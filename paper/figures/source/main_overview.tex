@@ -1,0 +1,56 @@
+\documentclass[tikz,border=0pt]{standalone}
+\input{style.tex}
+\begin{document}
+\begin{tikzpicture}[x=1cm,y=1cm]
+\path[use as bounding box] (0,0) rectangle (17.145,7.85);
+\fill[cream] (0,0) rectangle (17.145,7.85);
+\node[title] at (.32,7.38) {DeepProbe-VLM: one visual pass, a genuinely recurrent language model};
+\status{6.91}{muted}
+% Four stages, one recurrence. Question tokens do not enter the vision tower.
+\foreach \x/\n/\t in {.48/1/INPUTS,3.93/2/ENCODE ONCE,8.26/3/SHARED DECODER,14.55/4/ANSWER}{
+  \node[circle,fill=aubergine,text=white,font=\bfseries\fontsize{7.6}{8}\selectfont,minimum size=4.8mm] at (\x,6.34) {\n};
+  \node[label,anchor=west] at (\x+.35,6.34) {\t};
+}
+% Source frames are explicitly schematic, not empirical case studies.
+\thumbnail{.45}{4.75}{blush}
+\thumbnail{.78}{4.45}{lavender}
+\thumbnail{1.11}{4.15}{mint}
+\node[align=center] at (1.49,3.69) {Uniformly sampled\\video frames};
+\node[sub] at (1.49,3.10) {$F$ frames $\cdot$ schematic};
+\draw[flow] (2.34,4.77) -- (3.15,4.77);
+% Visual encoder and deterministic pooling/projection.
+\fill[card,fill=mint,draw=sage] (3.26,3.76) rectangle (6.39,5.72);
+\node[label,text=sage!55!ink] at (4.82,5.32) {SigLIP encoder};
+\node[align=center] at (4.82,4.76) {Encode frames once\\Pool + project};
+\node[sub,text=sage!55!ink] at (4.82,4.12) {$F G^2$ visual embeddings};
+\draw[flow] (6.39,4.77) -- (7.12,4.77);
+% Merge is a token sequence, not another trainable router.
+\node[circle,fill=white,draw=aubergine,line width=.9pt,minimum size=5.3mm] (join) at (7.38,4.77) {$+$};
+\node[sub,align=center] at (7.38,5.35) {concatenate};
+\draw[flow] (7.66,4.77) -- (8.24,4.77);
+\fill[card,fill=white,draw=aubergine!70] (.43,1.98) rectangle (2.67,2.72);
+\node[align=center] at (1.55,2.35) {Question tokens};
+\draw[flow] (2.67,2.35) -- (7.38,2.35) -- (join.south);
+\node[sub,fill=cream,inner sep=2pt] at (4.91,2.35) {text embeddings};
+% True main-stack recurrence.
+\fill[card,fill=lavender,draw=aubergine,line width=1pt] (8.25,3.76) rectangle (13.63,5.42);
+\node[label,font=\bfseries\fontsize{10.3}{12}\selectfont] at (10.94,5.02) {The same Ouro stack};
+\node[align=center] at (10.94,4.47) {Prefill updates all visual states\\at every recurrent round};
+\draw[flow,draw=coral,line width=1.25pt] (12.92,5.42) -- (12.92,6.03) -- (8.96,6.03) -- (8.96,5.42);
+\node[sub,text=coral!75!ink,fill=cream,inner sep=1pt] at (10.94,5.73) {$R$ rounds $\cdot$ same weights $\theta$};
+\fill[card,fill=white,draw=aubergine!45] (8.68,2.00) rectangle (13.19,2.90);
+\node[align=center] at (10.94,2.45) {Native per-loop KV cache\\No cross-loop KV substitution};
+\draw[draw=aubergine!60,densely dotted,line width=.85pt] (10.94,3.76) -- (10.94,2.90);
+% Model answer, no fabricated answer content.
+\draw[flow] (13.63,4.77) -- (14.33,4.77);
+\fill[card,fill=blush,draw=coral] (14.35,4.02) rectangle (16.71,5.50);
+\node[label,align=center] at (15.53,4.98) {Language head};
+\node[align=center] at (15.53,4.48) {Answer tokens};
+\node[sub,align=center] at (15.53,3.29) {Quality and cost\\must be evaluated};
+% One compact invariant strip instead of competing explanatory callouts.
+\draw[line] (.35,1.35) -- (16.80,1.35);
+\node[label,text=aubergine,anchor=west] at (.45,.91) {Inference parameters stay fixed.};
+\node[sub,anchor=west] at (6.28,.91) {Visual encoding once $\neq$ skipping visual-token updates inside the LM.};
+\node[sub,anchor=west] at (.45,.39) {Current baseline: dense native loops. Selective refresh and custom CUDA kernels are future work, not shown as implemented.};
+\end{tikzpicture}
+\end{document}

@@ -1,0 +1,11 @@
+.git
+.venv*
+data
+datasets
+weights
+checkpoints
+runs
+.env*
+paper/figures/qa
+paper/build
+**/__pycache__

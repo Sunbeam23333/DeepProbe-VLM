@@ -1,0 +1,23 @@
+{
+  "model": {
+    "language_model": "ByteDance/Ouro-1.4B",
+    "language_revision": "574fa66cb8bf5abdc979642d01cf2b79b16bfab1",
+    "language_backend": "ouro",
+    "vision_model": "google/siglip-so400m-patch14-384",
+    "vision_revision": "9fdffc58afc957d1a03a25b10dba0329ab15c2a3",
+    "num_loops": 4, "num_frames": 8, "pool_grid": 4,
+    "freeze_vision": true, "max_text_tokens": 512,
+    "attn_implementation": "sdpa"
+  },
+  "training": {
+    "stage": "alignment", "learning_rate": 0.001,
+    "per_device_train_batch_size": 1, "per_device_eval_batch_size": 1,
+    "gradient_accumulation_steps": 16, "num_train_epochs": 1,
+    "max_steps": -1, "bf16": true, "gradient_checkpointing": true,
+    "warmup_ratio": 0.03, "weight_decay": 0.0,
+    "lr_scheduler_type": "cosine", "seed": 17,
+    "save_steps": 200, "logging_steps": 10, "save_total_limit": 2,
+    "eval_strategy": "epoch", "dataloader_num_workers": 4,
+    "optim": "adamw_torch", "report_to": "none"
+  }
+}

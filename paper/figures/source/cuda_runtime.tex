@@ -1,0 +1,37 @@
+\documentclass[tikz,border=0pt]{standalone}
+\input{style.tex}
+\begin{document}
+\begin{tikzpicture}[x=1cm,y=1cm]
+\path[use as bounding box] (0,0) rectangle (17.145,7.66);
+\fill[white] (0,0) rectangle (17.145,7.66);
+\node[title] at (.33,7.16) {H20 / B300 runtime: establish a faithful baseline before kernel work};
+\status{6.70}{muted}
+\node[label,anchor=west] at (.48,6.07) {CURRENT EXPERIMENT PATH};
+\node[sub,anchor=east] at (16.76,6.07) {Logical execution flow $\cdot$ not a GPU topology or timeline};
+% Actual experimental reference path, alternating dark and filled-green boxes.
+\fill[rounded corners=2.5mm,graphite] (.46,3.83) rectangle (4.92,5.65);
+\node[label,text=white] at (2.69,5.15) {1. Capability preflight};
+\node[text=white,align=center] at (2.69,4.48) {Software + dtype + memory\\Pin each GPU configuration};
+\draw[flow,draw=graphite] (4.92,4.76)--(5.84,4.76);
+\fill[rounded corners=2.5mm,green] (5.86,3.83) rectangle (11.07,5.65);
+\node[label,text=white] at (8.47,5.15) {2. Native dense-loop reference};
+\node[text=white,align=center] at (8.47,4.48) {Dense recurrent prefill\\Preserve native per-loop KV};
+\draw[flow,draw=graphite] (11.07,4.76)--(11.99,4.76);
+\fill[rounded corners=2.5mm,graphite] (12.01,3.83) rectangle (16.68,5.65);
+\node[label,text=white] at (14.35,5.15) {3. Profile and verify};
+\node[text=white,align=center] at (14.35,4.48) {Answer / output parity\\Latency + peak device memory};
+% Future work is separated rather than blended into the shipped path.
+\fill[rounded corners=2.5mm,fill=white,draw=green,dashed,line width=.9pt] (.46,.93) rectangle (16.68,3.10);
+\node[label,text=green,anchor=west] at (.72,2.71) {FUTURE WORK $\cdot$ NOT IMPLEMENTED};
+\node[sub,anchor=east] at (16.38,2.71) {Proceed only if profiling identifies a material bottleneck};
+\fill[rounded corners=1.8mm,green] (.82,1.38) rectangle (5.30,2.24);
+\node[text=white,align=center] at (3.06,1.81) {Selective visual updates\\Train the mechanism first};
+\draw[control,draw=green] (5.30,1.81)--(6.03,1.81);
+\fill[rounded corners=1.8mm,graphite] (6.05,1.38) rectangle (10.73,2.24);
+\node[text=white,align=center] at (8.39,1.81) {Active-token scheduling\\Loop-aware fused kernels};
+\draw[control,draw=green] (10.73,1.81)--(11.47,1.81);
+\fill[rounded corners=1.8mm,green] (11.49,1.38) rectangle (16.31,2.24);
+\node[text=white,align=center] at (13.90,1.81) {Validate parity + quality\\Measure each GPU independently};
+\node[sub,anchor=west] at (.47,.43) {No H20/B300 speedup is established. A sparse mask alone does not prove skipped computation or lower latency.};
+\end{tikzpicture}
+\end{document}

@@ -1,0 +1,1 @@
+{"sample_id":"synthetic:example:qa0","source_video_id":"synthetic:example","video_path":"synthetic/example.mp4","question":"Which symbol appears first?","answer":"A","choices":["A circle","A square"],"split":"train","synthetic":true,"purpose":"Schema fixture only; no media supplied and no measured research result."}

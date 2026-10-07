@@ -1,0 +1,34 @@
+{
+  "verified_utc_date": "2026-10-07",
+  "warning": "Pinned source metadata only. Dataset/media rights remain with their owners. No dataset files are redistributed by this repository.",
+  "datasets": {
+    "llava_video_178k": {
+      "repo_id": "lmms-lab/LLaVA-Video-178K",
+      "revision": "6d8c562dc26d70042a0d9704d1cae58c94b89098",
+      "role": "train",
+      "default_patterns": ["README.md", "0_30_s_academic_v0_1/0_30_s_academic_oe_v0_1_qa_processed.json"],
+      "rights": "Card states Apache 2.0 plus academic research/education-only usage; check source-video and generated-data terms. Do not assume unrestricted video redistribution."
+    },
+    "videomme": {
+      "repo_id": "lmms-lab/Video-MME",
+      "revision": "ead1408f75b618502df9a1d8e0950166bf0a2a0b",
+      "role": "evaluation_only",
+      "default_patterns": ["README.md", "videomme/test-00000-of-00001.parquet"],
+      "rights": "Read the official Video-MME project and original video/platform terms; the pinned Hub card does not declare a blanket media license."
+    },
+    "mvbench": {
+      "repo_id": "OpenGVLab/MVBench",
+      "revision": "230a2d4fac8900333c61754641c7a13e069ac9c6",
+      "role": "evaluation_only",
+      "default_patterns": ["README.md", "json/*.json", "video/MVBench_videos_ntu.txt"],
+      "rights": "MIT Hub metadata does not replace source-video rights. 320 NTU RGB+D videos require separate authorized access."
+    },
+    "herbench": {
+      "repo_id": "DanBenAmi/HERBench",
+      "revision": "30b42e97180f2c7c0fdc3f2aed412ae04f0366ca",
+      "role": "evaluation_only_optional",
+      "default_patterns": ["README.md", "LICENSE", "data/herbench_lite_v2.parquet", "data/video_metadata.json", "data/task_metadata.json"],
+      "rights": "CC BY-NC-SA 4.0; research/education use and underlying video/source dataset terms apply."
+    }
+  }
+}

@@ -1,0 +1,39 @@
+% Deterministic vector typography; formulas are compiled by XeLaTeX.
+\usepackage{fontspec}
+\IfFontExistsTF{Comic Sans MS}{\setmainfont{Comic Sans MS}}{\setmainfont{texgyreheros}[Extension=.otf,UprightFont=*-regular,BoldFont=*-bold,ItalicFont=*-italic,BoldItalicFont=*-bolditalic]}
+\usepackage{amsmath}
+\usepackage{fix-cm}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,calc,positioning,shapes.geometric,backgrounds}
+\definecolor{ink}{HTML}{2D2730}
+\definecolor{muted}{HTML}{716771}
+\definecolor{aubergine}{HTML}{563D5D}
+\definecolor{coral}{HTML}{D66D75}
+\definecolor{sage}{HTML}{7A9E7E}
+\definecolor{ochre}{HTML}{C99331}
+\definecolor{cream}{HTML}{FFF9F0}
+\definecolor{lavender}{HTML}{F1EAF2}
+\definecolor{mint}{HTML}{EDF4ED}
+\definecolor{blush}{HTML}{FBECEE}
+\definecolor{line}{HTML}{DED5DB}
+\definecolor{green}{HTML}{4C7B00}
+\definecolor{nvidiagreen}{HTML}{76B900}
+\definecolor{graphite}{HTML}{242829}
+\tikzset{
+  every node/.style={font=\fontsize{8}{10.2}\selectfont,text=ink,inner sep=0pt},
+  title/.style={font=\bfseries\fontsize{12}{14}\selectfont,anchor=west},
+  sub/.style={font=\fontsize{7.5}{9.5}\selectfont,text=muted},
+  label/.style={font=\bfseries\fontsize{8.6}{11}\selectfont},
+  flow/.style={-{Latex[length=2.1mm,width=1.5mm]},line width=.9pt,draw=aubergine},
+  control/.style={-{Latex[length=1.8mm,width=1.3mm]},line width=.8pt,dashed,draw=muted},
+  card/.style={rounded corners=2.5mm,draw=line,line width=.65pt,fill=white},
+  icon/.style={draw=aubergine,line width=.8pt},
+}
+\newcommand{\status}[2]{\node[sub,anchor=east,text=#2] at (16.83,#1) {ILLUSTRATIVE $\cdot$ NOT MEASURED};}
+\newcommand{\step}[3]{\node[circle,fill=#3,text=white,font=\bfseries\fontsize{8}{8}\selectfont,minimum size=5mm] at (#1,#2) {};}
+\newcommand{\thumbnail}[3]{%
+  \begin{scope}[shift={(#1,#2)}]
+    \fill[fill=#3,draw=aubergine!60,line width=.6pt,rounded corners=.6mm] (0,0) rectangle (1.05,.70);
+    \draw[draw=aubergine!55,line width=.7pt] (.12,.15)--(.36,.38)--(.55,.20)--(.77,.46)--(.94,.21);
+    \fill[ochre!80] (.23,.53) circle (.065);
+  \end{scope}}
