@@ -26,7 +26,7 @@ memory reduction or speedup value is shown. Benchmark and GPU gates are pending.
 
 | Visual element | Current source | Boundary |
 |---|---|---|
-| Uniform video sampling | src/deepprobe_vlm/data.py: decode_video, uniform_indices | Reference two-pass decoder, not an optimized decoder |
+| Uniform video sampling | experiment/src/deepprobe_vlm/data.py: decode_video, uniform_indices | Reference two-pass decoder, not an optimized decoder |
 | SigLIP once; bounded FG² prefix | modeling.py: encode_visual, SpatialPoolProjector | No selective vision encoding claim |
 | Native shared-stack recurrence | DeepProbeVLM.__init__, _language_forward | Uses native total_ut_steps; no wrapper-loop approximation |
 | Per-loop KV | DeepProbeVLM.greedy_generate | Token-to-token decode caching does not permit cross-loop KV substitution |

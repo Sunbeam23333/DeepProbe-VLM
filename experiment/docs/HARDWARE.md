@@ -4,6 +4,10 @@ These are launch templates, **not measured support/performance claims**. No H20 
 B300 was connected during the initial local release. Do not reserve a long run
 until the gates below pass on your machine.
 
+All commands run from `experiment/`. Build the optional container from that
+directory with `docker build -f docker/Dockerfile -t deepprobe-vlm:local .`;
+the repository root is not its Docker build context.
+
 ## Environment
 
 Use Linux + a CUDA-enabled PyTorch >=2.8 and Transformers 4.57.6. Keep PyTorch
@@ -40,10 +44,13 @@ Sources, checked 2026-10-07:
    `torchrun --standalone --nproc-per-node=8 scripts/preflight.py --output runs/preflight_8gpu.json`
 3. Unit tests: `python -m pytest -q`. These use tiny local fixtures, not benchmark
    scores and not a substitute for real checkpoint validation.
-4. Prepare source-disjoint train/validation manifests, run a short connector
-   alignment, then the 20-step SFT pilot. Use one GPU first (`DEEP_PROBE_GPUS=1`).
-5. Confirm finite decreasing loss, all intended parameter groups receive finite
-   gradients, checkpoint reload works, and validation prompts contain no labels.
+4. Prepare source-disjoint train/validation manifests and run the 20-step SFT
+   connectivity pilot. It starts with a random connector and is not a quality
+   result. Use one GPU first (`DEEP_PROBE_GPUS=1`). For actual quality training,
+   complete projector alignment, then initialize SFT from that checkpoint.
+5. Confirm finite loss, inspect its trend, and check all intended parameter groups receive finite
+   gradients and checkpoint reload works. Generation/inference prompts must not
+   contain gold answers; teacher-forced validation loss uses masked answer supervision.
 6. Run the same pilot on eight GPUs. Check effective batch size and resume state.
 7. Profile a fixed validation subset on **both** GPU types before launching the
    full experiment matrix.

@@ -66,7 +66,7 @@ def main():
             "training_protocol": "Separate projector alignment and full-LM SFT from frozen held-out inference; source-video splits isolate test evidence.",
             "cuda_runtime": "Establish native baseline and hardware profiles before any custom sparse runtime; all selective-update or fused-kernel work remains future.",
         },
-        "sources": ["src/deepprobe_vlm/modeling.py", "src/deepprobe_vlm/train.py", "src/deepprobe_vlm/evaluate.py", "src/deepprobe_vlm/data.py"],
+        "sources": ["experiment/src/deepprobe_vlm/modeling.py", "experiment/src/deepprobe_vlm/train.py", "experiment/src/deepprobe_vlm/evaluate.py", "experiment/src/deepprobe_vlm/data.py"],
         "boundary": "No benchmark accuracy, convergence, throughput or speedup is claimed. A runnable scaffold is not a validated scientific result.",
         "files": {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in paths},
     }

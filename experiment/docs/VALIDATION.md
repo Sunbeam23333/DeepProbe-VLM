@@ -1,5 +1,20 @@
 # Initial release verification
 
+## Directory migration check — 2026-10-08
+
+Experiment installation, configs, scripts, tests and documentation now live in
+`experiment/`; paper sources and figures remain in `paper/`. Run experiment
+commands from `experiment/` and reinstall the editable package after pulling
+this layout change. No model algorithm or paper figure content changed.
+
+After the move: **53 tests passed**, including the opt-in tiny native Ouro
+eager/SDPA tests and four new checks for directory layout, paper evidence paths,
+Markdown links, and whole-repository public-file scanning. The same two benign
+Trainer checkpoint-order warnings remained. This is still CPU validation,
+not H20/B300 execution. The GitHub workflow was updated to use `experiment/`.
+
+## Initial verification — 2026-10-07
+
 Date: 2026-10-07. This records software checks, **not benchmark or GPU results**.
 
 ## Passed locally

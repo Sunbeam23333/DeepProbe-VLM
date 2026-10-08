@@ -4,7 +4,8 @@ This repository distributes **code, not datasets, videos, weights, or credential
 No benchmark test answers may be used for SFT, prompt selection, early stopping,
 or hyperparameter selection. Evaluation answers remain in a separate manifest
 field and must never enter the model input. The scripts below do not download
-anything unless `--download` is explicit. Run from the repository root.
+media unless `--download` is explicit. Token preflight may fetch tokenizer files,
+not model weights. Run all commands from the repository's `experiment/` directory.
 
 ## Sources and immutable revisions
 
@@ -271,7 +272,7 @@ For alignment-to-SFT or resume, use the actual saved tokenizer as training does:
 ```bash
 python scripts/data/check_token_budget.py \
   data/manifests/llava-split/train.jsonl data/manifests/llava-split/validation.jsonl \
-  --config configs/train/ouro_sft.json --checkpoint runs/ouro-alignment/final \
+  --config configs/train/ouro_sft.json --checkpoint runs/ouro_alignment/final \
   --report data/reports/ouro-sft-token-budget.json
 ```
 
@@ -290,16 +291,19 @@ on CPU/local storage before long H20/B300 training runs; otherwise decoding can
 hide model throughput. This is deterministic preprocessing, not a speedup result.
 
 ```bash
-python scripts/data/cache_frames.py --input data/manifests/llava-split/train.jsonl \
-  --media-root data/media/llava --output-dir data/frame_cache/llava-train-f16 \
-  --num-frames 16 --max-gb 100
+python scripts/data/cache_frames.py --input data/manifests/llava-pilot.jsonl \
+  --media-root data/media/llava --output-dir data/frame_cache/llava-pilot-f8 \
+  --num-frames 8 --max-gb 100
 
-python scripts/data/validate.py data/frame_cache/llava-train-f16/manifest.jsonl \
-  --media-root data/frame_cache/llava-train-f16
+python scripts/data/validate.py data/frame_cache/llava-pilot-f8/manifest.jsonl \
+  --media-root data/frame_cache/llava-pilot-f8
 ```
 
-Train/evaluate using the resulting `manifest.jsonl` and the cache directory as
-`--media-root`, with the **same frame count**. Images are lossless RGB PNGs at
+Next split the cached training-candidate manifest by source video, excluding
+every final benchmark source. The resulting train/validation manifests then
+share the cache directory as `--media-root`; see the complete commands in
+[REQUIREMENTS.md](REQUIREMENTS.md#推荐的统一帧缓存布局). Use the **same frame
+count** as the model config. Images are lossless RGB PNGs at
 original selected resolution; no hidden resize or JPEG recompression. Multiple
 questions sharing the same media and bounds reuse the same decode. Cache keys
 include source-content SHA256, temporal bounds, frame count, decoder source hash,

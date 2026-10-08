@@ -7,6 +7,7 @@
 #SBATCH --time=02:00:00
 #SBATCH --output=slurm-%j.out
 # Edit the partition/account for your cluster; no resource purchase is automatic.
+# Submit from experiment/ after activating its environment.
 set -euo pipefail
 : "${DEEP_PROBE_TRAIN:?Set DEEP_PROBE_TRAIN to a training manifest}"
 : "${DEEP_PROBE_VAL:?Set DEEP_PROBE_VAL to a source-disjoint validation manifest}"

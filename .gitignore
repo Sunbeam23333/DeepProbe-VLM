@@ -14,6 +14,12 @@ __pycache__/
 /checkpoints/
 /runs/
 /wandb/
+/experiment/data/
+/experiment/datasets/
+/experiment/weights/
+/experiment/checkpoints/
+/experiment/runs/
+/experiment/wandb/
 *.safetensors
 *.pt
 *.pth

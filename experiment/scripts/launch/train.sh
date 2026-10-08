@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run from the repository root. Remaining arguments go to the training CLI.
+# Run from experiment/. Remaining arguments go to the training CLI.
 set -euo pipefail
 if [[ $# -lt 1 ]]; then
   echo "Usage: bash scripts/launch/train.sh CONFIG --train-manifest ... --media-root ... --output-dir ..." >&2

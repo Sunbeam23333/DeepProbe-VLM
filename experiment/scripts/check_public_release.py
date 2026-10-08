@@ -5,7 +5,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]  # Scan BOTH experiment/ and paper/.
 PATTERNS = {
     "HF credential": re.compile(rb"\bhf_[A-Za-z0-9]{24,}\b"),
     "GitHub credential": re.compile(rb"\b(?:ghp|gho|ghu|ghs|github_pat)_[A-Za-z0-9_]{25,}\b"),
@@ -28,7 +28,7 @@ def main():
             continue
         if file.suffix.lower() in FORBIDDEN or file.stat().st_size > 20 * 2**20:
             issues.append((name, "large/binary research artifact requires explicit review"))
-        if name == "scripts/check_public_release.py":
+        if (ROOT / name).resolve() == Path(__file__).resolve():
             continue  # scan patterns are examples, not credentials
         if file.suffix.lower() in {".png", ".jpg", ".jpeg", ".pdf"}:
             continue
