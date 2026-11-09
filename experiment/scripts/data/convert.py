@@ -101,7 +101,11 @@ def convert_llava(row, args, source_map):
         if human["from"] not in {"human", "user"} or assistant["from"] not in {"gpt", "assistant"}:
             raise ValueError("expected alternating human/gpt pairs; no silent reordering")
         question = re.sub(r"<(?:image|video)>", "", human["value"]).strip()
-        identity = f"{args.input.name}|{row.get('id')}|{video}|{index//2}"
+        # LLaVA-Video reuses the video ID across separate rows containing
+        # different questions. Bind the QA content as well as its source ID.
+        pair_hash = hashlib.sha256(json.dumps([human, assistant], ensure_ascii=False,
+                                             sort_keys=True).encode()).hexdigest()
+        identity = f"{args.input.name}|{row.get('id')}|{video}|{index//2}|{pair_hash}"
         yield {"sample_id": "llava:" + hashlib.sha256(identity.encode()).hexdigest()[:24],
                "source_video_id": source, "video_path": video, "question": question,
                "answer": assistant["value"].strip(), "split": args.split,
@@ -130,6 +134,17 @@ def convert_herbench(row, args, source_map):
 def convert_mvbench(row, args, source_map):
     folder, family, bounded = MV_TASKS[args.task]
     video = safe_relative_path(f"{args.video_prefix}/{folder}/{row['video']}")
+    if args.task == "action_antonym":
+        # The official MVBench ZIP uses ssv2_video/*.webm. Keep the legacy
+        # directory as a supported layout, preserving the annotation filename.
+        candidates = [video, safe_relative_path(f"{args.video_prefix}/ssv2_video/{row['video']}")]
+        present = [path for path in candidates if resolve_media_path(path, args.media_root).is_file()]
+        if len(present) > 1:
+            raise ManifestError(f"ambiguous MVBench SSV2 media: {present}")
+        if present:
+            video = present[0]
+        # With neither candidate present, retain the normal missing-media error
+        # in validate_records; never substitute a different extension or sample.
     choices = clean_choices(row["candidates"])
     if choices.count(row["answer"]) != 1:
         raise ValueError("MVBench answer must uniquely match one candidate")

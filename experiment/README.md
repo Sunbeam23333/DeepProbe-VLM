@@ -1,6 +1,6 @@
 # DeepProbe-VLM / experiment
 
-**原生 Looped Transformer 视频全参数 SFT 实验基线 · H20 / B300 实验准备版**
+**原生 Looped Transformer 视频全参数 SFT 实验基线**
 
 **先读 [实验要求与验收清单](docs/REQUIREMENTS.md)。本文所有命令均从 `experiment/` 运行；图和论文在同级 `../paper/`。**
 
@@ -8,7 +8,7 @@
 
 这版先建立一个正确、可复现的稠密循环基线：**SigLIP 编码视频帧 → 可训练视觉连接器 → Ouro 原生共享权重循环 → 回答**。不是把普通 Transformer 在外面调用几次，也不是直接拿浅层 KV 冒充深层 KV。
 
-当前为实验代码发布，**没有已测得的 H20/B300 加速或精度结果**。旧的冻结模型/选择性深层补算草稿不作为这版的实现说明。新图和 [实验协议 PDF](../paper/experiment_protocol.pdf) 明确区分已实现基线与待验证创新。
+当前已有 R1/R2 seed17 的真实训练与评测结果，见[已验收结果与协议](results/RESULTS.md)和[当前进度](results/STATUS.md)。尚未完成多种子稳健性或正式 H20/B300 速度对比。旧的冻结模型/选择性深层补算草稿不作为这版的实现说明；[实验协议 PDF](../paper/experiment_protocol.pdf) 是实验设计文档。
 
 ## 已交付与边界
 
@@ -16,7 +16,7 @@
 |---|---|
 | 原生 Ouro 循环 + 视频前缀 + final-loop answer-only loss | 已实现；小模型 CPU 契约测试 |
 | 连接器对齐 → 全语言主干 SFT；视觉编码器可训练 | 已实现；无 LoRA，循环间不截断梯度 |
-| 普通 SmolLM2 对照、DDP、保存/重载、断点续训 | 已实现；完整 GPU/DDP pilot 待跑 |
+| 普通 SmolLM2 对照、DDP、保存/重载、断点续训 | 已实现；Ouro 八卡训练已验收，Smol GPU 基线待跑 |
 | 数据下载/转换/分组/泄漏检查/抽帧缓存 | 已实现；默认仅预览下载计划 |
 | 多选/EM 评测、逐样本记录、配对成簇 bootstrap | 已实现；不是官方语义 judge |
 | 选择性视觉更新、跨轮 KV 共享、TTT、自定义 CUDA/PTX | **未实现，属于后续研究分支** |
@@ -41,6 +41,8 @@ torchrun --standalone --nproc-per-node=8 scripts/preflight.py \
 ```
 
 只有 CPU 的开发机可用 `--allow-cpu` 跑自检，但结果不能代替 CUDA 检查。可选 `DEEPPROBE_TEST_NATIVE_OURO=1 python -m pytest -q tests/test_model_native_ouro.py` 只下载固定版本模型代码/配置，以随机小模型验证原生循环，不下载预训练权重。
+
+默认 CPU 测试不读取私有 benchmark 工件。需要原始授权证据的集成测试使用 `--run-private-evidence` 显式启用；输入要求和跳过语义见[测试说明](tests/README.md)。
 
 ## 2. 准备数据
 
@@ -89,14 +91,29 @@ DEEP_PROBE_GPUS=8 bash scripts/launch/train.sh configs/train/ouro_pilot.json \
   --eval-manifest data/manifests/llava-split/validation.jsonl \
   --media-root data/media/llava --output-dir runs/pilot-8gpu
 
+# 阶段 A/B 的正式配置要求已核验的源、数据和准入收据。
+# 将这些变量设为本次运行实际生成并核对的文件/目录/摘要；缺失时拒绝启动。
+: "${FORMAL_READY:?Path to verified FORMAL_READY.json}"
+: "${FORMAL_TRAINING_DATA_DIR:?Path to verified formal data directory}"
+: "${FROZEN_SOURCE_MANIFEST:?Path to frozen source manifest}"
+: "${FROZEN_SOURCE_MANIFEST_SHA256:?Verified source manifest SHA256}"
+
 # 阶段 A：只训练视觉池化和连接器。
 bash scripts/launch/train.sh configs/train/ouro_alignment.json \
+  --formal-ready "$FORMAL_READY" \
+  --formal-training-data-dir "$FORMAL_TRAINING_DATA_DIR" \
+  --frozen-source-manifest "$FROZEN_SOURCE_MANIFEST" \
+  --frozen-source-manifest-sha256 "$FROZEN_SOURCE_MANIFEST_SHA256" \
   --train-manifest data/manifests/llava-split/train.jsonl \
   --eval-manifest data/manifests/llava-split/validation.jsonl \
   --media-root data/media/llava --output-dir runs/ouro_alignment
 
 # 阶段 B：全语言主干 + 视觉编码器 + 连接器 SFT。
 bash scripts/launch/train.sh configs/train/ouro_sft.json \
+  --formal-ready "$FORMAL_READY" \
+  --formal-training-data-dir "$FORMAL_TRAINING_DATA_DIR" \
+  --frozen-source-manifest "$FROZEN_SOURCE_MANIFEST" \
+  --frozen-source-manifest-sha256 "$FROZEN_SOURCE_MANIFEST_SHA256" \
   --init-checkpoint runs/ouro_alignment/final \
   --train-manifest data/manifests/llava-split/train.jsonl \
   --eval-manifest data/manifests/llava-split/validation.jsonl \
@@ -135,6 +152,8 @@ python scripts/analysis/summarize.py \
 - [模型、梯度、缓存与续训契约](docs/MODEL_CONTRACT.md)
 - [硬件环境与首轮上机检查](docs/HARDWARE.md)
 - [实际完成的验证与未验证事项](docs/VALIDATION.md)
+- [已验收准确率、协议与证据索引](results/RESULTS.md)、[当前训练和待办](results/STATUS.md)
+- [操作工具与私有证据边界](docs/operations/README.md)
 - [实验矩阵与未来创新分支](docs/EXPERIMENTS.md)
 - [新图审查与排版](../paper/docs/FIGURE_AUDIT.md)、[论文协议与重建](../paper/README.md)
 
@@ -144,4 +163,4 @@ python scripts/analysis/summarize.py \
 
 ## Release status
 
-This is an experimental **baseline implementation**, not a reproduction claim or a finished research result. CPU tests include tiny native Ouro recurrence, cache parity, gradients, checkpoint round trips, and a Trainer alignment/SFT/resume/evaluation sequence. Full pretrained-model convergence, 8-GPU training, Docker compatibility and H20/B300 performance require server-side verification. No datasets, weights, copied third-party code or synthetic benchmark scores are distributed.
+This is an experimental **baseline implementation**. Accepted R1/R2 seed17 training, eight-GPU execution and benchmark results are documented in [results](results/RESULTS.md); this is not a full official benchmark reproduction or a completed research result. CPU tests cover recurrence, cache parity, gradients, checkpoint round trips, training-stage transitions and evaluation contracts. Additional training seeds, the remaining baselines/ablations, Docker compatibility and warmed hardware performance remain unverified. No datasets, weights, copied third-party code or synthetic benchmark scores are distributed. Private-evidence integration tests require separately provisioned authorized artifacts.

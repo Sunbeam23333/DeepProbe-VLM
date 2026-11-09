@@ -48,3 +48,12 @@ dist/
 build/
 core
 core.*
+
+# Private operational evidence is retained locally/OSS, never bulk-published.
+/experiment/docs/operations/evidence/
+/experiment/docs/operations/EXECUTION_STATUS_20261021.md
+/experiment/docs/operations/EXPERIMENT_PLAN.md
+/experiment/docs/operations/OPS_RUNBOOK.md
+/experiment/docs/operations/experiment_matrix.csv
+/experiment/docs/operations/schedule.csv
+/experiment/docs/operations/finalize*.py

@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "observed_at_utc": "2026-11-09T11:14:15.183658+00:00",
+  "display_timezone": "Asia/Shanghai",
+  "run_id": "dp-p1-ouro-r4-f8-g4-s17-sft-a1",
+  "stage": "sft",
+  "status": "Failed",
+  "failure_at_utc": "2026-11-09T09:04:27Z",
+  "last_observed_step": 602,
+  "target_steps": 718,
+  "checkpoint_step": 600,
+  "checkpoint_resume_accepted": false,
+  "sigterm_at_beijing": "2026-11-09T17:04:23+08:00",
+  "exit_code": null,
+  "termination_cause": "unknown; no events retained for exact Job/Pod UIDs",
+  "original_pod_present": false,
+  "final_checkpoint_present": false,
+  "training_complete_receipt_present": false,
+  "archive_object_count": 0,
+  "archive_bytes": 0,
+  "archive_accepted": false,
+  "retry_submitted_in_this_check": false,
+  "held_out_result": null,
+  "evidence": {
+    "snapshot.stdout.json": {
+      "source_path": "experiment/docs/operations/evidence/progress-and-github-sync-20261109/sft-readonly/snapshot.stdout.json",
+      "sha256": "fc153a29c5167d60052c4c84b5f08fd71302655e13345b655326e5c796b5d308",
+      "bytes": 818443,
+      "available_in_github": false
+    },
+    "failure-details.stdout.json": {
+      "source_path": "experiment/docs/operations/evidence/progress-and-github-sync-20261109/sft-readonly/failure-details.stdout.json",
+      "sha256": "338f110483b295014e96bd34e20b9137089877d408805e2068622f3922dc2346",
+      "bytes": 112766,
+      "available_in_github": false
+    },
+    "R4_SFT_A1_CURRENT_FAILURE_STATUS.json": {
+      "source_path": "experiment/docs/operations/evidence/progress-and-github-sync-20261109/sft-readonly/R4_SFT_A1_CURRENT_FAILURE_STATUS.json",
+      "sha256": "956a37c320503954baa79a93fb757e82d75da10644d719b12f11c33be06ca277",
+      "bytes": 4114,
+      "available_in_github": false
+    },
+    "checkpoint600.stdout.json": {
+      "source_path": "experiment/docs/operations/evidence/progress-and-github-sync-20261109/sft-readonly/checkpoint600.stdout.json",
+      "sha256": "c5658343473ac40bdba03d3d8e46c257cc1e495800f22a0163333f45a9da4a66",
+      "bytes": 208584,
+      "available_in_github": false
+    },
+    "CHECKPOINT600_FILE_MAP.json": {
+      "source_path": "experiment/docs/operations/evidence/progress-and-github-sync-20261109/sft-readonly/CHECKPOINT600_FILE_MAP.json",
+      "sha256": "9f323166622a901c74283f19559d5943ced7801af70063be291690c2da34c70b",
+      "bytes": 4312,
+      "available_in_github": false
+    }
+  },
+  "checkpoint_checked_at_utc": "2026-11-09T11:18:23.253533+00:00",
+  "checkpoint_file_count": 31,
+  "checkpoint_bytes": 22317153372,
+  "checkpoint_file_map_canonical_sha256": "1c2682adc2700bd99b0b5237d4765dff5fd7bb29686bc20289f02b027193d1d3",
+  "checkpoint_all_file_hashes_measured": true,
+  "checkpoint_model_headers_and_state_presence_passed": true,
+  "optimizer_scheduler_rng_deserialized": false,
+  "capacity_measurement": {
+    "admission_performed": false,
+    "combined_accounted_bytes": 67803479292,
+    "existing_sft_full_reserve_bytes": 54884490928,
+    "observed_utc": "2026-11-09T11:18:23.247745+00:00",
+    "operational_limit_bytes": 99000000000,
+    "over_limit_bytes": 23687970220,
+    "projected_with_same_reserve_bytes": 122687970220,
+    "reserve_recomputed_for_new_attempt": false
+  }
+}

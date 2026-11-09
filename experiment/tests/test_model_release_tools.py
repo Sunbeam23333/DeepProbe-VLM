@@ -22,6 +22,8 @@ class ReleaseToolsTest(unittest.TestCase):
             DeepProbeConfig.from_dict(raw)
             settings = dict(raw["training"])
             settings.pop("stage")
+            settings.pop("formal_training", None)
+            settings.pop("require_final_resume_checkpoint", None)
             # Validate recipe syntax without pretending this CPU has BF16 CUDA.
             settings.update(bf16=False, use_cpu=True)
             TrainingArguments(output_dir="unused", **settings)

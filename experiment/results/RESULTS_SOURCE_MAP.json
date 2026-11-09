@@ -1,0 +1,80 @@
+{
+  "curated_at_utc": "2026-11-09T11:13:25.265303+00:00",
+  "derivatives": {
+    "accepted_results.json": {
+      "bytes": 8623,
+      "derivative_sha256": "3607850d36c92f1e45fa316f38c92ac1ee12a352942ee58304b65ce3c1955383",
+      "source_evidence_ids": [
+        "videomme_result_audit",
+        "videomme_archive_acceptance",
+        "tempcompass_result_audit",
+        "tempcompass_archive_acceptance",
+        "paired_statistics_audit",
+        "videomme_paired_statistics",
+        "tempcompass_paired_statistics",
+        "r4_alignment_acceptance"
+      ]
+    }
+  },
+  "digest_convention": "original_sha256 hashes the exact original local evidence bytes. derivative_sha256 hashes the separately generated sanitized projection; these digests are not interchangeable.",
+  "public_reproducibility_scope": "This compact index and the result projection expose accepted metrics, protocols and evidence digests. They do not by themselves make raw predictions or private operational evidence publicly available.",
+  "schema_version": 1,
+  "sources": {
+    "paired_statistics_audit": {
+      "available_in_github": false,
+      "original_bytes": 8349,
+      "original_sha256": "00905c4ffb631da98959dc9c363a9f547f13cd461acf7bf614e1fcb25b3542e3",
+      "role": "Original private operational evidence; its digest identifies the original, not this curated projection.",
+      "source_path": "experiment/docs/operations/evidence/paired-statistics-20261107/independent-review-v1/INDEPENDENT_PAIRED_STATISTICS_AUDIT.json"
+    },
+    "r4_alignment_acceptance": {
+      "available_in_github": false,
+      "original_bytes": 2620,
+      "original_sha256": "62331648b4aa885d0d3f83d9dbe257e549882e35f38a859c561bfdfc3dc7ec06",
+      "role": "Original private operational evidence; its digest identifies the original, not this curated projection.",
+      "source_path": "experiment/docs/operations/evidence/r4-progress-20261109/a5-independent-success-review-v1/INDEPENDENT_ALIGNMENT_SUCCESS_ARCHIVE_ACCEPTANCE.json"
+    },
+    "tempcompass_archive_acceptance": {
+      "available_in_github": false,
+      "original_bytes": 61273,
+      "original_sha256": "fb92294304f3ba6fe0e297b3f901204f2b97608263979de44cbb464f0fdc4314",
+      "role": "Original private operational evidence; its digest identifies the original, not this curated projection.",
+      "source_path": "experiment/docs/operations/evidence/tempcompass-success-20261107/independent-result-audit/INDEPENDENT_SUCCESS_ARCHIVE_ACCEPTANCE.json"
+    },
+    "tempcompass_paired_statistics": {
+      "available_in_github": false,
+      "original_bytes": 1007,
+      "original_sha256": "bcfe8b7ace661a63bfeda868ac1257180d29338a174e09dd06eb0ad673d85dd3",
+      "role": "Original private operational evidence; its digest identifies the original, not this curated projection.",
+      "source_path": "experiment/docs/operations/evidence/paired-statistics-20261107/results-v1/tempcompass/r2_vs_r1.json"
+    },
+    "tempcompass_result_audit": {
+      "available_in_github": false,
+      "original_bytes": 85030,
+      "original_sha256": "fee4c43a72b38eef1598f22e2fe28d4541f82a193b00dd40f13acdd7d0a698fe",
+      "role": "Original private operational evidence; its digest identifies the original, not this curated projection.",
+      "source_path": "experiment/docs/operations/evidence/tempcompass-success-20261107/independent-result-audit/INDEPENDENT_RESULTS_PREARCHIVE_CHECK.json"
+    },
+    "videomme_archive_acceptance": {
+      "available_in_github": false,
+      "original_bytes": 30553,
+      "original_sha256": "f40fca3fba7ae5018873f6ea0db8423b366b11768e135ea857438629491a1868",
+      "role": "Original private operational evidence; its digest identifies the original, not this curated projection.",
+      "source_path": "experiment/docs/operations/evidence/experiment-execution-20261021/videomme-a3-independent-result-audit/INDEPENDENT_SUCCESS_ARCHIVE_ACCEPTANCE.json"
+    },
+    "videomme_paired_statistics": {
+      "available_in_github": false,
+      "original_bytes": 4464,
+      "original_sha256": "5c2c9818ebc81ab0cf0c41e1bd4cf4b65f9ad35dca602609b573e93ad1520941",
+      "role": "Original private operational evidence; its digest identifies the original, not this curated projection.",
+      "source_path": "experiment/docs/operations/evidence/paired-statistics-20261107/results-v1/videomme899/r2_vs_r1.json"
+    },
+    "videomme_result_audit": {
+      "available_in_github": false,
+      "original_bytes": 25838,
+      "original_sha256": "e84c2f63731eeca02aea0e75cadb59e9b0fce153b47bb43a1b852cbf51ae88ea",
+      "role": "Original private operational evidence; its digest identifies the original, not this curated projection.",
+      "source_path": "experiment/docs/operations/evidence/experiment-execution-20261021/videomme-a3-independent-result-audit/INDEPENDENT_RESULTS_PREARCHIVE_CHECK.json"
+    }
+  }
+}

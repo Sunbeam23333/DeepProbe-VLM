@@ -1,0 +1,17 @@
+{
+  "purpose": "Original project-owned training recipe fixtures; copied without modification",
+  "files": [
+    {
+      "path": "ouro_r4_sft_s17_save50_limit1.json",
+      "source": "docs/operations/evidence/r4-recovery-preparation-20261021/configs/ouro_r4_sft_s17_save50_limit1.json",
+      "bytes": 1047,
+      "sha256": "92a4aef5e7b653cc4b933388834a7b087c987a0c0b26d2ebdf125e5a91220ac1"
+    },
+    {
+      "path": "ouro_r4_alignment_a2_resume_s17.json",
+      "source": "docs/operations/evidence/r4-recovery-preparation-20261021/configs/ouro_r4_alignment_a2_resume_s17.json",
+      "bytes": 1051,
+      "sha256": "b1c3fc9ce9bcc65335ebc68435730ef8f32a0e2d9cb953babf13a871d5b0c865"
+    }
+  ]
+}

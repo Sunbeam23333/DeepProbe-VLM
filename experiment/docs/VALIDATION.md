@@ -1,4 +1,47 @@
-# Initial release verification
+# Verification history
+
+## Experiment results and code synchronization — 2026-11-09
+
+R1/R2 seed17 alignment and SFT have completed, with accepted eight-GPU execution
+and archived Video-MME899/TempCompass results. The exact evaluation scope,
+denominators, invalid-response rates and paired source-cluster confidence
+intervals are in [the accepted results](../results/RESULTS.md).
+
+R4 alignment completed and passed full archive acceptance. R4 SFT subsequently
+failed after 602/718 updates; the last durable checkpoint is step 600, with no
+R4 held-out result. See [the dated status](../results/STATUS.md).
+
+This source update includes deterministic spatial pooling, native Ouro token-0
+embedding-gradient preservation across reloads, formal data/source and resume
+checks, distributed preflight, guarded operational tools, TempCompass scoring
+and the prepared latency runner. These implementations and CPU tests do not
+establish multi-seed robustness or a warmed GPU performance comparison.
+
+The reviewed unified-evaluation candidate has also been integrated: explicit
+model/backend/loop/seed and checkpoint acceptance bindings replace model-name
+inference. Its additional R4/Smol/seed interfaces have CPU validation only;
+they are not completed evaluations or admission for resumed-SFT variants.
+
+Validation of the published source tree:
+
+- A clean export of the staged Git files, with no private evidence directory:
+  **448 passed / 79 skipped**. Skips comprise 75 private-evidence integration
+  checks, three opt-in pinned native remote-code checks and one Ali-only original
+  artifact check.
+- The 75 private-evidence integration checks passed separately against the
+  original local artifacts. Those inputs are not distributed in this release.
+- CPU attention forward/backward preflight passed with `status=cpu_only`.
+  Python 3.12.14, macOS CPU, Torch 2.13.0, Transformers 4.57.6,
+  Accelerate 1.15.0, huggingface-hub 0.36.0, NumPy 2.5.4, Pillow 11.3.0,
+  PyAV 16.1.0. This environment is not a GPU runtime recommendation.
+- Python AST checks, 11 shell syntax checks, whitespace checks and staged-file
+  credential/artifact scans passed. No private evidence, media or weights are
+  present in the exported source tree.
+
+These are local checks; GitHub Actions results are recorded separately by CI.
+
+The sections below describe checks performed on their stated dates. Their
+historical “not verified” lists are not the current experiment status.
 
 ## Directory migration check — 2026-10-08
 

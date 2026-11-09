@@ -28,6 +28,7 @@ DeepProbe-VLM/
 - **跑实验**：先读 [实验要求清单](experiment/docs/REQUIREMENTS.md)，再按 [上机指南](experiment/README.md) 执行。全部实验命令以 `experiment/` 为工作目录。
 - **看论文和图**：进入 [paper/](paper/README.md)。当前同步的是五页实验协议及三张方法/流程图，不是已有结果的完整论文。
 - **核对可信边界**：[已验证事项](experiment/docs/VALIDATION.md)、[模型契约](experiment/docs/MODEL_CONTRACT.md)、[实验矩阵](experiment/docs/EXPERIMENTS.md)。
+- **看真实结果与进度**：[已验收结果](experiment/results/RESULTS.md)、[当前实验状态](experiment/results/STATUS.md)。
 
 ```bash
 git clone https://github.com/Sunbeam23333/DeepProbe-VLM.git
@@ -44,7 +45,11 @@ python -m pytest -q
 
 已实现：Ouro 原生循环、连接器对齐、全主干 SFT、普通模型对照、数据准备、参考评测与断点续训。
 
-**尚无 H20/B300 实测性能或精度结果。** 选择性视觉刷新、跨轮 KV 共享、TTT 和自定义 CUDA/PTX 是待验证分支，不能当作现有功能。数据集视频、模型权重、私人邮件和学生身份信息不在仓库中。
+截至 **2026-11-09**，R1/R2 seed17 已完成两阶段训练和评测：Video-MME 的声明 899 视频子集准确率为 **6.3404% / 18.4650%**，TempCompass 多选准确率为 **42.5316% / 50.4430%**。Video-MME 包含较高无效回答率，不代表官方全量成绩；协议、配对统计、局限与证据摘要见[结果记录](experiment/results/RESULTS.md)。
+
+R4 alignment 已完成；R4 SFT 在 602/718 步后收到 SIGTERM，保存了 600 步检查点，尚无 R4 评测成绩。Smol 基线、额外训练种子、剩余消融及正式成本/延迟实验仍待完成，详见[当前状态](experiment/results/STATUS.md)。尚无 H20/B300 加速结论。选择性视觉刷新、跨轮 KV 共享、TTT 和自定义 CUDA/PTX 属于待验证分支。
+
+Git 只同步代码、测试和经过核对的结果摘要。数据集视频、模型权重、私人邮件、学生身份信息及原始集群快照不在仓库中。
 
 ![Current model overview](paper/figures/final/main_overview.png)
 

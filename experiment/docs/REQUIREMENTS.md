@@ -123,7 +123,7 @@ python scripts/make_ablation_configs.py \
 - 置信区间按原视频成簇 bootstrap；配对结果要求样本、来源、split、答案一致。
 - H20/B300 使用相同模型、输入、精度和 batch，记录软件版本。保持相同步数和 global batch；另做等计算预算对照，不能凭峰值算力推断加速。
 - 真实 checkpoint 还需 cache/no-cache 输出一致性、各参数组梯度和保存重载检查；目前这套严格自动测试是在 tiny CPU 模型上完成的，不应误写成 GPU 已测。
-- 当前评测耗时是 **cold/mixed**，profile 样本额外有开销。正式速度表仍需专门 warmup/重复/同步测量；现有 CLI 不分别测 vision/prefill/decode，也没有完整 warmed benchmark runner。
+- 已有评测耗时是 **cold/mixed**，profile 样本额外有开销。正式速度表仍需专门 warmup/重复/同步测量；独立的 `deepprobe_vlm.benchmark_latency` 测量实现与边界见 [LATENCY_PROTOCOL.md](LATENCY_PROTOCOL.md)，目前尚无验收后的 warmed GPU 结果。
 
 实际排期只能在 pilot 后估算：`剩余优化步数 × 稳态秒/步 + 验证 + 检查点/I/O 时间`。首次编译、加载、下载、抽帧另记。H20 和 B300 各自测量，不预填小时数。
 

@@ -8,5 +8,8 @@ fi
 config="$1"
 shift
 num_gpus="${DEEP_PROBE_GPUS:-8}"
-torchrun --standalone --nnodes=1 --nproc-per-node="$num_gpus" \
+# Static rendezvous avoids the hostname lookup used by --standalone on clusters.
+# Override MASTER_PORT when multiple single-node jobs share the host/network.
+torchrun --nnodes=1 --node-rank=0 --nproc-per-node="$num_gpus" \
+  --master-addr="${MASTER_ADDR:-127.0.0.1}" --master-port="${MASTER_PORT:-29500}" \
   -m deepprobe_vlm.train --config "$config" "$@"

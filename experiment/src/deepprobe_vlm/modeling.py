@@ -64,6 +64,24 @@ class DeepProbeConfig:
         return self.num_frames * self.pool_grid ** 2
 
 
+def _adaptive_bin_weights(side: int, grid: int, reference: torch.Tensor) -> torch.Tensor:
+    """Rows encode adaptive-pooling bins, including overlap at uneven edges."""
+    bins = reference.new_zeros((grid, side))
+    for index in range(grid):
+        start = index * side // grid
+        end = ((index + 1) * side + grid - 1) // grid
+        bins[index, start:end] = 1.0 / (end - start)
+    return bins
+
+
+def _pool_with_bin_weights(values: torch.Tensor, bins: torch.Tensor) -> torch.Tensor:
+    """Separable FP32 pooling with deterministic matmul backward."""
+    # Matmul is autocast-eligible; the former adaptive_avg_pool2d path pooled
+    # FP32 values under BF16 training autocast.
+    with torch.autocast(device_type=values.device.type, enabled=False):
+        return torch.matmul(torch.matmul(bins, values), bins.T)
+
+
 class SpatialPoolProjector(nn.Module):
     """Learned positive within-bin weights; output retains spatial bin order."""
     def __init__(self, vision_dim, language_dim, grid):
@@ -81,7 +99,10 @@ class SpatialPoolProjector(nn.Module):
         weights = torch.sigmoid(self.gate(states)).float().clamp_min(1e-6)
         values = (states.float() * weights).transpose(1, 2).reshape(states.shape[0], -1, side, side)
         weights = weights.transpose(1, 2).reshape(states.shape[0], 1, side, side)
-        pooled = F.adaptive_avg_pool2d(values, self.grid) / F.adaptive_avg_pool2d(weights, self.grid)
+        # Fixed bin weights preserve adaptive pooling's floor/ceil boundaries
+        # while matmul avoids its nondeterministic CUDA backward.
+        bins = _adaptive_bin_weights(side, self.grid, values)
+        pooled = _pool_with_bin_weights(values, bins) / _pool_with_bin_weights(weights, bins)
         pooled = pooled.flatten(2).transpose(1, 2).to(self.projection[0].weight.dtype)
         return self.projection(pooled)
 
@@ -100,6 +121,17 @@ class DeepProbeVLM(nn.Module):
             core = getattr(language_model, "model", None)
             if core is None or not hasattr(core, "total_ut_steps"):
                 raise TypeError("Expected native Ouro with model.total_ut_steps; refusing fake recurrence")
+            embedding = language_model.get_input_embeddings()
+            if not isinstance(embedding, nn.Embedding):
+                raise TypeError("Expected native Ouro input embedding to be torch.nn.Embedding")
+            # Ouro's token 0 is BOS/EOS. Trainer also uses it as the tokenizer's
+            # PAD ID and writes pad_token_id=0 to checkpoint config. Reloading
+            # that config would otherwise construct nn.Embedding(padding_idx=0)
+            # and silently suppress token-0 gradients on resumed training.
+            # Preserve the fresh Ouro embedding semantics on both load paths;
+            # keep the config/tokenizer PAD ID unchanged for collation.
+            embedding.padding_idx = None
+            core.padding_idx = None
             language_model.config.total_ut_steps = config.num_loops
             core.total_ut_steps = config.num_loops
         self.set_stage("sft")
@@ -160,10 +192,15 @@ class DeepProbeVLM(nn.Module):
         if not torch.all(visual_mask.sum(-1) == self.deep_config.num_visual_tokens):
             raise ValueError("Exactly configured visual tokens are required per example")
         embeds = self.language_model.get_input_embeddings()(input_ids)
+        gradient_tap = getattr(self, "_deepprobe_step_embedding_gradient_tap", None)
+        if gradient_tap is not None:
+            gradient_tap.capture_activation("lookup_output", embeds)
         visual = self.encode_visual(pixel_values).to(embeds.dtype)
         # CopySlices preserves gradients into both the projector and text embeddings.
         embeds = embeds.clone()
         embeds[visual_mask] = visual.flatten(0, 1)
+        if gradient_tap is not None:
+            gradient_tap.capture_activation("multimodal_output", embeds)
         return embeds
 
     def _language_forward(self, *, inputs_embeds, attention_mask, use_cache=False, past_key_values=None):

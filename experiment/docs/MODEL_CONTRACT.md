@@ -4,7 +4,9 @@ This repository implements a **native looped-language-model video SFT baseline**
 It does not implement the previous selective visual-depth/ridge-RLS proposal.
 It does not yet implement a novel video-specific recurrent architecture,
 cross-loop KV sharing, token early exit, test-time weight updates, or custom CUDA.
-No pretrained-model accuracy, convergence or H20/B300 throughput result is claimed.
+Accepted pretrained-model evaluations are documented in
+[results](../results/RESULTS.md), with their exact scope and limitations.
+They do not establish convergence, multi-seed robustness or H20/B300 speedups.
 
 ## Architecture
 
