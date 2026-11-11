@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
-  "observed_at_utc": "2026-11-11T06:38:32.765361+00:00",
+  "observed_at_utc": "2026-11-11T11:53:42.723793+00:00",
   "display_timezone": "Asia/Shanghai",
-  "observation_note": "Dated observations from exact submitted Job/Pod and independent archive acceptance. No background monitor or new benchmark result is implied.",
+  "observation_note": "Dated actual submission and exact Job/Pod observations, plus the earlier attempt-1 startup failure and later independent failure-archive acceptance. No background monitor or new benchmark result is implied.",
   "new_held_out_results": false,
   "runs": {
     "dp-p1-ouro-r4-f8-g4-s17-sft-a1": {
@@ -131,7 +131,7 @@
       "dev_qa_count": 4472,
       "target_steps": 718,
       "last_observed_step": null,
-      "status": "Pending",
+      "status": "Failed",
       "submission_client_started_at_utc": "2026-11-11T06:33:55.498965+00:00",
       "submission_outcome_confirmed": true,
       "cpu_admission_passed": true,
@@ -188,35 +188,367 @@
           "bytes": 9711,
           "available_in_github": false
         },
-        "latest_startup_capture": {
+        "historical_pending_capture": {
           "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/startup-capture-v1/transport.stdout.json",
           "sha256": "b307afbf7c415a8aa01153f387c41ef16c641975430cd4434a7aad5d59770cbc",
           "bytes": 64639,
           "available_in_github": false
         },
-        "latest_startup_readback_inventory": {
+        "historical_pending_readback_inventory": {
           "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/startup-capture-v1/READBACK_VERIFIED.json",
           "sha256": "cd6e0c2075829112a0addef422562b6f29f47143d269aa418ead8d6383339e37",
           "bytes": 2146,
+          "available_in_github": false
+        },
+        "latest_startup_readback_inventory": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/progress-20261111T1125Z/READBACK_VERIFIED.json",
+          "sha256": "58510f9411a2d307c492259037e1083e7a23c040d46643785585055171f87603",
+          "bytes": 5467,
+          "available_in_github": false
+        },
+        "exact_terminal_job": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/progress-20261111T1125Z/job_after.stdout",
+          "sha256": "aa62d443afb603a66a93e5f78d7c0d956b7d41644f7fbd7b9585751e42d91ceb",
+          "bytes": 13015,
+          "available_in_github": false
+        },
+        "exact_terminal_pod": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/progress-20261111T1125Z/pod_after.stdout",
+          "sha256": "9e9bdc67947cab2cf50f4df0e1af92178424a34e29e1a78fa90fb1dadc392e03",
+          "bytes": 15938,
+          "available_in_github": false
+        },
+        "startup_failure_receipt": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/progress-20261111T1125Z/startup/FAILED.json",
+          "sha256": "41858c129c469909fc2b5da1ddcd218e2cf22462fb40a2d8bf18a1530fa1f433",
+          "bytes": 170,
+          "available_in_github": false
+        },
+        "hardware_inventory_command": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/progress-20261111T1125Z/startup/gpu_inventory.json",
+          "sha256": "3f566d7ec296aae1b5c377c28a3cd38a8c3bcbfe6ec2ac8832859fb3f6ce37d7",
+          "bytes": 356,
+          "available_in_github": false
+        },
+        "hardware_inventory_output": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/progress-20261111T1125Z/startup/gpu_inventory.stdout",
+          "sha256": "4f06650aa86f253d9b91957d1dce54708a37a9237591d5c94f3d42b2c545e648",
+          "bytes": 456,
+          "available_in_github": false
+        },
+        "submitted_control_manifest": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/control-20261111-v3/PACKAGE_MANIFEST.json",
+          "sha256": "18905b8f45154744895b9085c3e8bf48fb37c8360e8cc82e4cdc48350fa0abf6",
+          "bytes": 5251,
+          "available_in_github": false
+        },
+        "submitted_startup_control": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/control-20261111-v3/control.py",
+          "sha256": "47f822e8c4b8482f9d7469bbbd12a041386bf1ffeb87cd30beea2386f1e7f57e",
+          "bytes": 13319,
+          "available_in_github": false
+        },
+        "submitted_resource_contract": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/control-20261111-v3/contract.py",
+          "sha256": "f8cfcfb7838c91998d40b10685cc7e7f0dcebad88f12c7453ece746742da44a9",
+          "bytes": 13291,
+          "available_in_github": false
+        },
+        "frozen_training_preflight": {
+          "source_path": "experiment/scripts/preflight.py",
+          "sha256": "6c8894ba63cc3860ad5aa574743c1ea73bd32de73f7de5a2e1947c1ce529f990",
+          "bytes": 8743,
+          "available_in_github": false
+        },
+        "existing_gpu_alias_runbook": {
+          "source_path": "experiment/docs/operations/OPS_RUNBOOK.md",
+          "sha256": "ab9c4f3d1187ef23d702126871df3eb46b8de514f04aeedd3c87a24e0421bcfb",
+          "bytes": 85962,
+          "available_in_github": false
+        },
+        "historical_compatible_alias_observation": {
+          "source_path": "experiment/docs/operations/evidence/p0-ddp-v1-result-20261008.json",
+          "sha256": "afe202f608147f61079df92ca715b24b3939dd4e3c43dad9175635757252a1a8",
+          "bytes": 19265,
+          "available_in_github": false
+        },
+        "exact_oss_observation": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/progress-20261111T1125Z/oss-readonly-v1/execution-v1/stdout.json",
+          "sha256": "e2f787d60209ded7073aa22c4ab71bbae69e781d39f91b18630b3a280baaff98",
+          "bytes": 1111,
+          "available_in_github": false
+        },
+        "startup_failure_archive_writer": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/startup-failure-archive-preparation-v1/root-execution-client-v1/stdout.json",
+          "sha256": "1f814af9ad7ef39487e926e59bff8b7bfac61f2b97017b4991b78e45486dcd4a",
+          "bytes": 23248,
+          "available_in_github": false
+        },
+        "startup_failure_archive_independent_acceptance": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/a1-startup-failure-independent-audit-v1/execution-v1/stdout.json",
+          "sha256": "72befedadc6f43f4f963e61cd759cd5848cae6e231482840598c9696032d1b4f",
+          "bytes": 23738,
           "available_in_github": false
         }
       },
       "submission_status": "submitted_exact_job_observed",
       "job_created_at_utc": "2026-11-11T06:36:53Z",
-      "last_observed_at_utc": "2026-11-11T06:38:32.765361+00:00",
-      "pending_reason": "Insufficient schedulable CPU, memory and GPU resources for the one-node eight-GPU allocation",
-      "allocated_node_observed": false,
-      "hardware_inventory_observed": false,
+      "last_observed_at_utc": "2026-11-11T11:26:16.902414+00:00",
+      "allocated_node_observed": true,
+      "hardware_inventory_observed": true,
       "eight_rank_preflight_passed": false,
       "training_started": false,
-      "capacity_observed_at_utc": "2026-11-11T06:35:46.215938+00:00"
+      "capacity_observed_at_utc": "2026-11-11T06:35:46.215938+00:00",
+      "historical_observations": [
+        {
+          "observed_at_utc": "2026-11-11T06:38:32.765361+00:00",
+          "status": "Pending",
+          "pending_reason": "Insufficient schedulable CPU, memory and GPU resources for the one-node eight-GPU allocation",
+          "allocated_node_observed": false,
+          "hardware_inventory_observed": false,
+          "training_started": false,
+          "last_observed_step": null,
+          "evidence_key": "historical_pending_readback_inventory",
+          "note": "Preserved earlier Pending snapshot, superseded by the later exact-job failure observation."
+        }
+      ],
+      "failure_at_utc": "2026-11-11T08:03:35Z",
+      "container_started_at_utc": "2026-11-11T08:01:50Z",
+      "container_finished_at_utc": "2026-11-11T08:03:33Z",
+      "exit_code": 1,
+      "restart_count": 0,
+      "actual_gpu_count": 8,
+      "actual_gpu_model": "NVIDIA L20D",
+      "hardware_admission_passed": false,
+      "exact_device_compute_capability_observed": false,
+      "exact_device_memory_capacity_observed": false,
+      "failure_phase": "startup_hardware_admission_before_training_runner",
+      "failure_reason": "Exactly eight B300 GPUs required",
+      "failure_interpretation": "The outer startup guard requires a literal B300 name substring, while the frozen training preflight accepts the cluster NVIDIA L20D alias only when torch reports compute capability [10,3] and at least 240 GiB. The outer guard rejected the name before that complete validation or training ran. This attempt captured names and UUIDs only, so the exact allocated device capabilities are not established.",
+      "training_runner_invoked": false,
+      "formal_training_run_created": false,
+      "optimizer_updates_observed": 0,
+      "archive_object_count": 78,
+      "archive_bytes": 6055444,
+      "archive_accepted": true,
+      "archive_observed_at_utc": "2026-11-11T11:53:42.723793+00:00",
+      "retry_submitted_in_this_check": false,
+      "recovery_gate": "The small startup-failure archive is independently accepted. A separately identified attempt 2 uses the reviewed complete hardware identity repair and is submitted. Attempt 1 remains terminal and is not resubmitted.",
+      "replacement_attempt_run_id": "dp-p1-smollm2-f8-g4-s29-alignment-a2",
+      "replacement_attempt_submission_confirmed": true,
+      "archive_historical_observations": [
+        {
+          "observed_at_utc": "2026-11-11T11:28:01.488736+00:00",
+          "object_count": 0,
+          "bytes": 0,
+          "archive_accepted": false,
+          "evidence_key": "exact_oss_observation",
+          "note": "Historical empty-prefix observation before later startup-failure evidence upload."
+        }
+      ],
+      "archive_payload_count": 76,
+      "archive_payload_bytes": 5968562,
+      "archive_status": "startup_failure_archive_independently_accepted",
+      "archive_writer_full_get_sha256_verified": true,
+      "archive_independent_full_get_sha256_verified": true,
+      "archive_scope": "Small startup-failure evidence only; no training checkpoint exists.",
+      "original_run_and_receipts_preserved": true,
+      "archive_writer_completed_at_utc": "2026-11-11T11:50:46.113621+00:00",
+      "archive_source_copy_sha256_verified": true,
+      "wrong_gpu_allocation_proven": false
+    },
+    "dp-p1-smollm2-f8-g4-s29-alignment-a2": {
+      "stage": "alignment",
+      "model": "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+      "training_seed": 29,
+      "loops": 1,
+      "frames": 8,
+      "pool_grid": 4,
+      "global_batch_size": 128,
+      "train_qa_count": 91826,
+      "dev_qa_count": 4472,
+      "target_steps": 718,
+      "run_id": "dp-p1-smollm2-f8-g4-s29-alignment-a2",
+      "status": "Pending",
+      "submission_status": "submitted_exact_job_observed",
+      "submission_outcome_confirmed": true,
+      "submission_client_started_at_utc": "2026-11-11T11:47:28.914466+00:00",
+      "submission_client_completed_at_utc": "2026-11-11T11:50:00.910531+00:00",
+      "submission_outcome_recorded_at_utc": "2026-11-11T11:49:36.891009+00:00",
+      "last_observed_at_utc": "2026-11-11T11:51:57.084690+00:00",
+      "cpu_admission_passed": true,
+      "cpu_admission_completed_at_utc": "2026-11-11T11:43:49.643707+00:00",
+      "cpu_admission_expires_at_utc": "2026-11-11T12:13:49.643707+00:00",
+      "cpu_admission_independently_accepted": true,
+      "capacity_projected_bytes": 95109611082,
+      "capacity_observed_at_utc": "2026-11-11T11:48:28.822913+00:00",
+      "capacity_scope": "Actual submission-side durable intent after fresh input/source/capacity rechecks.",
+      "capacity_limit_bytes": 99000000000,
+      "resource_contract": {
+        "cluster": "ali-gpu",
+        "pool": "stream",
+        "priority": "low",
+        "nodes": 1,
+        "gpus": 8,
+        "required_gpu_model": "B300",
+        "restart_policy": "Never",
+        "maximum_project_jobs": 1,
+        "identity_rule": {
+          "accepted_name": "B300 substring or normalized NVIDIA L20D",
+          "torch_compute_capability": [
+            10,
+            3
+          ],
+          "minimum_memory_gib": 240,
+          "validate_each_of_eight_allocated_devices": true,
+          "native_eight_rank_preflight_still_required": true
+        }
+      },
+      "actual_resource_contract_passed": true,
+      "no_forced_node": true,
+      "control_repair_deployed_and_readback_accepted": true,
+      "training_started": false,
+      "last_observed_step": null,
+      "hardware_inventory_observed": false,
+      "hardware_admission_passed": false,
+      "eight_rank_preflight_passed": false,
+      "training_complete": false,
+      "held_out_result": null,
+      "job_pod_startup_readback_accepted": true,
+      "observation_limit": "The exact Job was Created and its Pod Pending, with no allocated node, running container, startup/run receipt or optimizer update. Hardware startup and training have not begun.",
+      "automatic_retry": false,
+      "hardware_repair_scope": "Reuses the unchanged frozen preflight identity matcher with fresh torch properties for all eight devices. L20D name alone is insufficient. Training source/configuration and native eight-rank BF16/attention/NCCL requirements are unchanged.",
+      "evidence": {
+        "cpu_admission": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/a2-admission-collection-v1/remote/ADMISSION.json",
+          "sha256": "c7d35597442ccfe5d78e8e942120072fdc57c6c94a5b4469913b96d5e3a6c569",
+          "bytes": 13788,
+          "available_in_github": false
+        },
+        "independent_admission_review": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/a2-independent-admission-review-v1/INDEPENDENT_ADMISSION_REVIEW.json",
+          "sha256": "04c2dbd1f5ef9a1814389c6c6020c9bd434a75931405f2b346c10b048d36146e",
+          "bytes": 4114,
+          "available_in_github": false
+        },
+        "submission_client_intent": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/a2-submission-execution-v1/CLIENT_INTENT.json",
+          "sha256": "8338b85aa3685bf3e04f599c5d3dd2ecbc3014021623ab17e718f3b64673864c",
+          "bytes": 1280,
+          "available_in_github": false
+        },
+        "submission_client_exit": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/a2-submission-execution-v1/CLIENT_EXIT.json",
+          "sha256": "f0359d1f92db8911381508130bb11c7405026f329d2ac12f12f951cf0acb4f24",
+          "bytes": 94,
+          "available_in_github": false
+        },
+        "confirmed_submission_outcome": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/a2-submission-execution-v1/stdout.json",
+          "sha256": "ca064c033b7e2be4165613188e9ad2e4f8b304ad1233fe8f73494574c6abf61c",
+          "bytes": 1293,
+          "available_in_github": false
+        },
+        "control_manifest": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/control-a2-20261111-v4/PACKAGE_MANIFEST.json",
+          "sha256": "0e3097c833a2d5f35488a17b5b92f1a8334ebdc8f239db35d7fa65b3a0feb655",
+          "bytes": 7730,
+          "available_in_github": false
+        },
+        "independent_control_source_review": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/a2-independent-derivation-review-v1/INDEPENDENT_DERIVATION_REVIEW.json",
+          "sha256": "8ecf66878541ceed302fdbbe129605535260662aa55dab39909a90bd2d381e02",
+          "bytes": 4943,
+          "available_in_github": false
+        },
+        "deployment_readback": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/a2-deployment-execution-v1/stdout.json",
+          "sha256": "279bb3bab23c0c6b450a3f88abd88eb1e6682f21c5f1d54238b99b2386b13865",
+          "bytes": 6834,
+          "available_in_github": false
+        },
+        "independent_deployment_acceptance": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/a2-deployment-independent-review-v1/INDEPENDENT_DEPLOYMENT_ACCEPTANCE.json",
+          "sha256": "007936099cd1f3af844e929c203a4b87039854155357d7b3187a753c1e7506bd",
+          "bytes": 1479,
+          "available_in_github": false
+        },
+        "independent_submission_helper_review": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/a2-submit-helper-independent-review-v1/INDEPENDENT_SOURCE_REVIEW.json",
+          "sha256": "05332fb5c59c733fbf241149f11980d3d9da891fa006a1c6b9f727708f3bfdc2",
+          "bytes": 2376,
+          "available_in_github": false
+        },
+        "hardware_identity_diagnosis": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-gpu-selector-readonly-20261111/GPU_IDENTITY_DIAGNOSIS.json",
+          "sha256": "bb3662dd3edc80b44334e8e49ad7f4961ce1c666b6a95da2de5d73ce9d7820bd",
+          "bytes": 6728,
+          "available_in_github": false
+        },
+        "public_hardware_identity_helper": {
+          "source_path": "experiment/scripts/operations/verify_gpu_identity.py",
+          "sha256": "f62273cd4372262aae624b5155d136541fadf1dd38d86fac9f24a20ee8b8c55e",
+          "bytes": 6711,
+          "available_in_github": true
+        },
+        "submission_durable_intent": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/a2-submission-capture-v1/GLOBAL_SUBMIT_INTENT.json",
+          "sha256": "f90830d2cc08a1b8d1d34356fd52884a8f99ae35125d5426bc82036f3db73562",
+          "bytes": 10248,
+          "available_in_github": false
+        },
+        "submission_readback_inventory": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/a2-submission-capture-v1/READBACK_VERIFIED.json",
+          "sha256": "50dccc10eb0df7b7f34cd65209ca24b6ac38497efc1877d0fce6b4da054b9076",
+          "bytes": 7593,
+          "available_in_github": false
+        },
+        "submission_full_outcome": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/a2-submission-capture-v1/submission/SUBMISSION_OUTCOME.json",
+          "sha256": "cd23e41153632f29b01e8fe39d2ea87016d730b887cf7f5b7e827370c8dfa00f",
+          "bytes": 1465,
+          "available_in_github": false
+        },
+        "latest_startup_readback_inventory": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/a2-startup-capture-v1/READBACK_VERIFIED.json",
+          "sha256": "38efd7f57487b9ed095265979499750a8dd6c3583df72f3dd3d14947421c7d5e",
+          "bytes": 2249,
+          "available_in_github": false
+        },
+        "latest_startup_transport": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/a2-startup-capture-v1/transport.stdout.json",
+          "sha256": "4ae65ff9ccdadc90c5b6cbee8249b5c3918ba3b762253b60a45066997ea70166",
+          "bytes": 64583,
+          "available_in_github": false
+        },
+        "exact_current_job": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/a2-startup-capture-v1/job_after.stdout",
+          "sha256": "ade4d7be6d6cf7317e2aedc2ae34ff8e7fbf3061d00c6fa026fb5464fc8aec10",
+          "bytes": 12098,
+          "available_in_github": false
+        },
+        "exact_current_pod": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/a2-startup-capture-v1/pod_after.stdout",
+          "sha256": "edc315469ed5b77cb5e2830ddc47c1026c2ae929cfa3e5011117b1e4dc050307",
+          "bytes": 11104,
+          "available_in_github": false
+        }
+      },
+      "job_condition": "Created",
+      "pod_phase": "Pending",
+      "job_created_at_utc": "2026-11-11T11:49:36Z",
+      "pending_reason": "Insufficient schedulable CPU, memory and GPU resources for the one-node eight-GPU allocation",
+      "allocated_node_observed": false,
+      "container_observed": false,
+      "hardware_admission_status": "not_run_pending_allocation",
+      "eight_rank_preflight_status": "not_run_pending_allocation"
     }
   },
   "remaining_work": [
-    "Complete Smol alignment, archive and validate it before matched SFT and accepted benchmark evaluation.",
+    "Accept Smol attempt-2 hardware startup and complete alignment/archive, then its matched SFT and benchmark evaluation.",
     "Complete R4 checkpoint-600 recovery checks and capacity admission before its remaining 118 updates.",
     "Additional seeds and declared ablations, controlled cost/latency measurements, and new-model evaluation."
   ],
-  "active_run_id": "dp-p1-smollm2-f8-g4-s29-alignment-a1",
-  "active_run_observation": "submitted and Pending; occupies the sole project GPU job slot"
+  "active_run_id": "dp-p1-smollm2-f8-g4-s29-alignment-a2",
+  "active_run_observation": "Attempt 2 is submitted and Pending at the dated observation, with no allocated node, container, hardware startup or optimizer update."
 }

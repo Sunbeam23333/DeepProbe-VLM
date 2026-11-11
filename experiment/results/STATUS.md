@@ -1,8 +1,11 @@
 # Experiment status — 2026-11-11
 
-Latest observation: **14:38 Beijing time (UTC+08:00)**. The Smol baseline was
-submitted at 14:36 and is **Pending**. R4 SFT failure archival passed independent
-acceptance. These are dated observations, not a background monitor.
+Latest exact Job/Pod observation: **19:52 Beijing time (UTC+08:00)**. Smol
+alignment attempt 2 was submitted at **19:49** and is **Pending**. The GPU
+identity repair is deployed, but allocation and training have not started.
+Attempt 1 failed during startup at **16:03**; its small failure archive passed
+independent acceptance at **19:53:42**. These are dated observations,
+not a background monitor. No new benchmark result is claimed.
 
 ## Completed
 
@@ -12,21 +15,55 @@ acceptance. These are dated observations, not a background monitor.
 - R4 seed17 alignment: completed 718 optimizer steps. Its full archive and final
   checkpoint passed independent acceptance.
 
-## Smol baseline submitted
+## Smol repaired attempt submitted
 
-SmolLM2-1.7B-Instruct seed29 alignment has one confirmed submitted GPU job. At
-14:38, its Pod was Pending because the scheduler could not satisfy the combined
-CPU, memory and GPU request on one node. It occupies the sole project GPU job
-slot. No node, running container, GPU startup receipt, eight-rank preflight or
-optimizer update had been observed; training has not yet started.
+SmolLM2-1.7B-Instruct seed29 alignment attempt 2 has one confirmed submission.
+The submission client exited successfully, and the actual Job resource contract
+passed: stream/low, one node, eight GPUs, restart policy Never and no forced
+node. At **19:52**, its Pod was Pending because the scheduler could not satisfy
+the combined CPU, memory and GPU request on one node. No allocated node,
+running container, startup/run receipt or optimizer update was observed;
+training has not yet started.
 
-The baseline uses F8/G4/R1 and global batch 128, with 91,826 train and 4,472 dev
-QA; the target is 718 optimizer updates. Its fresh CPU/source/input/storage
-admission and actual Job contract passed. The submission-time storage projection
-was 95,095,371,398 bytes, below the 99,000,000,000-byte project limit.
-The resource contract is stream/low, one node, eight GPUs and restart policy
-Never; GPU startup additionally requires eight B300 devices. That hardware check
-has not run while the job is Pending. No Smol held-out result is available.
+The replacement control package and every deployed file passed independent
+source and readback review. It now reuses the frozen preflight's complete GPU
+identity rule: each of the eight devices must have an accepted B300-family name
+(the cluster's NVIDIA L20D alias is allowed), torch compute capability [10,3]
+and at least 240 GiB of memory. Names alone cannot pass. The original eight-rank
+BF16/attention/NCCL startup preflight remains required. Neither hardware check
+has run while the new job is Pending.
+
+Fresh CPU/source/input/storage admission and independent review passed before
+this separate submission. The actual submission-side capacity projection was
+**95,109,611,082 bytes**, below the 99,000,000,000-byte limit. The submitted
+control and source/input binding were read back with the exact Job/Pod evidence.
+
+The scientific recipe remains F8/G4/R1 and global batch 128, with 91,826 train
+and 4,472 dev QA and a target of 718 optimizer updates. No Smol training
+completion or held-out result has been accepted.
+
+## Smol attempt-1 failure retained
+
+Attempt 1 was submitted once at 14:36. Its container started at **16:01:50**,
+exited with code **1** at **16:03:33**, and the Job became Failed at
+**16:03:35**, with zero container restarts. The **19:26** exact Job/Pod
+readback confirmed those terminal facts.
+
+The inventory contained eight NVIDIA L20D devices, but an outer name-only
+check rejected them before actual torch capability/memory validation and the
+training runner. This was inconsistent with the already-frozen identity rule.
+No optimizer update or checkpoint was produced. The exact allocated device
+capabilities were not measured by attempt 1; its names cannot establish that
+hardware validation passed.
+
+At **19:53:42**, independent acceptance verified its complete startup-failure
+archive: **78 objects / 6,055,444 bytes**, including 76 payload objects /
+5,968,562 bytes. Every object was fully read back and SHA256-checked; the exact
+object inventory remained stable, and the source copies were preserved and
+reverified. This archive contains failure evidence, not a training checkpoint.
+The earlier **19:28** empty-prefix observation and **14:38 Pending** state remain
+in the status record as history. Attempt 2 has a separate identity and does not
+overwrite or resubmit attempt 1.
 
 ## R4 SFT interruption and recovery
 
@@ -53,7 +90,8 @@ No new benchmark results are claimed by these training and archive updates.
 
 ## Remaining work
 
-1. Complete and accept Smol alignment, then its matched SFT and benchmark runs.
+1. Accept Smol attempt-2 hardware startup, complete alignment and its archive,
+   then run matched SFT and benchmark evaluations.
 2. Finish R4 checkpoint recovery and storage admission, run the remaining SFT,
    then archive and evaluate the completed model.
 3. Complete the additional training seeds and declared ablations, controlled
