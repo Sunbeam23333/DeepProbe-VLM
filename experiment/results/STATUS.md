@@ -1,7 +1,8 @@
-# Experiment status — 2026-11-09
+# Experiment status — 2026-11-11
 
-Last remote checks: **19:09–19:18 Beijing time (UTC+08:00)**. This is a dated
-observation, not a background monitor.
+Latest observation: **14:38 Beijing time (UTC+08:00)**. The Smol baseline was
+submitted at 14:36 and is **Pending**. R4 SFT failure archival passed independent
+acceptance. These are dated observations, not a background monitor.
 
 ## Completed
 
@@ -11,46 +12,53 @@ observation, not a background monitor.
 - R4 seed17 alignment: completed 718 optimizer steps. Its full archive and final
   checkpoint passed independent acceptance.
 
-## R4 SFT interruption
+## Smol baseline submitted
 
-R4 SFT attempt 1 changed to **Failed at 17:04:27 Beijing time**. The training log
-last reached **602/718 updates** and recorded **SIGTERM at 17:04:23**. A durable
-`checkpoint-600/trainer_state.json` reports step 600 of 718. The failed attempt
-has no final checkpoint or training-complete receipt; there is no R4 held-out
-score.
+SmolLM2-1.7B-Instruct seed29 alignment has one confirmed submitted GPU job. At
+14:38, its Pod was Pending because the scheduler could not satisfy the combined
+CPU, memory and GPU request on one node. It occupies the sole project GPU job
+slot. No node, running container, GPU startup receipt, eight-rank preflight or
+optimizer update had been observed; training has not yet started.
 
-The original Pod is no longer present. Exact Job/Pod UID event queries returned
-no events, so the source of SIGTERM and the actual process exit code remain
-unknown. This observation does not establish scheduler preemption. The exact
-SFT archive prefix was empty (0 objects) at the check; failure archival and
-recovery acceptance are still pending. No retry was submitted during this check.
+The baseline uses F8/G4/R1 and global batch 128, with 91,826 train and 4,472 dev
+QA; the target is 718 optimizer updates. Its fresh CPU/source/input/storage
+admission and actual Job contract passed. The submission-time storage projection
+was 95,095,371,398 bytes, below the 99,000,000,000-byte project limit.
+The resource contract is stream/low, one node, eight GPUs and restart policy
+Never; GPU startup additionally requires eight B300 devices. That hardware check
+has not run while the job is Pending. No Smol held-out result is available.
 
-At 19:18, all 31 checkpoint files (22,317,153,372 bytes) were SHA256-hashed on
-the server, with stable file-tree checks and matching model/training contracts.
-The model headers and optimizer/scheduler/eight-rank RNG presence checks passed.
-Optimizer/RNG deserialization and an actual GPU resume were not performed, so
-this is structural verification rather than full recovery acceptance.
+## R4 SFT interruption and recovery
 
-The two project roots account for 67,803,479,292 bytes. Reusing the previous
-54,884,490,928-byte SFT reserve projects 122,687,970,220 bytes, above the
-99,000,000,000-byte project limit. This reserve has not yet been recomputed for
-a new recovery attempt; it is a conservative planning check, not final admission.
+R4 SFT attempt 1 failed on **November 9 at 17:04:27 Beijing time**. Its log last
+reached **602/718 updates**, while the preserved durable checkpoint is at step
+600. SIGTERM was observed, but the original process exit code and termination
+source remain unknown. There is no final checkpoint or R4 held-out score.
 
-The sanitized [status record](status.json) binds these observations to the
-original private evidence hashes. Historical Running observations are retained
-as history and do not override this later failed state.
+On November 11 at **14:38**, independent readback accepted the complete failure
+archive: **147 objects, 23,234,938,760 bytes**, including 145 payload objects.
+Every object was fully read back and SHA256-checked. The original run and all
+31 checkpoint files (22,317,153,372 bytes) were preserved and reverified.
+This completes failure archival; training and recovery acceptance remain open.
 
-## Remaining sequence
+Model headers and optimizer/scheduler/eight-rank RNG presence checks previously
+passed. Actual optimizer/RNG deserialization and a GPU resume have not been
+accepted. Recovery from step 600 requires 118 further updates. The November 11
+capacity analysis retains the checkpoint and projects 122,687,970,220 bytes,
+above the 99,000,000,000-byte limit, so the R4 recovery job remains gated.
 
-1. Archive and verify the interrupted R4 SFT attempt, validate the complete
-   step-600 checkpoint and recovery contract, then finish the remaining SFT.
-   Capacity, exact destination prefix, absence of duplicate work, fresh CPU
-   admission and the resource contract must pass before a new GPU job.
-2. Run the prepared Smol baseline and evaluate completed new models under the
-   same accepted protocols.
-3. Complete the additional training seeds and declared ablations, then the
-   controlled cost/latency experiments and updated comparative statistics.
+The sanitized [status record](status.json) preserves the dated R4 failure facts
+and records Smol separately, with hashes linking each claim to private evidence.
+No new benchmark results are claimed by these training and archive updates.
 
-MVBench has no accepted result in this release. Its current authorization/media
-status was not reverified in this check. Existing benchmark timings do not
-constitute a warmed latency comparison. No canceled automation was recreated.
+## Remaining work
+
+1. Complete and accept Smol alignment, then its matched SFT and benchmark runs.
+2. Finish R4 checkpoint recovery and storage admission, run the remaining SFT,
+   then archive and evaluate the completed model.
+3. Complete the additional training seeds and declared ablations, controlled
+   cost/latency experiments and updated comparative statistics.
+
+MVBench has no accepted result in this release. Its authorization/media status
+was not reverified in this check. Existing benchmark timings do not constitute
+a warmed latency comparison. No canceled automation was recreated.

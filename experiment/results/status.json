@@ -1,73 +1,222 @@
 {
-  "schema_version": 1,
-  "observed_at_utc": "2026-11-09T11:14:15.183658+00:00",
+  "schema_version": 2,
+  "observed_at_utc": "2026-11-11T06:38:32.765361+00:00",
   "display_timezone": "Asia/Shanghai",
-  "run_id": "dp-p1-ouro-r4-f8-g4-s17-sft-a1",
-  "stage": "sft",
-  "status": "Failed",
-  "failure_at_utc": "2026-11-09T09:04:27Z",
-  "last_observed_step": 602,
-  "target_steps": 718,
-  "checkpoint_step": 600,
-  "checkpoint_resume_accepted": false,
-  "sigterm_at_beijing": "2026-11-09T17:04:23+08:00",
-  "exit_code": null,
-  "termination_cause": "unknown; no events retained for exact Job/Pod UIDs",
-  "original_pod_present": false,
-  "final_checkpoint_present": false,
-  "training_complete_receipt_present": false,
-  "archive_object_count": 0,
-  "archive_bytes": 0,
-  "archive_accepted": false,
-  "retry_submitted_in_this_check": false,
-  "held_out_result": null,
-  "evidence": {
-    "snapshot.stdout.json": {
-      "source_path": "experiment/docs/operations/evidence/progress-and-github-sync-20261109/sft-readonly/snapshot.stdout.json",
-      "sha256": "fc153a29c5167d60052c4c84b5f08fd71302655e13345b655326e5c796b5d308",
-      "bytes": 818443,
-      "available_in_github": false
+  "observation_note": "Dated observations from exact submitted Job/Pod and independent archive acceptance. No background monitor or new benchmark result is implied.",
+  "new_held_out_results": false,
+  "runs": {
+    "dp-p1-ouro-r4-f8-g4-s17-sft-a1": {
+      "schema_version": 1,
+      "display_timezone": "Asia/Shanghai",
+      "run_id": "dp-p1-ouro-r4-f8-g4-s17-sft-a1",
+      "stage": "sft",
+      "status": "Failed",
+      "failure_at_utc": "2026-11-09T09:04:27Z",
+      "last_observed_step": 602,
+      "target_steps": 718,
+      "checkpoint_step": 600,
+      "checkpoint_resume_accepted": false,
+      "sigterm_at_beijing": "2026-11-09T17:04:23+08:00",
+      "exit_code": null,
+      "termination_cause": "unknown; no events retained for exact Job/Pod UIDs",
+      "original_pod_present": false,
+      "final_checkpoint_present": false,
+      "training_complete_receipt_present": false,
+      "archive_object_count": 147,
+      "archive_bytes": 23234938760,
+      "archive_accepted": true,
+      "retry_submitted_in_this_check": false,
+      "held_out_result": null,
+      "evidence": {
+        "snapshot.stdout.json": {
+          "source_path": "experiment/docs/operations/evidence/progress-and-github-sync-20261109/sft-readonly/snapshot.stdout.json",
+          "sha256": "fc153a29c5167d60052c4c84b5f08fd71302655e13345b655326e5c796b5d308",
+          "bytes": 818443,
+          "available_in_github": false
+        },
+        "failure-details.stdout.json": {
+          "source_path": "experiment/docs/operations/evidence/progress-and-github-sync-20261109/sft-readonly/failure-details.stdout.json",
+          "sha256": "338f110483b295014e96bd34e20b9137089877d408805e2068622f3922dc2346",
+          "bytes": 112766,
+          "available_in_github": false
+        },
+        "R4_SFT_A1_CURRENT_FAILURE_STATUS.json": {
+          "source_path": "experiment/docs/operations/evidence/progress-and-github-sync-20261109/sft-readonly/R4_SFT_A1_CURRENT_FAILURE_STATUS.json",
+          "sha256": "956a37c320503954baa79a93fb757e82d75da10644d719b12f11c33be06ca277",
+          "bytes": 4114,
+          "available_in_github": false
+        },
+        "checkpoint600.stdout.json": {
+          "source_path": "experiment/docs/operations/evidence/progress-and-github-sync-20261109/sft-readonly/checkpoint600.stdout.json",
+          "sha256": "c5658343473ac40bdba03d3d8e46c257cc1e495800f22a0163333f45a9da4a66",
+          "bytes": 208584,
+          "available_in_github": false
+        },
+        "CHECKPOINT600_FILE_MAP.json": {
+          "source_path": "experiment/docs/operations/evidence/progress-and-github-sync-20261109/sft-readonly/CHECKPOINT600_FILE_MAP.json",
+          "sha256": "9f323166622a901c74283f19559d5943ced7801af70063be291690c2da34c70b",
+          "bytes": 4312,
+          "available_in_github": false
+        },
+        "failure_archive_writer_receipt": {
+          "source_path": "experiment/docs/operations/evidence/r4-sft-resume-20261111/failure-archive/root-execution-v1/stdout.json",
+          "sha256": "e95e2a9193720ca90a56022ecd4313722268ce29eb0857f7a13ab5b2a7798163",
+          "bytes": 22744,
+          "available_in_github": false
+        },
+        "recovery_capacity_analysis": {
+          "source_path": "experiment/docs/operations/evidence/r4-sft-resume-20261111/resume-control/RESUME_CAPACITY_ANALYSIS.json",
+          "sha256": "9497eca71f5171781f1d2edc71e2366c88681757d6e1f46ee0968ee7965e087a",
+          "bytes": 1560,
+          "available_in_github": false
+        },
+        "failure_archive_independent_acceptance": {
+          "source_path": "experiment/docs/operations/evidence/r4-sft-resume-20261111/failure-archive/root-independent-audit/execution-v1/stdout.json",
+          "sha256": "bf417cdf66b7ef8638d5fda71658dbf082f90ab692b9527485c9dab20951488e",
+          "bytes": 47346,
+          "available_in_github": false
+        }
+      },
+      "checkpoint_checked_at_utc": "2026-11-09T11:18:23.253533+00:00",
+      "checkpoint_file_count": 31,
+      "checkpoint_bytes": 22317153372,
+      "checkpoint_file_map_canonical_sha256": "1c2682adc2700bd99b0b5237d4765dff5fd7bb29686bc20289f02b027193d1d3",
+      "checkpoint_all_file_hashes_measured": true,
+      "checkpoint_model_headers_and_state_presence_passed": true,
+      "optimizer_scheduler_rng_deserialized": false,
+      "capacity_measurement": {
+        "admission_performed": false,
+        "combined_accounted_bytes": 67803479292,
+        "existing_sft_full_reserve_bytes": 54884490928,
+        "observed_utc": "2026-11-09T11:18:23.247745+00:00",
+        "operational_limit_bytes": 99000000000,
+        "over_limit_bytes": 23687970220,
+        "projected_with_same_reserve_bytes": 122687970220,
+        "reserve_recomputed_for_new_attempt": false
+      },
+      "archive_observed_at_utc": "2026-11-11T06:38:13.388984+00:00",
+      "archive_status": "independent_failure_archive_accepted",
+      "original_run_preserved": true,
+      "archive_previous_empty_observation_utc": "2026-11-09T11:14:15.183658+00:00",
+      "historical_failure_observed_at_utc": "2026-11-09T11:14:15.183658+00:00",
+      "recovery_capacity_analysis": {
+        "status": "READ_ONLY_CAPACITY_BLOCKED",
+        "combined_bytes": 67803479292,
+        "checkpoint600_preserved_and_already_charged": true,
+        "resume_start_step": 600,
+        "remaining_optimizer_updates": 118,
+        "projected_peak_bytes": 122687970220,
+        "strict_operational_limit_bytes": 99000000000,
+        "admission_reserve_bytes": 54884490928,
+        "minimum_bytes_to_release_strictly_below_limit": 23687970221,
+        "gpu_submitted": false,
+        "files_deleted": false
+      },
+      "archive_payload_count": 145,
+      "archive_payload_bytes": 23234791297,
+      "archive_all_objects_full_get_sha256_verified": true,
+      "checkpoint_reverified_at_utc": "2026-11-11T06:38:13.388984+00:00",
+      "checkpoint_reverification_scope": "all 31 local files and archived payloads SHA256 matched; optimizer/RNG not deserialized and no GPU resume"
     },
-    "failure-details.stdout.json": {
-      "source_path": "experiment/docs/operations/evidence/progress-and-github-sync-20261109/sft-readonly/failure-details.stdout.json",
-      "sha256": "338f110483b295014e96bd34e20b9137089877d408805e2068622f3922dc2346",
-      "bytes": 112766,
-      "available_in_github": false
-    },
-    "R4_SFT_A1_CURRENT_FAILURE_STATUS.json": {
-      "source_path": "experiment/docs/operations/evidence/progress-and-github-sync-20261109/sft-readonly/R4_SFT_A1_CURRENT_FAILURE_STATUS.json",
-      "sha256": "956a37c320503954baa79a93fb757e82d75da10644d719b12f11c33be06ca277",
-      "bytes": 4114,
-      "available_in_github": false
-    },
-    "checkpoint600.stdout.json": {
-      "source_path": "experiment/docs/operations/evidence/progress-and-github-sync-20261109/sft-readonly/checkpoint600.stdout.json",
-      "sha256": "c5658343473ac40bdba03d3d8e46c257cc1e495800f22a0163333f45a9da4a66",
-      "bytes": 208584,
-      "available_in_github": false
-    },
-    "CHECKPOINT600_FILE_MAP.json": {
-      "source_path": "experiment/docs/operations/evidence/progress-and-github-sync-20261109/sft-readonly/CHECKPOINT600_FILE_MAP.json",
-      "sha256": "9f323166622a901c74283f19559d5943ced7801af70063be291690c2da34c70b",
-      "bytes": 4312,
-      "available_in_github": false
+    "dp-p1-smollm2-f8-g4-s29-alignment-a1": {
+      "run_id": "dp-p1-smollm2-f8-g4-s29-alignment-a1",
+      "stage": "alignment",
+      "model": "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+      "training_seed": 29,
+      "loops": 1,
+      "frames": 8,
+      "pool_grid": 4,
+      "global_batch_size": 128,
+      "train_qa_count": 91826,
+      "dev_qa_count": 4472,
+      "target_steps": 718,
+      "last_observed_step": null,
+      "status": "Pending",
+      "submission_client_started_at_utc": "2026-11-11T06:33:55.498965+00:00",
+      "submission_outcome_confirmed": true,
+      "cpu_admission_passed": true,
+      "cpu_admission_completed_at_utc": "2026-11-11T06:20:00.818285+00:00",
+      "cpu_admission_expires_at_utc": "2026-11-11T06:50:00.818285+00:00",
+      "capacity_projected_bytes": 95095371398,
+      "capacity_limit_bytes": 99000000000,
+      "resource_contract": {
+        "cluster": "ali-gpu",
+        "pool": "stream",
+        "priority": "low",
+        "nodes": 1,
+        "gpus": 8,
+        "required_gpu_model": "B300",
+        "restart_policy": "Never",
+        "maximum_project_jobs": 1
+      },
+      "training_complete": false,
+      "held_out_result": null,
+      "evidence": {
+        "cpu_admission": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/admission-collection-v1/remote/ADMISSION.json",
+          "sha256": "02861749103728e3fc1b0294112b92cb2d256331d7bb5b6678350dc129197f2f",
+          "bytes": 13255,
+          "available_in_github": false
+        },
+        "independent_admission_review": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/independent-admission-review-v1/INDEPENDENT_ADMISSION_REVIEW.json",
+          "sha256": "644362c58a4229d54b25b1129744a6c6d46fba1cbdf095f53087b39c63af8ff2",
+          "bytes": 1373,
+          "available_in_github": false
+        },
+        "submission_client_intent": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/root-submission-execution-v1/CLIENT_INTENT.json",
+          "sha256": "edee7c92868ac5b31d8c199d7002e9fca1a4555f8f5e21ecdede6707d0d9bc84",
+          "bytes": 1040,
+          "available_in_github": false
+        },
+        "submission_outcome": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/submission-capture-v1/submission/SUBMISSION_OUTCOME.json",
+          "sha256": "16160a998bc50c362d45af878ee829503d832f7b73fee1e42f93d03c33947fcc",
+          "bytes": 1462,
+          "available_in_github": false
+        },
+        "submission_readback_inventory": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/submission-capture-v1/READBACK_VERIFIED.json",
+          "sha256": "37174722debc859f5c35be4e5e7d1f5616896f9072ffbec7334f5495923ab808",
+          "bytes": 7593,
+          "available_in_github": false
+        },
+        "submission_intent": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/submission-capture-v1/GLOBAL_SUBMIT_INTENT.json",
+          "sha256": "84faf62fd2419c270d275c895751a41eda3fc625497b03a40684ae3658b1d4f8",
+          "bytes": 9711,
+          "available_in_github": false
+        },
+        "latest_startup_capture": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/startup-capture-v1/transport.stdout.json",
+          "sha256": "b307afbf7c415a8aa01153f387c41ef16c641975430cd4434a7aad5d59770cbc",
+          "bytes": 64639,
+          "available_in_github": false
+        },
+        "latest_startup_readback_inventory": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/startup-capture-v1/READBACK_VERIFIED.json",
+          "sha256": "cd6e0c2075829112a0addef422562b6f29f47143d269aa418ead8d6383339e37",
+          "bytes": 2146,
+          "available_in_github": false
+        }
+      },
+      "submission_status": "submitted_exact_job_observed",
+      "job_created_at_utc": "2026-11-11T06:36:53Z",
+      "last_observed_at_utc": "2026-11-11T06:38:32.765361+00:00",
+      "pending_reason": "Insufficient schedulable CPU, memory and GPU resources for the one-node eight-GPU allocation",
+      "allocated_node_observed": false,
+      "hardware_inventory_observed": false,
+      "eight_rank_preflight_passed": false,
+      "training_started": false,
+      "capacity_observed_at_utc": "2026-11-11T06:35:46.215938+00:00"
     }
   },
-  "checkpoint_checked_at_utc": "2026-11-09T11:18:23.253533+00:00",
-  "checkpoint_file_count": 31,
-  "checkpoint_bytes": 22317153372,
-  "checkpoint_file_map_canonical_sha256": "1c2682adc2700bd99b0b5237d4765dff5fd7bb29686bc20289f02b027193d1d3",
-  "checkpoint_all_file_hashes_measured": true,
-  "checkpoint_model_headers_and_state_presence_passed": true,
-  "optimizer_scheduler_rng_deserialized": false,
-  "capacity_measurement": {
-    "admission_performed": false,
-    "combined_accounted_bytes": 67803479292,
-    "existing_sft_full_reserve_bytes": 54884490928,
-    "observed_utc": "2026-11-09T11:18:23.247745+00:00",
-    "operational_limit_bytes": 99000000000,
-    "over_limit_bytes": 23687970220,
-    "projected_with_same_reserve_bytes": 122687970220,
-    "reserve_recomputed_for_new_attempt": false
-  }
+  "remaining_work": [
+    "Complete Smol alignment, archive and validate it before matched SFT and accepted benchmark evaluation.",
+    "Complete R4 checkpoint-600 recovery checks and capacity admission before its remaining 118 updates.",
+    "Additional seeds and declared ablations, controlled cost/latency measurements, and new-model evaluation."
+  ],
+  "active_run_id": "dp-p1-smollm2-f8-g4-s29-alignment-a1",
+  "active_run_observation": "submitted and Pending; occupies the sole project GPU job slot"
 }
