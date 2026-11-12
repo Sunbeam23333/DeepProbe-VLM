@@ -6,6 +6,8 @@ approximates recurrence with repeated whole-language-model forward calls.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, fields
+from contextlib import nullcontext
+import inspect
 import json
 import math
 from pathlib import Path
@@ -91,12 +93,20 @@ class SpatialPoolProjector(nn.Module):
         self.projection = nn.Sequential(nn.Linear(vision_dim, language_dim), nn.GELU(),
                                         nn.Linear(language_dim, language_dim))
 
-    def forward(self, states):
+    def forward(self, states, *, backend="reference"):
+        if backend not in {"reference", "triton"}:
+            raise ValueError("pool backend must be reference or triton")
+        if backend == "triton" and (self.training or torch.is_grad_enabled()):
+            raise ValueError("Triton pooling requires eval mode with gradients disabled")
         # SigLIP patch tokens have no CLS token and form a square spatial grid.
         side = math.isqrt(states.shape[1])
         if side * side != states.shape[1] or self.grid > side:
             raise ValueError("Expected square SigLIP patch grid with pool_grid <= patch grid")
         weights = torch.sigmoid(self.gate(states)).float().clamp_min(1e-6)
+        if backend == "triton":
+            from .cuda_pool import weighted_spatial_pool
+            pooled = weighted_spatial_pool(states, weights, self.grid)
+            return self.projection(pooled.to(self.projection[0].weight.dtype))
         values = (states.float() * weights).transpose(1, 2).reshape(states.shape[0], -1, side, side)
         weights = weights.transpose(1, 2).reshape(states.shape[0], 1, side, side)
         # Fixed bin weights preserve adaptive pooling's floor/ceil boundaries
@@ -175,18 +185,21 @@ class DeepProbeVLM(nn.Module):
                 for name, module in (("language", self.language_model), ("vision", self.vision_model),
                                      ("pool_projector", self.projector))}
 
-    def encode_visual(self, pixel_values):
+    def encode_visual(self, pixel_values, *, pool_backend="reference", profile_ranges=False):
         if pixel_values.ndim != 5 or pixel_values.shape[1] != self.deep_config.num_frames:
             raise ValueError("pixel_values must be [batch, configured_frames, C, H, W]")
         batch, frames = pixel_values.shape[:2]
         pixels = pixel_values.flatten(0, 1).to(next(self.vision_model.parameters()).dtype)
         # Frozen vision allows detaching vision only, never the recurrent LM.
-        with torch.set_grad_enabled(self.training and any(p.requires_grad for p in self.vision_model.parameters())):
-            states = self.vision_model(pixel_values=pixels, return_dict=True).last_hidden_state
-        visual = self.projector(states)
+        with torch.profiler.record_function("deepprobe.vision") if profile_ranges else nullcontext():
+            with torch.set_grad_enabled(self.training and any(p.requires_grad for p in self.vision_model.parameters())):
+                states = self.vision_model(pixel_values=pixels, return_dict=True).last_hidden_state
+        with torch.profiler.record_function("deepprobe.pool_projector") if profile_ranges else nullcontext():
+            visual = self.projector(states, backend=pool_backend)
         return visual.reshape(batch, frames * self.deep_config.pool_grid ** 2, -1)
 
-    def prepare_embeddings(self, input_ids, visual_mask, pixel_values):
+    def prepare_embeddings(self, input_ids, visual_mask, pixel_values, *,
+                           pool_backend="reference", profile_ranges=False):
         if visual_mask.shape != input_ids.shape:
             raise ValueError("visual_mask must match input_ids")
         if not torch.all(visual_mask.sum(-1) == self.deep_config.num_visual_tokens):
@@ -195,7 +208,8 @@ class DeepProbeVLM(nn.Module):
         gradient_tap = getattr(self, "_deepprobe_step_embedding_gradient_tap", None)
         if gradient_tap is not None:
             gradient_tap.capture_activation("lookup_output", embeds)
-        visual = self.encode_visual(pixel_values).to(embeds.dtype)
+        visual = self.encode_visual(pixel_values, pool_backend=pool_backend,
+                                    profile_ranges=profile_ranges).to(embeds.dtype)
         # CopySlices preserves gradients into both the projector and text embeddings.
         embeds = embeds.clone()
         embeds[visual_mask] = visual.flatten(0, 1)
@@ -203,12 +217,26 @@ class DeepProbeVLM(nn.Module):
             gradient_tap.capture_activation("multimodal_output", embeds)
         return embeds
 
-    def _language_forward(self, *, inputs_embeds, attention_mask, use_cache=False, past_key_values=None):
+    def _language_forward(self, *, inputs_embeds, attention_mask, use_cache=False,
+                          past_key_values=None, last_token_logits=False):
         kwargs = dict(inputs_embeds=inputs_embeds, attention_mask=attention_mask, labels=None,
                       use_cache=use_cache, past_key_values=past_key_values, return_dict=True)
         if self.deep_config.language_backend == "ouro":
             kwargs.update(exit_at_step=self.deep_config.num_loops - 1, use_weighted_exit=False)
+        if last_token_logits:
+            kwargs["logits_to_keep"] = 1
         return self.language_model(**kwargs)
+
+    def _require_last_token_logits_support(self):
+        """A generic **kwargs parameter is not proof that the head supports slicing."""
+        try:
+            parameter = inspect.signature(self.language_model.forward).parameters.get("logits_to_keep")
+        except (TypeError, ValueError) as error:
+            raise ValueError("Cannot verify explicit logits_to_keep support on this backbone") from error
+        if parameter is None or parameter.kind not in {
+            inspect.Parameter.POSITIONAL_OR_KEYWORD, inspect.Parameter.KEYWORD_ONLY
+        }:
+            raise ValueError("last_token_logits requires explicit backbone logits_to_keep support")
 
     def forward(self, input_ids, attention_mask, visual_mask, pixel_values, labels=None, **kwargs):
         from transformers.modeling_outputs import CausalLMOutputWithPast
@@ -226,35 +254,54 @@ class DeepProbeVLM(nn.Module):
 
     @torch.no_grad()
     def greedy_generate(self, input_ids, attention_mask, visual_mask, pixel_values,
-                        *, max_new_tokens=64, eos_token_id=None, use_cache=True):
+                        *, max_new_tokens=64, eos_token_id=None, use_cache=True,
+                        last_token_logits: bool = False, pool_backend="reference",
+                        profile_ranges: bool = False):
         """Reference single-example decoding with untouched native per-loop KV.
 
         Cache reuse is across decoded tokens, never across recurrence depths.
         No-cache mode is an explicit correctness/latency comparison.
+        Last-token projection and Triton pooling are opt-in inference paths;
+        neither changes the training forward or historical reference defaults.
         """
+        if type(last_token_logits) is not bool or type(profile_ranges) is not bool:
+            raise ValueError("last_token_logits and profile_ranges must be Boolean")
+        if pool_backend not in {"reference", "triton"}:
+            raise ValueError("pool_backend must be reference or triton")
+        if last_token_logits:
+            self._require_last_token_logits_support()
         if input_ids.shape[0] != 1 or not torch.all(attention_mask == 1):
             raise ValueError("Reference generation supports one unpadded example")
         if max_new_tokens <= 0:
             raise ValueError("max_new_tokens must be positive")
         self.eval()
-        embeds = self.prepare_embeddings(input_ids, visual_mask, pixel_values)
+        embeds = self.prepare_embeddings(input_ids, visual_mask, pixel_values,
+                                         pool_backend=pool_backend, profile_ranges=profile_ranges)
         if embeds.shape[1] + max_new_tokens > self.config.max_position_embeddings:
             raise ValueError("Requested generation exceeds context limit")
         all_embeds, generated, past = embeds, [], None
         current = embeds
-        for _ in range(max_new_tokens):
-            outputs = self._language_forward(inputs_embeds=current, attention_mask=attention_mask,
-                                             use_cache=use_cache, past_key_values=past)
+        for index in range(max_new_tokens):
+            # Uncached generation recomputes the full prefix at every iteration.
+            phase = "prefill" if index == 0 or not use_cache else "decode"
+            with torch.profiler.record_function("deepprobe." + phase) if profile_ranges else nullcontext():
+                outputs = self._language_forward(inputs_embeds=current, attention_mask=attention_mask,
+                                                 use_cache=use_cache, past_key_values=past,
+                                                 last_token_logits=last_token_logits)
             token = outputs.logits[:, -1].argmax(-1, keepdim=True)
             generated.append(token)
             if eos_token_id is not None and token.item() == eos_token_id:
                 break
-            embedding = self.language_model.get_input_embeddings()(token)
-            attention_mask = torch.cat((attention_mask, attention_mask.new_ones((1, 1))), dim=1)
             if use_cache:
                 past = outputs.past_key_values
                 if past is None:
                     raise RuntimeError("Backbone did not return a native KV cache")
+            # Preserve the native-cache check even when the token budget ends.
+            if index + 1 == max_new_tokens:
+                break
+            embedding = self.language_model.get_input_embeddings()(token)
+            attention_mask = torch.cat((attention_mask, attention_mask.new_ones((1, 1))), dim=1)
+            if use_cache:
                 current = embedding
             else:
                 all_embeds = torch.cat((all_embeds, embedding), dim=1)

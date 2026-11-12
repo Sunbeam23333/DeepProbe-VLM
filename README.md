@@ -47,7 +47,9 @@ python -m pytest -q
 
 截至 **2026-11-09**，R1/R2 seed17 已完成两阶段训练和评测：Video-MME 的声明 899 视频子集准确率为 **6.3404% / 18.4650%**，TempCompass 多选准确率为 **42.5316% / 50.4430%**。Video-MME 包含较高无效回答率，不代表官方全量成绩；协议、配对统计、局限与证据摘要见[结果记录](experiment/results/RESULTS.md)。
 
-R4 alignment 已完成；R4 SFT 在 602/718 步后收到 SIGTERM，保存了 600 步检查点，尚无 R4 评测成绩。Smol 基线、额外训练种子、剩余消融及正式成本/延迟实验仍待完成，详见[当前状态](experiment/results/STATUS.md)。尚无 H20/B300 加速结论。选择性视觉刷新、跨轮 KV 共享、TTT 和自定义 CUDA/PTX 属于待验证分支。
+R4 alignment 已完成；R4 SFT 在 602/718 步后收到 SIGTERM，保存了 600 步检查点，尚无 R4 评测成绩。Smol 基线、额外训练种子、剩余消融及正式成本/延迟实验仍待完成，详见[当前状态](experiment/results/STATUS.md)。尚无 H20/B300 加速结论。
+
+训练恢复现在预检 optimizer/scheduler/RNG 等必需状态；推理新增显式启用的最后位置 logits 投影、Triton 融合空间池化和独立 profiler 诊断。默认训练及参考评测保持原路径。实现范围、验证方式与待补的 GPU 证据见[优化记录](experiment/docs/OPTIMIZATION_STATUS.md)。选择性视觉刷新、token compaction、跨轮 KV 共享和 TTT 尚未实现；新增池化核不等于这些研究机制已经完成。
 
 Git 只同步代码、测试和经过核对的结果摘要。数据集视频、模型权重、私人邮件、学生身份信息及原始集群快照不在仓库中。
 

@@ -17,6 +17,12 @@ results paper. It aligns the new diagrams with the native-looped training code.
 The previous local frozen-model manuscript remains untouched and is not copied
 into this public repository with incompatible claims or private correspondence.
 
+The November 12 code adds optional last-position logits and inference-only
+Triton spatial pooling. Their implementation and pending GPU evidence are
+tracked in [optimization status](../experiment/docs/OPTIMIZATION_STATUS.md).
+The protocol PDF remains the dense-baseline design note; its future algorithm/
+kernel co-design is not established by these engineering additions.
+
 Final figures: `figures/final/main_overview`, `training_protocol`, `cuda_runtime`
 in PDF, PNG and outlined SVG. Editable diagram source is XeLaTeX/TikZ. Comic Sans
 MS is used when installed; no proprietary font file is redistributed. Math is

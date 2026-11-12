@@ -156,8 +156,25 @@ class NativeOuroTest(unittest.TestCase):
         model.eval()
         supervised_value = dict(value)
         value.pop("labels")
-        torch.testing.assert_close(model.greedy_generate(**value, max_new_tokens=5, use_cache=True),
-                                   model.greedy_generate(**value, max_new_tokens=5, use_cache=False))
+        # Exercise the real pinned Ouro signature and head slicing, not only a
+        # stub that accepts logits_to_keep. The native depth caches remain the
+        # same while the opted-in head sees just the selected final position.
+        generated = []
+        for use_cache in (False, True):
+            for last_token_logits in (False, True):
+                head_lengths = []
+                hook = language.lm_head.register_forward_pre_hook(
+                    lambda _module, args: head_lengths.append(args[0].shape[1]))
+                try:
+                    generated.append(model.greedy_generate(
+                        **value, max_new_tokens=5, use_cache=use_cache,
+                        last_token_logits=last_token_logits))
+                finally:
+                    hook.remove()
+                expected_lengths = [5, 1, 1, 1, 1] if use_cache else [5, 6, 7, 8, 9]
+                self.assertEqual(head_lengths, [1] * 5 if last_token_logits else expected_lengths)
+        for actual in generated[1:]:
+            torch.testing.assert_close(actual, generated[0], atol=0, rtol=0)
         embeds = model.prepare_embeddings(**{k: value[k] for k in ("input_ids", "visual_mask", "pixel_values")})
         cached = model._language_forward(inputs_embeds=embeds, attention_mask=value["attention_mask"], use_cache=True)
         self.assertEqual(len(cached.past_key_values.key_cache), 6)

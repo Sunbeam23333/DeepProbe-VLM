@@ -23,8 +23,9 @@ reject a dependency, keep the error and resolve versions in a separate tested
 environment rather than removing constraints in the system installation.
 
 B300 is compute capability **10.3**, not consumer Blackwell 12.0. Query the
-actual GPU; do not hard-code B200/RTX architecture flags for B300. This release
-does not build custom CUDA extensions. H20's actual reported capability, GPU
+actual GPU; do not hard-code B200/RTX architecture flags for B300. The default
+path does not build custom CUDA extensions. The optional Triton pooling path
+JIT-compiles for the actual GPU and must be tested on that runtime. H20's actual reported capability, GPU
 count, driver, torch CUDA runtime and supported architectures are logged by the
 preflight. Successful matrix multiplication alone does not certify the entire
 model path, so the next gates test attention and the real model.
@@ -66,9 +67,16 @@ hardware does not justify changing evaluation frames only for one model.
 Baseline: native shared decoder layers, independent per-loop KV, PyTorch SDPA,
 BF16, activation checkpointing, and distributed data parallel training.
 
-Not yet implemented: visual-token early halting, cross-loop KV sharing, custom
-CUDA/PTX kernels, FP8/FP4 training, and architecture-specific CUTLASS kernels.
-The CUDA figure marks these as future work. A lower-precision or cache-sharing
+Opt-in inference additions: last-position language-head projection and a Triton
+weighted spatial pooling kernel with a standalone numerical/microbenchmark
+runner. No actual CUDA speedup or end-to-end quality parity is yet accepted;
+see [optimization status](OPTIMIZATION_STATUS.md). Triton is optional and loaded
+only when explicitly requested. Keep the CUDA-enabled PyTorch distribution's
+compatible Triton runtime rather than installing an arbitrary newer version.
+
+Not yet implemented: visual-token early halting, token compaction, cross-loop KV
+sharing, FP8/FP4 training, and architecture-specific CUTLASS kernels.
+The CUDA figure's algorithm co-design remains future work. A lower-precision or cache-sharing
 variant requires output/gradient parity or an explicitly measured quality loss.
 
 Measure video decode/vision encoding/prefill/generation separately where possible,

@@ -22,6 +22,7 @@ import tempfile
 import time
 
 PROTOCOL = "deepprobe-development-latency-v1"
+OPTIMIZATION_PROTOCOL = "deepprobe-development-latency-v2"
 SETTINGS = {"sample_count": 32, "seed": 17, "warmup_requests_per_sample": 3,
             "measured_requests_per_sample": 10, "batch_size": 1,
             "max_new_tokens": 16, "dtype": "bfloat16", "decoding": "greedy_argmax",
@@ -29,6 +30,7 @@ SETTINGS = {"sample_count": 32, "seed": 17, "warmup_requests_per_sample": 3,
             "sample_order": "sha256_seed_sample_id", "request_order": "sample_major",
             "input_reuse": "reprepare_every_request", "num_inference_devices": 1}
 DEPENDENCIES = ("__init__.py", "benchmark_latency.py", "data.py", "evaluate.py", "manifest.py", "modeling.py")
+OPTIMIZATION_DEPENDENCIES = DEPENDENCIES + ("cuda_pool.py", "_triton_pool.py")
 PACKAGE = Path(__file__).resolve().parent
 TIMINGS = ("prepare_seconds", "model_seconds", "postprocess_seconds", "request_seconds")
 SCOPE = {
@@ -113,15 +115,34 @@ def media_names(records):
 
 
 def comparison_identity(plan):
-    """Cache on/off plans share this identity only when every other input agrees."""
-    return digest({k: v for k, v in plan.items() if k not in {"cache", "comparison_identity"}})
+    """Only declared implementation/cache axes may differ within a comparison."""
+    excluded = {"cache", "comparison_identity"}
+    if plan.get("schema_version") == 2:
+        excluded.add("implementation")
+    return digest({k: v for k, v in plan.items() if k not in excluded})
+
+
+def implementation_options(plan):
+    """Legacy v1 never implicitly opts into an experimental execution path."""
+    if plan["schema_version"] == 1:
+        return {}
+    value = plan.get("implementation")
+    require(isinstance(value, dict) and set(value) == {"last_token_logits", "pool_backend"}
+            and type(value["last_token_logits"]) is bool
+            and isinstance(value["pool_backend"], str)
+            and value["pool_backend"] in {"reference", "triton"}, "invalid inference implementation")
+    return dict(value)
 
 
 def validate_plan(plan):
+    version = plan.get("schema_version")
+    require(type(version) is int and version in {1, 2}, "unknown latency protocol")
+    extra = {"implementation"} if version == 2 else set()
     require(set(plan) == {"schema_version", "protocol", "settings", "cache", "data_scope", "quality_score_based_selection",
             "manifest", "source_metadata", "media_root", "media_files", "samples", "checkpoint", "model_config",
-            "source_files", "comparison_identity"}, "unknown or missing plan field")
-    require(plan["schema_version"] == 1 and plan["protocol"] == PROTOCOL, "unknown latency protocol")
+            "source_files", "comparison_identity"} | extra, "unknown or missing plan field")
+    require(plan["protocol"] == (PROTOCOL if version == 1 else OPTIMIZATION_PROTOCOL), "unknown latency protocol")
+    implementation_options(plan)
     require(canonical(plan["settings"]) == canonical(SETTINGS), "fixed latency settings changed")
     require(type(plan["cache"]) is bool and plan["data_scope"] == "development_only" and
             plan["quality_score_based_selection"] is False, "invalid cache/scope/selection policy")
@@ -129,8 +150,9 @@ def validate_plan(plan):
     for name in ("manifest", "source_metadata"):
         require(Path(plan[name]["path"]).is_absolute(), "input paths must be absolute")
     require(Path(plan["media_root"]).is_absolute() and Path(plan["checkpoint"]["path"]).is_absolute(), "roots must be absolute")
-    require({r["path"] for r in plan["source_files"]} == set(DEPENDENCIES) and
-            len(plan["source_files"]) == len(DEPENDENCIES), "complete executable dependency inventory required")
+    dependencies = DEPENDENCIES if version == 1 else OPTIMIZATION_DEPENDENCIES
+    require({r["path"] for r in plan["source_files"]} == set(dependencies) and
+            len(plan["source_files"]) == len(dependencies), "complete executable dependency inventory required")
     for rows in (plan["source_files"], plan["media_files"], plan["checkpoint"]["files"]):
         require(rows and len({r["path"] for r in rows}) == len(rows), "empty or duplicate inventory")
         for row in rows:
@@ -144,7 +166,7 @@ def validate_plan(plan):
     return plan
 
 
-def freeze_plan(manifest, checkpoint, media_root, source_metadata, *, cache=True):
+def freeze_plan(manifest, checkpoint, media_root, source_metadata, *, cache=True, implementation=None):
     """Hash local files and return an immutable-plan value; never load weights.
 
     Source metadata must declare scope=development, manifest_sha256,
@@ -162,6 +184,9 @@ def freeze_plan(manifest, checkpoint, media_root, source_metadata, *, cache=True
             "samples": sample_pins(records), "checkpoint": {"path": str(checkpoint), "files": inventory(checkpoint)},
             "model_config": json.loads((checkpoint / "deepprobe_config.json").read_text()),
             "source_files": [{**pin(PACKAGE / name), "path": name} for name in DEPENDENCIES]}
+    if implementation is not None:
+        plan.update(schema_version=2, protocol=OPTIMIZATION_PROTOCOL, implementation=dict(implementation))
+        plan["source_files"] = [{**pin(PACKAGE / name), "path": name} for name in OPTIMIZATION_DEPENDENCIES]
     plan["comparison_identity"] = comparison_identity(plan)
     validate_plan(plan)
     verify_metadata(plan)
@@ -277,7 +302,8 @@ def write_json(path, value):
         pass
 
 
-def execute(plan, plan_sha, output, *, plan_bytes=None):
+def execute(plan, plan_sha, output, *, plan_bytes=None, profile=False):
+    require(type(profile) is bool, "profile must be Boolean")
     plan_bytes = canonical(plan) if plan_bytes is None else plan_bytes
     require(hashlib.sha256(plan_bytes).hexdigest() == plan_sha and json.loads(plan_bytes) == plan, "execution plan bytes changed")
     output = safe(output)
@@ -289,6 +315,7 @@ def execute(plan, plan_sha, output, *, plan_bytes=None):
     completed_rows = []
     try:
         records = verify_inputs(plan)
+        implementation = implementation_options(plan)
         checkpoint = Path(plan["checkpoint"]["path"])
         provenance = json.loads((checkpoint / "training_provenance.json").read_text())
         for key in ("training_sources", "tuning_sources"):
@@ -316,7 +343,7 @@ def execute(plan, plan_sha, output, *, plan_bytes=None):
         props = torch.cuda.get_device_properties(device)
         driver = Path("/proc/driver/nvidia/version")
         packages = {}
-        for name in ("torch", "transformers", "tokenizers", "numpy", "pillow", "av", "safetensors", "huggingface-hub"):
+        for name in ("torch", "transformers", "tokenizers", "numpy", "pillow", "av", "safetensors", "huggingface-hub", "triton"):
             try: packages[name] = importlib.metadata.version(name)
             except importlib.metadata.PackageNotFoundError: packages[name] = None
         runtime = {"packages": packages, "cuda_runtime": torch.version.cuda, "cudnn": torch.backends.cudnn.version(),
@@ -331,6 +358,9 @@ def execute(plan, plan_sha, output, *, plan_bytes=None):
                    "tf32": False, "cudnn_benchmark": False, "profiler_enabled": False,
                    "checkpoint_training_provenance_sha256": sha(checkpoint / "training_provenance.json"),
                    "development_overlap_permitted_no_heldout_claim": True, "hardware_isolation_verified_by_runner": False}
+        runtime.update(implementation=implementation or {"last_token_logits": False, "pool_backend": "reference"},
+                       profile_diagnostic_requested=profile,
+                       first_warmup_may_include_jit_compilation=implementation.get("pool_backend") == "triton")
         write_json(output / "RUNTIME.json", runtime)
 
         def memory():
@@ -356,7 +386,8 @@ def execute(plan, plan_sha, output, *, plan_bytes=None):
                     input_info["tensor_dtypes"] = {key: str(value.dtype) for key, value in batch.items()}
                     return batch
                 def generate(batch):
-                    return model.greedy_generate(**batch, max_new_tokens=16, eos_token_id=tokenizer.eos_token_id, use_cache=plan["cache"])
+                    return model.greedy_generate(**batch, max_new_tokens=16, eos_token_id=tokenizer.eos_token_id,
+                                                 use_cache=plan["cache"], **implementation)
                 for phase, count in (("warmup", 3), ("measured", 10)):
                     for repeat in range(count):
                         row = measure_request(prepare=prepare, generate=generate, decode=decode,
@@ -364,21 +395,48 @@ def execute(plan, plan_sha, output, *, plan_bytes=None):
                             reset_peak=lambda: torch.cuda.reset_peak_memory_stats(device), memory=memory)
                         row.update(sample_id=record["sample_id"], source_video_id=record["source_video_id"], split=record["split"],
                             phase=phase, repeat_index=repeat, record_sha256=digest(record), plan_sha256=plan_sha,
-                            input=dict(input_info), answer=record["answer"],
+                            input=dict(input_info), implementation=runtime["implementation"], answer=record["answer"],
                             quality=score_answer(row["prediction"], record["answer"], record.get("choices")))
                         out.write(canonical(row)+b"\n"); out.flush(); os.fsync(out.fileno())
                         completed_rows.append(row)
         summary = summarize(completed_rows, [r["sample_id"] for r in records])
         summary.update(status="DEVELOPMENT_LATENCY_MEASUREMENTS_COMPLETE", plan_sha256=plan_sha,
-            protocol=PROTOCOL, comparison_identity=plan["comparison_identity"], cache=plan["cache"], measurement_scope=SCOPE,
+            protocol=plan["protocol"], comparison_identity=plan["comparison_identity"], cache=plan["cache"],
+            implementation=runtime["implementation"], measurement_scope=SCOPE,
             requests_sha256=sha(output / "requests.jsonl"), runtime_sha256=sha(output / "RUNTIME.json"),
             finished_utc=datetime.now(timezone.utc).isoformat())
         write_json(output / "SUMMARY.json", summary)
+        if profile:
+            # Separate diagnostic pass AFTER all unprofiled measurements. Its
+            # failure cannot turn a published timing summary into a failed run.
+            try:
+                example = dataset[0]
+                batch = {key: value.to(device) for key, value in collator([example]).items()}
+                torch.cuda.synchronize(device)
+                with torch.inference_mode(), torch.profiler.profile(
+                        activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA],
+                        record_shapes=True, profile_memory=True) as prof:
+                    tokens = model.greedy_generate(**batch, max_new_tokens=16, eos_token_id=tokenizer.eos_token_id,
+                                                  use_cache=plan["cache"], profile_ranges=True, **implementation)
+                    torch.cuda.synchronize(device)
+                prof.export_chrome_trace(str(output / "profile.trace.json"))
+                table = prof.key_averages(group_by_input_shape=True).table(sort_by="self_device_time_total", row_limit=80)
+                (output / "profile.operators.txt").write_text(table, encoding="utf-8")
+                write_json(output / "PROFILE.json", {"status": "DIAGNOSTIC_PROFILE_COMPLETE", "included_in_measurements": False,
+                    "sample_id": records[0]["sample_id"], "generated_token_ids": decode(tokens)["generated_token_ids"],
+                    "trace_sha256": sha(output / "profile.trace.json"), "operators_sha256": sha(output / "profile.operators.txt"),
+                    "plan_sha256": plan_sha, "runtime_sha256": summary["runtime_sha256"],
+                    "timing_summary_sha256": sha(output / "SUMMARY.json"),
+                    "implementation": runtime["implementation"], "cache": plan["cache"],
+                    "profile_ranges_enabled": True, "isolated_kernel_speedup_claimed": False})
+            except Exception as error:
+                write_json(output / "PROFILE_FAILURE.json", {"error_type": type(error).__name__, "error": str(error),
+                    "timing_summary_preserved": True, "plan_sha256": plan_sha})
         return summary
     except Exception as error:
         write_json(output / "FAILURE.json", {"utc": datetime.now(timezone.utc).isoformat(), "error_type": type(error).__name__,
             "error": str(error), "completed_requests": len(completed_rows), "automatic_retry": False,
-            "complete_summary_written": False, "plan_sha256": plan_sha})
+            "complete_summary_written": (output / "SUMMARY.json").is_file(), "plan_sha256": plan_sha})
         raise
 
 
@@ -388,15 +446,17 @@ def main(argv=None):
     parser.add_argument("--plan-sha256", required=True)
     parser.add_argument("--execute", action="store_true")
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--profile", action="store_true", help="Separate first-sample CUDA diagnostic after unprofiled measurements")
     args = parser.parse_args(argv)
     require(sha(args.plan) == args.plan_sha256, "plan SHA changed")
     plan = validate_plan(json.loads(args.plan.read_text()))
     if not args.execute:
+        require(not args.profile, "--profile requires --execute")
         print(json.dumps({"status": "PLAN_SCHEMA_VALID_NO_EXECUTION", "plan_sha256": args.plan_sha256,
                           "input_bytes_verified": False, "model_loaded": False, "gpu_used": False}))
         return 0
     require(args.output is not None, "--execute requires a fresh --output directory")
-    execute(plan, args.plan_sha256, args.output, plan_bytes=args.plan.read_bytes())
+    execute(plan, args.plan_sha256, args.output, plan_bytes=args.plan.read_bytes(), profile=args.profile)
     return 0
 
 

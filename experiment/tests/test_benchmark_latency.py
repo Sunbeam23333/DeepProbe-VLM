@@ -12,6 +12,7 @@ from types import ModuleType, SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from deepprobe_vlm import benchmark_latency as latency
+from deepprobe_vlm import compare_latency as comparison
 
 
 class LatencyTest(unittest.TestCase):
@@ -406,6 +407,236 @@ class LatencyTest(unittest.TestCase):
         pending = list(output.glob(".SUMMARY.json.pending-*"))
         self.assertEqual(len(pending), 1)
         self.assertTrue(pending[0].samefile(output / "SUMMARY.json"))
+
+    def optimization_plan(self, *, last_token_logits=False, pool_backend="reference"):
+        return latency.freeze_plan(self.manifest, self.checkpoint, self.media, self.meta,
+            implementation={"last_token_logits": last_token_logits, "pool_backend": pool_backend})
+
+    def test_v2_explicit_implementation_axes_share_bound_sources_and_inputs(self):
+        reference = self.optimization_plan()
+        optimized = self.optimization_plan(last_token_logits=True, pool_backend="triton")
+        optimized["cache"] = False
+        self.assertEqual(reference["schema_version"], 2)
+        self.assertEqual(reference["protocol"], latency.OPTIMIZATION_PROTOCOL)
+        self.assertEqual(reference["comparison_identity"], optimized["comparison_identity"])
+        self.assertNotEqual(reference["comparison_identity"], self.plan["comparison_identity"])
+        self.assertEqual({row["path"] for row in reference["source_files"]}, set(latency.OPTIMIZATION_DEPENDENCIES))
+        latency.validate_plan(optimized)
+        optimized["source_files"][0]["sha256"] = "0" * 64
+        optimized["comparison_identity"] = latency.comparison_identity(optimized)
+        self.assertNotEqual(reference["comparison_identity"], optimized["comparison_identity"])
+
+    def test_optimization_schema_refuses_implicit_or_invalid_switches(self):
+        for implementation in ({}, {"last_token_logits": 1, "pool_backend": "reference"},
+                               {"last_token_logits": False, "pool_backend": "automatic"},
+                               {"last_token_logits": False, "pool_backend": "reference", "profile": True}):
+            plan = self.optimization_plan()
+            plan["implementation"] = implementation
+            plan["comparison_identity"] = latency.comparison_identity(plan)
+            with self.subTest(implementation=implementation), self.assertRaisesRegex(ValueError, "implementation"):
+                latency.validate_plan(plan)
+        legacy = copy.deepcopy(self.plan)
+        legacy["implementation"] = {"last_token_logits": True, "pool_backend": "triton"}
+        legacy["comparison_identity"] = latency.comparison_identity(legacy)
+        with self.assertRaisesRegex(ValueError, "plan field"):
+            latency.validate_plan(legacy)
+
+    def execute_fake(self, name, plan=None, *, profile=False, profiler=None, fail_after=None):
+        plan = self.optimization_plan() if plan is None else plan
+        output = self.root / name
+        calls, modules = self.fake_runtime(fail_after=fail_after)
+        if profiler is not None:
+            modules["torch"].profiler = profiler(output, calls)
+        with patch.dict(sys.modules, modules), patch.dict("os.environ", {"WORLD_SIZE": "1"}):
+            summary = latency.execute(plan, latency.digest(plan), output, profile=profile)
+        return output, summary, calls
+
+    def test_v2_diagnostic_profile_follows_416_unprofiled_requests(self):
+        events = []
+        def profiler(output, calls):
+            outer = self
+            class Profile:
+                def __enter__(self):
+                    outer.assertTrue((output / "SUMMARY.json").is_file())
+                    outer.assertEqual(len(calls["generate"]), 416)
+                    events.append("profile_enter")
+                    return self
+                def __exit__(self, *args): events.append("profile_exit")
+                def export_chrome_trace(self, path): Path(path).write_text('{"traceEvents": []}')
+                def key_averages(self, **kwargs):
+                    outer.assertEqual(kwargs, {"group_by_input_shape": True})
+                    return self
+                def table(self, **kwargs):
+                    outer.assertEqual(kwargs, {"sort_by": "self_device_time_total", "row_limit": 80})
+                    return "synthetic test-only operator table"
+            def make_profile(**kwargs):
+                outer.assertEqual(kwargs, {"activities": ["CPU", "CUDA"], "record_shapes": True, "profile_memory": True})
+                return Profile()
+            return SimpleNamespace(profile=make_profile, ProfilerActivity=SimpleNamespace(CPU="CPU", CUDA="CUDA"))
+        plan = self.optimization_plan(last_token_logits=True, pool_backend="triton")
+        output, summary, calls = self.execute_fake("v2-profile", plan, profile=True, profiler=profiler)
+        self.assertEqual(len(calls["generate"]), 417)
+        for call in calls["generate"]:
+            self.assertTrue(call["last_token_logits"])
+            self.assertEqual(call["pool_backend"], "triton")
+        self.assertTrue(all("profile_ranges" not in call for call in calls["generate"][:-1]))
+        self.assertIs(calls["generate"][-1]["profile_ranges"], True)
+        self.assertEqual(events, ["profile_enter", "profile_exit"])
+        profile = json.loads((output / "PROFILE.json").read_text())
+        self.assertFalse(profile["included_in_measurements"])
+        self.assertEqual(profile["generated_token_ids"], [101, 0, 2])
+        self.assertEqual(profile["trace_sha256"], latency.sha(output / "profile.trace.json"))
+        self.assertEqual(profile["runtime_sha256"], latency.sha(output / "RUNTIME.json"))
+        self.assertEqual(profile["timing_summary_sha256"], latency.sha(output / "SUMMARY.json"))
+        self.assertEqual(profile["implementation"], plan["implementation"])
+        self.assertEqual(summary["measured_requests"], 320)
+        self.assertEqual(len((output / "requests.jsonl").read_text().splitlines()), 416)
+        self.assertEqual(summary["protocol"], latency.OPTIMIZATION_PROTOCOL)
+        self.assertEqual(summary, comparison.read_run(output)[2])
+        self.assertFalse((output / "FAILURE.json").exists())
+
+    def test_diagnostic_failure_preserves_complete_unprofiled_measurements(self):
+        output, summary, calls = self.execute_fake("profile-unavailable", profile=True)
+        self.assertEqual(len(calls["generate"]), 416)
+        self.assertEqual(json.loads((output / "SUMMARY.json").read_text()), summary)
+        failure = json.loads((output / "PROFILE_FAILURE.json").read_text())
+        self.assertTrue(failure["timing_summary_preserved"])
+        self.assertFalse((output / "FAILURE.json").exists())
+        self.assertFalse((output / "PROFILE.json").exists())
+        self.assertEqual(summary, comparison.read_run(output)[2])
+
+    def test_profile_cli_refuses_schema_only_execution(self):
+        plan = self.optimization_plan()
+        path = self.root / "optimization-plan.json"
+        path.write_bytes(latency.canonical(plan))
+        with self.assertRaisesRegex(ValueError, "requires --execute"):
+            latency.main(["--plan", str(path), "--plan-sha256", latency.sha(path), "--profile"])
+
+    def test_failed_diagnostic_receipt_reports_already_published_summary(self):
+        calls, modules = self.fake_runtime()
+        output = self.root / "diagnostic-receipt-failure"
+        plan = self.optimization_plan()
+        original_write = latency.write_json
+        def fail_diagnostic_receipt(path, value):
+            if Path(path).name == "PROFILE_FAILURE.json":
+                raise OSError("diagnostic receipt storage failed")
+            return original_write(path, value)
+        with patch.dict(sys.modules, modules), patch.dict("os.environ", {"WORLD_SIZE": "1"}), \
+                patch.object(latency, "write_json", side_effect=fail_diagnostic_receipt):
+            with self.assertRaisesRegex(OSError, "diagnostic receipt storage failed"):
+                latency.execute(plan, latency.digest(plan), output, profile=True)
+        self.assertEqual(len(calls["generate"]), 416)
+        failure = json.loads((output / "FAILURE.json").read_text())
+        self.assertTrue(failure["complete_summary_written"])
+        self.assertEqual(comparison.read_run(output)[2]["measured_requests"], 320)
+
+    def rewrite_run(self, output, *, alter_plan=None, alter_runtime=None, alter_rows=None, alter_summary=None):
+        """Rebind altered fixture bytes to test validation beyond checksum errors."""
+        plan = json.loads((output / "PLAN.json").read_text())
+        runtime = json.loads((output / "RUNTIME.json").read_text())
+        rows = [json.loads(line) for line in (output / "requests.jsonl").read_text().splitlines()]
+        summary = json.loads((output / "SUMMARY.json").read_text())
+        if alter_plan:
+            alter_plan(plan)
+            plan["comparison_identity"] = latency.comparison_identity(plan)
+            (output / "PLAN.json").write_bytes(latency.canonical(plan))
+            summary["plan_sha256"] = latency.sha(output / "PLAN.json")
+            summary["comparison_identity"] = plan["comparison_identity"]
+            for row in rows: row["plan_sha256"] = summary["plan_sha256"]
+        if alter_runtime: alter_runtime(runtime)
+        if alter_rows: alter_rows(rows)
+        (output / "RUNTIME.json").write_bytes(latency.canonical(runtime))
+        (output / "requests.jsonl").write_bytes(b"".join(latency.canonical(r)+b"\n" for r in rows))
+        summary.update(latency.summarize(rows, [r["sample_id"] for r in plan["samples"]]))
+        summary["requests_sha256"] = latency.sha(output / "requests.jsonl")
+        summary["runtime_sha256"] = latency.sha(output / "RUNTIME.json")
+        if alter_summary: alter_summary(summary)
+        (output / "SUMMARY.json").write_bytes(latency.canonical(summary))
+
+    def test_comparison_accepts_exact_pair_and_reports_all_requests(self):
+        reference, _, _ = self.execute_fake("reference")
+        plan = self.optimization_plan(last_token_logits=True, pool_backend="triton")
+        plan["cache"] = False
+        candidate, _, _ = self.execute_fake("candidate", plan)
+        result = comparison.compare(reference, candidate)
+        self.assertEqual(result["status"], "TOKEN_PARITY_PASSED")
+        self.assertEqual(result["requests_compared_including_warmups"], 416)
+        self.assertEqual(result["candidate_implementation"], plan["implementation"])
+        self.assertFalse(result["candidate_cache"])
+        self.assertEqual(set(result["reference_over_candidate_timing_ratio"]), {"model_seconds", "request_seconds"})
+        self.assertFalse(result["heldout_quality_claimed"])
+
+    def test_comparison_gates_ratios_on_warmup_and_measured_token_parity(self):
+        reference, _, _ = self.execute_fake("reference")
+        for index in (0, 3):
+            candidate, _, _ = self.execute_fake(f"candidate-{index}")
+            self.rewrite_run(candidate, alter_rows=lambda rows: rows[index].update(generated_token_ids=[102, 0, 2]))
+            result = comparison.compare(reference, candidate)
+            self.assertEqual(result["status"], "TOKEN_PARITY_FAILED")
+            self.assertEqual(result["token_mismatch_count"], 1)
+            self.assertIsNone(result["reference_over_candidate_timing_ratio"])
+
+    def test_comparison_rejects_different_runtime_source_and_prepared_input(self):
+        reference, _, _ = self.execute_fake("reference")
+        mutations = [
+            ({"alter_runtime": lambda runtime: runtime.update(gpu_uuid="different GPU")}, "runtime differs"),
+            ({"alter_runtime": lambda runtime: runtime.update(python="different Python")}, "runtime differs"),
+            ({"alter_plan": lambda plan: plan["source_files"][0].update(sha256="0"*64)}, "sources differ"),
+            ({"alter_rows": lambda rows: rows[0]["input"].update(prompt_text_tokens=999)}, "prompt metadata differ"),
+        ]
+        for index, (mutation, error) in enumerate(mutations):
+            candidate, _, _ = self.execute_fake(f"candidate-{index}")
+            self.rewrite_run(candidate, **mutation)
+            with self.subTest(error=error), self.assertRaisesRegex(ValueError, error):
+                comparison.compare(reference, candidate)
+
+    def test_comparison_rejects_rehashed_metadata_and_invalid_warmup_rows(self):
+        mutations = [
+            ({"alter_summary": lambda row: row.update(cache=False)}, "protocol or cache"),
+            ({"alter_summary": lambda row: row.update(protocol="invented")}, "protocol or cache"),
+            ({"alter_summary": lambda row: row.update(implementation={})}, "summary implementation"),
+            ({"alter_runtime": lambda row: row.update(implementation={})}, "runtime implementation"),
+            ({"alter_runtime": lambda row: row["implementation"].update(last_token_logits=0)}, "runtime implementation"),
+            ({"alter_runtime": lambda row: row.update(profiler_enabled=True)}, "profiled requests"),
+            ({"alter_runtime": lambda row: row.update(checkpoint_training_provenance_sha256="0"*64)}, "provenance differs"),
+            ({"alter_runtime": lambda row: row.update(gpu_uuid="None")}, "actual GPU UUID"),
+            ({"alter_rows": lambda rows: rows[0].update(implementation={})}, "request implementation"),
+            ({"alter_rows": lambda rows: rows[0].update(record_sha256="0"*64)}, "input record"),
+            ({"alter_rows": lambda rows: rows[0].update(plan_sha256="0"*64)}, "different plan"),
+            ({"alter_rows": lambda rows: rows[0].update(generated_token_ids=[True, 0, 2])}, "token IDs"),
+            ({"alter_rows": lambda rows: rows[0].update(generated_tokens=2)}, "token IDs or count"),
+            ({"alter_rows": lambda rows: rows[0].update(model_seconds=-1)}, "request timing"),
+            ({"alter_rows": lambda rows: rows[0].update(request_seconds=999)}, "boundaries disagree"),
+            ({"alter_rows": lambda rows: rows.reverse()}, "request order"),
+        ]
+        for index, (mutation, error) in enumerate(mutations):
+            output, _, _ = self.execute_fake(f"invalid-{index}")
+            self.rewrite_run(output, **mutation)
+            with self.subTest(error=error), self.assertRaisesRegex(ValueError, error):
+                comparison.read_run(output)
+
+    def test_comparison_rejects_unbound_bytes_and_summary_calculation(self):
+        output, _, _ = self.execute_fake("changed-bytes")
+        with (output / "requests.jsonl").open("a") as stream: stream.write("\n")
+        with self.assertRaisesRegex(ValueError, "artifact hash differs"):
+            comparison.read_run(output)
+        output, _, _ = self.execute_fake("changed-summary")
+        self.rewrite_run(output, alter_summary=lambda row: row.update(measured_requests=999))
+        with self.assertRaisesRegex(ValueError, "summary differs"):
+            comparison.read_run(output)
+
+    def test_legacy_comparison_accepts_missing_additive_implementation_metadata(self):
+        reference, _, _ = self.execute_fake("legacy-reference", self.plan)
+        plan = copy.deepcopy(self.plan)
+        plan["cache"] = False
+        candidate, _, _ = self.execute_fake("legacy-candidate", plan)
+        for output in (reference, candidate):
+            self.rewrite_run(output, alter_summary=lambda row: row.pop("implementation"),
+                             alter_runtime=lambda row: row.pop("implementation"),
+                             alter_rows=lambda rows: [row.pop("implementation") for row in rows])
+        result = comparison.compare(reference, candidate)
+        self.assertEqual(result["status"], "TOKEN_PARITY_PASSED")
+        self.assertEqual(result["reference_implementation"], {})
 
 
 if __name__ == "__main__":

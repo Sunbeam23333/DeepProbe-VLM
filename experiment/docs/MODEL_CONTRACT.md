@@ -3,7 +3,9 @@
 This repository implements a **native looped-language-model video SFT baseline**.
 It does not implement the previous selective visual-depth/ridge-RLS proposal.
 It does not yet implement a novel video-specific recurrent architecture,
-cross-loop KV sharing, token early exit, test-time weight updates, or custom CUDA.
+cross-loop KV sharing, token early exit, or test-time weight updates. An optional
+inference-only Triton pooling kernel is described in
+[optimization status](OPTIMIZATION_STATUS.md); the default path remains PyTorch.
 Accepted pretrained-model evaluations are documented in
 [results](../results/RESULTS.md), with their exact scope and limitations.
 They do not establish convergence, multi-seed robustness or H20/B300 speedups.
@@ -85,6 +87,20 @@ tokens. It does **not** reuse an earlier recurrence's KV as a deeper recurrence'
 KV. `--no-cache` provides a full-prefix recomputation reference. In either case
 the vision encoder runs once per request, not again at every decoded token.
 
+`last_token_logits=True` projects only the final hidden position through the
+language head when the backend explicitly exposes `logits_to_keep`. This is
+opt-in; training still requests complete logits. `pool_backend="triton"` fuses
+weighted spatial reductions while retaining the original learned gate, sigmoid,
+clamp and projection. It requires CUDA, BF16/FP32 contiguous inputs and inference
+mode with gradients disabled, and fails explicitly without a supported Triton
+runtime. It supplies no backward implementation. Adaptive pooling's overlapping
+floor/ceil bins and FP32 accumulation are retained, but reduction order may
+change rounding. GPU numerical and generated-token parity must be checked before
+using it in a scientific comparison. Neither option changes native per-loop KV.
+The frozen Video-MME entry refuses these new options; a new evaluation protocol
+is required to assess them. Optional `profile_ranges` labels vision, pooling,
+prefill and decode; the separate latency runner keeps profiling out of timing.
+
 `--profile` records the first request using PyTorch profiler. Output timings
 separate media/preprocessing (`prepare_seconds`) and model execution
 (`model_seconds`), with their sum in `end_to_end_seconds` / `latency_s`.
@@ -105,6 +121,11 @@ contain optimizer, scheduler, trainer progress and RNG state.
   optimizer and schedule contract. Changed contracts fail rather than silently
   restoring an incompatible optimizer. For a changed training schedule, use a
   new output directory and `--init-checkpoint` instead.
+  Before loading model weights, both training entries also require nonempty
+  regular optimizer/scheduler files, the exact single-rank or per-rank RNG file
+  set, required scaler state and consistent Trainer step metadata. This rejects
+  Hugging Face's missing-state fallback. It does not deserialize/authenticate
+  tensor contents or replace a numerical full-state recovery audit.
 - A nonempty output directory is refused unless `--resume` was requested.
 - Validation/test examples sharing recorded training source IDs are rejected.
   Held-out test examples sharing prior validation/tuning sources are rejected.

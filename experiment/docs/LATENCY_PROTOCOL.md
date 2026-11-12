@@ -1,4 +1,4 @@
-# Development latency protocol v1
+# Development latency protocols
 
 `deepprobe_vlm.benchmark_latency` is an opt-in, per-device latency runner. It does
 not submit jobs. The October 26 preparation has passed CPU tests with simulated
@@ -34,7 +34,8 @@ synchronization at each boundary:
 
 Model/tokenizer/processor loading, input hashes, answer scoring and artifact
 writing are outside those intervals. Vision/prefill/decode are not individually
-instrumented, and no time-to-first-token field is claimed. OS file caches and
+timed in these unprofiled measurements, and no time-to-first-token field is
+claimed. OS file caches and
 the CUDA allocator remain warmed; the runner does not clear them between
 requests. Absolute allocated and reserved memory peaks include the resident
 model and request tensors. Baseline allocated/reserved bytes are also retained.
@@ -81,3 +82,36 @@ enforce the allocated single-node/eight-GPU/low-priority policy and fresh storag
 identity, source and data checks. The runner measures one process on logical
 `cuda:0`; an eight-GPU allocation does not make this an eight-GPU throughput
 measurement. Concurrent work and hardware isolation require external review.
+
+## Explicit implementation comparison (v2)
+
+V1 plans and their default execution remain supported. Passing an explicit
+`implementation` mapping to `freeze_plan` creates schema 2 with protocol
+`deepprobe-development-latency-v2`. The mapping must contain exactly
+`last_token_logits` (Boolean) and `pool_backend` (`reference` or `triton`). V2
+also hashes `cuda_pool.py` and `_triton_pool.py`. Prepare a v2 reference with
+both options disabled as well as each candidate; do not compare a new candidate
+against old measurements made from different executable bytes. Cache and
+implementation are the only fields omitted from a v2 comparison identity.
+Inputs, output-token cap, weights, source and remaining protocol fields must
+remain identical. The first warmup may contain Triton compilation; it remains
+visible and excluded from measured summaries.
+
+`--profile` adds one separate diagnostic request after the unprofiled summary
+has been durably published. It records vision, pool/projector, prefill and
+decode ranges, a Chrome trace and an operator table. That pass is not a measured
+repeat or a TTFT result. Profile failure produces a distinct failure receipt;
+it does not invalidate an already completed unprofiled summary. Evaluator
+`--profile` still has its original first-request/mixed timing behavior.
+
+`python -m deepprobe_vlm.compare_latency --reference REFERENCE_DIR
+--candidate CANDIDATE_DIR` validates completed artifacts, plan/runtime/input
+bindings, recomputed summaries and hardware/software identity. It compares exact
+generated token IDs for every warmup and measured pair. Any mismatch suppresses
+all timing ratios. Successful comparison reports descriptive model/request
+median and p95 ratios, with no significance, serving-throughput or held-out
+quality claim. Use an explicit new `--output` JSON path to retain the comparison.
+
+The separate `benchmark_cuda_pool` command measures only weighted pooling on
+synthetic model-shaped features. Its microsecond timings cannot replace the
+checkpoint-based v2 protocol or establish the thesis's end-to-end benefit.

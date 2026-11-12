@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
-  "observed_at_utc": "2026-11-11T11:53:42.723793+00:00",
+  "observed_at_utc": "2026-11-12T12:08:15.294152+00:00",
   "display_timezone": "Asia/Shanghai",
-  "observation_note": "Dated actual submission and exact Job/Pod observations, plus the earlier attempt-1 startup failure and later independent failure-archive acceptance. No background monitor or new benchmark result is implied.",
+  "observation_note": "Dated exact Job/Pod and persisted-artifact observation on November 12, followed by one complete exact OSS-prefix listing. Earlier submissions, Pending states and independent failure-archive acceptance remain historical. No background monitor, new benchmark result or GPU admission is implied.",
   "new_held_out_results": false,
   "runs": {
     "dp-p1-ouro-r4-f8-g4-s17-sft-a1": {
@@ -369,13 +369,13 @@
       "dev_qa_count": 4472,
       "target_steps": 718,
       "run_id": "dp-p1-smollm2-f8-g4-s29-alignment-a2",
-      "status": "Pending",
+      "status": "Failed",
       "submission_status": "submitted_exact_job_observed",
       "submission_outcome_confirmed": true,
       "submission_client_started_at_utc": "2026-11-11T11:47:28.914466+00:00",
       "submission_client_completed_at_utc": "2026-11-11T11:50:00.910531+00:00",
       "submission_outcome_recorded_at_utc": "2026-11-11T11:49:36.891009+00:00",
-      "last_observed_at_utc": "2026-11-11T11:51:57.084690+00:00",
+      "last_observed_at_utc": "2026-11-12T12:06:17.314410+00:00",
       "cpu_admission_passed": true,
       "cpu_admission_completed_at_utc": "2026-11-11T11:43:49.643707+00:00",
       "cpu_admission_expires_at_utc": "2026-11-11T12:13:49.643707+00:00",
@@ -407,15 +407,14 @@
       "actual_resource_contract_passed": true,
       "no_forced_node": true,
       "control_repair_deployed_and_readback_accepted": true,
-      "training_started": false,
-      "last_observed_step": null,
-      "hardware_inventory_observed": false,
-      "hardware_admission_passed": false,
-      "eight_rank_preflight_passed": false,
+      "training_started": true,
+      "last_observed_step": 317,
+      "hardware_inventory_observed": true,
+      "hardware_admission_passed": true,
+      "eight_rank_preflight_passed": true,
       "training_complete": false,
       "held_out_result": null,
-      "job_pod_startup_readback_accepted": true,
-      "observation_limit": "The exact Job was Created and its Pod Pending, with no allocated node, running container, startup/run receipt or optimizer update. Hardware startup and training have not begun.",
+      "observation_limit": "The exact Job is Failed and its original Pod is absent. Persisted logs reach step 317, but only checkpoint-300 Trainer metadata was checked; full checkpoint payload integrity and resumability remain unaccepted. Exit code and termination source are unknown.",
       "automatic_retry": false,
       "hardware_repair_scope": "Reuses the unchanged frozen preflight identity matcher with fresh torch properties for all eight devices. L20D name alone is insufficient. Training source/configuration and native eight-rank BF16/attention/NCCL requirements are unchanged.",
       "evidence": {
@@ -509,46 +508,155 @@
           "bytes": 1465,
           "available_in_github": false
         },
-        "latest_startup_readback_inventory": {
-          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/a2-startup-capture-v1/READBACK_VERIFIED.json",
-          "sha256": "38efd7f57487b9ed095265979499750a8dd6c3583df72f3dd3d14947421c7d5e",
-          "bytes": 2249,
-          "available_in_github": false
-        },
-        "latest_startup_transport": {
-          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/a2-startup-capture-v1/transport.stdout.json",
-          "sha256": "4ae65ff9ccdadc90c5b6cbee8249b5c3918ba3b762253b60a45066997ea70166",
-          "bytes": 64583,
-          "available_in_github": false
-        },
-        "exact_current_job": {
+        "historical_pending_exact_job": {
           "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/a2-startup-capture-v1/job_after.stdout",
           "sha256": "ade4d7be6d6cf7317e2aedc2ae34ff8e7fbf3061d00c6fa026fb5464fc8aec10",
           "bytes": 12098,
           "available_in_github": false
         },
-        "exact_current_pod": {
+        "historical_pending_exact_pod": {
           "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/a2-startup-capture-v1/pod_after.stdout",
           "sha256": "edc315469ed5b77cb5e2830ddc47c1026c2ae929cfa3e5011117b1e4dc050307",
           "bytes": 11104,
           "available_in_github": false
+        },
+        "historical_pending_startup_readback_inventory": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/a2-startup-capture-v1/READBACK_VERIFIED.json",
+          "sha256": "38efd7f57487b9ed095265979499750a8dd6c3583df72f3dd3d14947421c7d5e",
+          "bytes": 2249,
+          "available_in_github": false
+        },
+        "historical_pending_startup_transport": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-readiness-20261111/a2-startup-capture-v1/transport.stdout.json",
+          "sha256": "4ae65ff9ccdadc90c5b6cbee8249b5c3918ba3b762253b60a45066997ea70166",
+          "bytes": 64583,
+          "available_in_github": false
+        },
+        "current_progress_facts": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-a2-live-20261112/20261112T120609Z/CURRENT_PROGRESS_FACTS_V2.json",
+          "sha256": "b5b8f9aa1831734e13daeecce8e4332f28aad80045e96fb8ece4a8d8e62b3742",
+          "bytes": 16465,
+          "available_in_github": false
+        },
+        "current_readback_inventory": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-a2-live-20261112/20261112T120609Z/READBACK_VERIFIED.json",
+          "sha256": "325ecd5d31edca47c9bc10dbf7012b88a4400da2d8e29772e77a06ee75a8c1a9",
+          "bytes": 2531,
+          "available_in_github": false
+        },
+        "exact_current_job": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-a2-live-20261112/20261112T120609Z/decoded/exact_job.stdout",
+          "sha256": "4ae88aa15345ce1b451ec51a04edd9806cf8f3ac64c7108d5c0ffb4be9b4a349",
+          "bytes": 13021,
+          "available_in_github": false
+        },
+        "exact_current_pod_not_found": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-a2-live-20261112/20261112T120609Z/decoded/exact_pod.stderr",
+          "sha256": "fb6745a29a9cc2ffa84dd024725b0e6629c0f3450d5ebed76da2be781ca39d03",
+          "bytes": 106,
+          "available_in_github": false
+        },
+        "startup_admission": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-a2-live-20261112/20261112T120609Z/decoded/startup/STARTUP_ADMISSION.json",
+          "sha256": "4a350faed598d8611186a920d7ed1ab1acc3d2b4d81172b5822fbb0b5470747c",
+          "bytes": 11447,
+          "available_in_github": false
+        },
+        "gpu_identity": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-a2-live-20261112/20261112T120609Z/decoded/startup/gpu_identity.stdout",
+          "sha256": "5a8cc9ee60e755e6222acb7362438704992d36ade202fad7aa4583b3c55fae04",
+          "bytes": 2965,
+          "available_in_github": false
+        },
+        "eight_rank_preflight": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-a2-live-20261112/20261112T120609Z/decoded/run/preflight-before.json",
+          "sha256": "84b54375a54b16445c61e24d9903f656e76562b01853315aafd2d39ea1602a66",
+          "bytes": 4983,
+          "available_in_github": false
+        },
+        "persisted_trainer_state": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-a2-live-20261112/20261112T120609Z/decoded/run/training/checkpoint-300/trainer_state.json",
+          "sha256": "94321c09b3c4fcbcc9efd38262e4739f4f4388bdc758bb0a423d2ac79fc1c869",
+          "bytes": 5933,
+          "available_in_github": false
+        },
+        "training_log": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-a2-live-20261112/20261112T120609Z/decoded/logs/run.stdout",
+          "sha256": "497d7618b5d0e1e3e00242eb61c265b77d1c96f93e74e0b3a5ea0077105c35ed",
+          "bytes": 42418,
+          "available_in_github": false
+        },
+        "exact_current_oss_observation": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-a2-live-20261112/20261112T120609Z/exact-oss-list-once/stdout.json",
+          "sha256": "a796ab372d019b3585a74f82219f27702f0da1575b330483373ba314b7ed2b24",
+          "bytes": 624,
+          "available_in_github": false
         }
       },
-      "job_condition": "Created",
-      "pod_phase": "Pending",
+      "job_condition": "Failed",
+      "pod_phase": "NotFound",
       "job_created_at_utc": "2026-11-11T11:49:36Z",
-      "pending_reason": "Insufficient schedulable CPU, memory and GPU resources for the one-node eight-GPU allocation",
-      "allocated_node_observed": false,
-      "container_observed": false,
-      "hardware_admission_status": "not_run_pending_allocation",
-      "eight_rank_preflight_status": "not_run_pending_allocation"
+      "hardware_admission_status": "GPU_IDENTITY_ACCEPTED",
+      "eight_rank_preflight_status": "gpu_gate_passed",
+      "historical_observations": [
+        {
+          "status": "Pending",
+          "job_condition": "Created",
+          "pod_phase": "Pending",
+          "pending_reason": "Insufficient schedulable CPU, memory and GPU resources for the one-node eight-GPU allocation",
+          "allocated_node_observed": false,
+          "container_observed": false,
+          "hardware_inventory_observed": false,
+          "hardware_admission_passed": false,
+          "eight_rank_preflight_passed": false,
+          "training_started": false,
+          "last_observed_step": null,
+          "job_pod_startup_readback_accepted": true,
+          "observed_at_utc": "2026-11-11T11:51:57.084690+00:00",
+          "evidence_keys": [
+            "historical_pending_exact_job",
+            "historical_pending_exact_pod",
+            "historical_pending_startup_readback_inventory"
+          ],
+          "note": "Preserved submitted/Pending snapshot, superseded by the later exact-job failure and persisted training artifacts."
+        }
+      ],
+      "failure_at_utc": "2026-11-11T13:34:31Z",
+      "job_running_transition_at_utc": "2026-11-11T12:16:13Z",
+      "original_pod_present": false,
+      "exit_code": null,
+      "termination_cause": "unknown; no exact event query in this bounded observation",
+      "checkpoint_step": 300,
+      "checkpoint_full_payload_validated": false,
+      "checkpoint_resume_accepted": false,
+      "remaining_updates_from_checkpoint": 418,
+      "final_checkpoint_present": false,
+      "training_complete_receipt_present": false,
+      "archive_receipts_present": false,
+      "actual_gpu_count": 8,
+      "actual_gpu_model": "NVIDIA L20D",
+      "actual_compute_capability": [
+        10,
+        3
+      ],
+      "all_eight_rank_attention_passed": true,
+      "all_eight_rank_allreduce_passed": true,
+      "archive_object_count": 0,
+      "archive_bytes": 0,
+      "archive_accepted": false,
+      "archive_status": "exact_prefix_empty_no_local_archive_receipts",
+      "archive_observed_at_utc": "2026-11-12T12:08:15.294152+00:00",
+      "archive_full_prefix_listing": true,
+      "retry_submitted_in_this_check": false,
+      "latest_observation_readback_verified": true,
+      "recovery_gate": "Preserve and independently archive the failed run, validate the full checkpoint-300 payload and recovery state, then perform fresh capacity/source/scheduler admission for a separately identified recovery attempt. No retry was submitted in this observation."
     }
   },
   "remaining_work": [
-    "Accept Smol attempt-2 hardware startup and complete alignment/archive, then its matched SFT and benchmark evaluation.",
+    "Archive the failed Smol attempt-2 run and validate checkpoint-300 recovery; after fresh admission finish its remaining 418 alignment updates, then matched SFT and benchmark evaluation.",
     "Complete R4 checkpoint-600 recovery checks and capacity admission before its remaining 118 updates.",
     "Additional seeds and declared ablations, controlled cost/latency measurements, and new-model evaluation."
   ],
-  "active_run_id": "dp-p1-smollm2-f8-g4-s29-alignment-a2",
-  "active_run_observation": "Attempt 2 is submitted and Pending at the dated observation, with no allocated node, container, hardware startup or optimizer update."
+  "active_run_id": null,
+  "active_run_observation": "The six project-matching jobs in the returned all-namespace PyTorchJob projection were terminal at 20:06 Beijing time on November 12. This does not certify global Pod or scheduler clearance for a new submission."
 }

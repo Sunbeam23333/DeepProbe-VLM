@@ -2,9 +2,11 @@
 import json
 import hashlib
 from pathlib import Path
+import shutil
 import tempfile
 from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
 
 from PIL import Image
 import torch
@@ -251,6 +253,15 @@ class TrainingCLITest(unittest.TestCase):
             self.assertEqual(sft_contract["ddp_bucket_cap_mb"], "None")
             self.assertEqual(sft_contract["ddp_broadcast_buffers"], "None")
             uninterrupted = {k: v.clone() for k, v in DeepProbeVLM.from_pretrained(root/"sft/final").state_dict().items()}
+            for missing in ("optimizer.pt", "scheduler.pt", "rng_state.pth"):
+                broken = root / ("broken-" + missing) / "checkpoint-1"
+                shutil.copytree(root/"sft/checkpoint-1", broken)
+                (broken / missing).unlink()
+                with patch.object(DeepProbeVLM, "from_backbones") as load_model:
+                    with self.assertRaisesRegex(ValueError, "Exact resume"):
+                        train_main(common+["--output-dir", str(root / ("rejected-" + missing)),
+                                           "--resume", str(broken)])
+                    load_model.assert_not_called()
             train_main(common+["--output-dir", str(root/"sft"), "--resume", str(root/"sft/checkpoint-1")])
             resumed = DeepProbeVLM.from_pretrained(root/"sft/final").state_dict()
             for key in uninterrupted:

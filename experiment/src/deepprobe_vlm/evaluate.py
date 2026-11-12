@@ -233,6 +233,12 @@ def main(argv=None):
     p.add_argument("--max-new-tokens", type=int, default=64)
     p.add_argument("--profile", action="store_true", help="Save CPU/CUDA trace for first example")
     p.add_argument("--no-cache", action="store_true", help="Explicit uncached reference comparison")
+    p.add_argument("--last-token-logits", action="store_true",
+                   help="Opt in to last-position LM-head projection on explicitly supported backbones")
+    p.add_argument("--pool-backend", choices=["reference", "triton"], default="reference",
+                   help="Opt-in inference pooling backend; Triton requires CUDA and has no fallback")
+    p.add_argument("--profile-ranges", action="store_true",
+                   help="Add diagnostic vision/pool/prefill/decode ranges; combine with --profile for a trace")
     p.add_argument("--protocol", choices=["reference", VIDEOMME_PROTOCOL], default="reference")
     p.add_argument("--run-provenance", help="Frozen runner receipt with full checkpoint/source/plan identities")
     p.add_argument("--resume", action="store_true", help="Resume only an identical protocol and verified prediction prefix")
@@ -242,6 +248,17 @@ def main(argv=None):
     cli = p.parse_args(argv)
     if cli.max_new_tokens <= 0:
         raise ValueError("max-new-tokens must be positive")
+    # Keep the default protocol bytes and generator arguments unchanged. An
+    # opted-in path gets a distinct protocol hash and cannot resume reference rows.
+    inference_options = {}
+    if cli.last_token_logits:
+        inference_options["last_token_logits"] = True
+    if cli.pool_backend != "reference":
+        inference_options["pool_backend"] = cli.pool_backend
+    if cli.profile_ranges:
+        inference_options["profile_ranges"] = True
+    if cli.protocol == VIDEOMME_PROTOCOL and inference_options:
+        raise ValueError("Frozen Video-MME protocol forbids opt-in inference optimizations and diagnostic ranges")
     rank, world, local_rank = 0, 1, 0
     if cli.distributed_env:
         rank, world, local_rank = (int(os.environ[name]) for name in ("RANK", "WORLD_SIZE", "LOCAL_RANK"))
@@ -294,6 +311,8 @@ def main(argv=None):
                 "prompt_contract": "MultimodalCollator: chronological frames, question, choices, option-letter only; no gold",
                 "full_coverage": full_coverage, "torch": torch.__version__, "cuda": torch.version.cuda,
                 "contamination_check": contamination_check}
+    if inference_options:
+        protocol["inference_options"] = dict(inference_options)
     protocol_sha = canonical_sha256(protocol)
     output.parent.mkdir(parents=True, exist_ok=True)
     protocol_path = output.with_suffix(".protocol.json")
@@ -337,11 +356,13 @@ def main(argv=None):
             if cli.profile and index == 0:
                 with torch.profiler.profile(activities=activities, record_shapes=True, profile_memory=True) as prof:
                     tokens = model.greedy_generate(**batch, max_new_tokens=cli.max_new_tokens,
-                                                   eos_token_id=tokenizer.eos_token_id, use_cache=not cli.no_cache)
+                                                   eos_token_id=tokenizer.eos_token_id, use_cache=not cli.no_cache,
+                                                   **inference_options)
                 prof.export_chrome_trace(str(output.with_suffix(".trace.json")))
             else:
                 tokens = model.greedy_generate(**batch, max_new_tokens=cli.max_new_tokens,
-                                               eos_token_id=tokenizer.eos_token_id, use_cache=not cli.no_cache)
+                                               eos_token_id=tokenizer.eos_token_id, use_cache=not cli.no_cache,
+                                               **inference_options)
             synchronise()
             finished = time.perf_counter()
             prediction = tokenizer.decode(tokens[0], skip_special_tokens=True)
@@ -359,6 +380,10 @@ def main(argv=None):
                    "peak_memory_bytes": torch.cuda.max_memory_allocated() if device.type == "cuda" else None,
                    "timing_status": "profiled_not_benchmark" if cli.profile and index == 0 else "raw_cold_or_mixed_no_warmup",
                    "contamination_check": contamination_check}
+            if inference_options:
+                row["inference_options"] = dict(inference_options)
+                if cli.profile_ranges:
+                    row["timing_status"] = "diagnostic_ranges_not_benchmark"
             rows.append(row)
             handle.write(json.dumps(row, ensure_ascii=False) + "\n")
             handle.flush()

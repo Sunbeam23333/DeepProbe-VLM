@@ -23,6 +23,7 @@ from .formal_integrity import (manifest_media, verify_attested_media_metadata,
                                verify_frozen_source_manifest)
 from .manifest import load_manifest, validate_disjoint
 from .modeling import DeepProbeConfig, DeepProbeVLM
+from .resume_checkpoint import verify_resume_checkpoint
 
 
 def _sha256_file(path: Path) -> str:
@@ -641,6 +642,10 @@ def main(argv=None):
             expected_rank=args.process_index, expected_world_size=args.world_size)
         formal_receipt = formal_inputs["receipt"]
     checkpoint = cli.resume or cli.init_checkpoint
+    if cli.resume:
+        verify_resume_checkpoint(
+            cli.resume, world_size=args.world_size, require_scaler=args.fp16,
+            expected_max_steps=args.max_steps if args.max_steps > 0 else None)
     training_sources = {x["source_video_id"] for x in train_records}
     tuning_sources = {x["source_video_id"] for x in eval_records}
     previous_provenance = None

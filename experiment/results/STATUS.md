@@ -1,10 +1,11 @@
-# Experiment status — 2026-11-11
+# Experiment status — 2026-11-12
 
-Latest exact Job/Pod observation: **19:52 Beijing time (UTC+08:00)**. Smol
-alignment attempt 2 was submitted at **19:49** and is **Pending**. The GPU
-identity repair is deployed, but allocation and training have not started.
-Attempt 1 failed during startup at **16:03**; its small failure archive passed
-independent acceptance at **19:53:42**. These are dated observations,
+Latest exact Job/Pod observation: **November 12, 20:06 Beijing time
+(UTC+08:00)**. Smol alignment attempt 2 is **Failed**, with its failure transition
+at **November 11, 21:34:31**. Hardware startup passed and training reached
+317/718 updates in the captured log; checkpoint-300 is preserved but full
+recovery has not been validated. A complete exact OSS-prefix listing at
+**20:08:15 on November 12** found zero objects. These are dated observations,
 not a background monitor. No new benchmark result is claimed.
 
 ## Completed
@@ -15,26 +16,35 @@ not a background monitor. No new benchmark result is claimed.
 - R4 seed17 alignment: completed 718 optimizer steps. Its full archive and final
   checkpoint passed independent acceptance.
 
-## Smol repaired attempt submitted
+## Smol attempt-2 training interruption
 
-SmolLM2-1.7B-Instruct seed29 alignment attempt 2 has one confirmed submission.
-The submission client exited successfully, and the actual Job resource contract
-passed: stream/low, one node, eight GPUs, restart policy Never and no forced
-node. At **19:52**, its Pod was Pending because the scheduler could not satisfy
-the combined CPU, memory and GPU request on one node. No allocated node,
-running container, startup/run receipt or optimizer update was observed;
-training has not yet started.
+SmolLM2-1.7B-Instruct seed29 alignment attempt 2 was submitted once on
+November 11 at **19:49**, using stream/low, one node, eight GPUs, restart policy
+Never and no forced node. The **19:52 Pending** observation is retained as
+history. The Job subsequently transitioned to Running at **20:16:13**, then
+Failed at **21:34:31**. Its original Pod was absent at the November 12 readback,
+so the original container exit code and termination source remain unknown.
 
-The replacement control package and every deployed file passed independent
-source and readback review. It now reuses the frozen preflight's complete GPU
-identity rule: each of the eight devices must have an accepted B300-family name
-(the cluster's NVIDIA L20D alias is allowed), torch compute capability [10,3]
-and at least 240 GiB of memory. Names alone cannot pass. The original eight-rank
-BF16/attention/NCCL startup preflight remains required. Neither hardware check
-has run while the new job is Pending.
+The deployed hardware identity repair passed on all eight NVIDIA L20D devices:
+each reported compute capability [10,3] and 267.69 GiB of memory. The separate
+eight-rank BF16 attention forward/backward and NCCL all-reduce preflight also
+passed. These validate startup on the allocated devices; they do not establish
+training completion or CUDA performance.
+
+The log reaches **317/718 optimizer updates**. The preserved checkpoint
+directory and its Trainer state both identify **step 300**, leaving **418
+updates** if recovery is accepted. Its complete weight/optimizer/RNG payload
+has not been validated, so its presence is not a resumability guarantee. No
+final checkpoint or training-completion receipt was observed. Captured NCCL
+environment deprecation warnings do not establish the failure cause.
+
+The exact run archive prefix was completely listed once and contained **0
+objects / 0 bytes**; no local archive manifest or success receipt was present.
+Failure archival, full recovery validation and fresh submission admission
+remain outstanding. No retry was submitted in this observation.
 
 Fresh CPU/source/input/storage admission and independent review passed before
-this separate submission. The actual submission-side capacity projection was
+the November 11 submission. Its submission-side capacity projection was
 **95,109,611,082 bytes**, below the 99,000,000,000-byte limit. The submitted
 control and source/input binding were read back with the exact Job/Pod evidence.
 
@@ -90,8 +100,9 @@ No new benchmark results are claimed by these training and archive updates.
 
 ## Remaining work
 
-1. Accept Smol attempt-2 hardware startup, complete alignment and its archive,
-   then run matched SFT and benchmark evaluations.
+1. Archive Smol attempt-2 failure evidence and validate checkpoint-300 recovery;
+   after fresh admission finish the remaining 418 alignment updates, then run
+   matched SFT and benchmark evaluations.
 2. Finish R4 checkpoint recovery and storage admission, run the remaining SFT,
    then archive and evaluate the completed model.
 3. Complete the additional training seeds and declared ablations, controlled
