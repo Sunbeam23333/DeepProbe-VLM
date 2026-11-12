@@ -104,12 +104,18 @@ The opt-in inference changes and recovery guard are committed as
 `bec405e8802232cf4815f1c6dfea968318a12aa9`. The public CPU suite passed 512 tests
 (80 skipped), and three separate pinned native Ouro CPU tests passed.
 
-The synthetic pooling QA job was created at **20:46:10 on November 12**.
-At **20:47:41**, its Pod was **Pending**: the combined single-node CPU, memory
-and eight-GPU request could not yet be placed. Its actual contract is
-stream/low, one node, eight GPUs and restart Never. No GPU startup, CUDA
-numerical result, microbenchmark or archive had been produced. It measures one
-device if allocated; no model/training speedup or held-out claim follows.
+The synthetic pooling QA job
+`jinhaopeng-dpvlm-cuda-pool-qa-20261112-a1-n1-bb1e7` was created at **20:46:10
+on November 12**, became Running at **20:55:46**, and Failed at **20:56:31**.
+Exact Pod-UID events confirm **external preemption at 20:56:29**, followed by
+container termination. The earlier **20:47:41 Pending** observation is retained
+as history. Its contract was stream/low, one node, eight GPUs and restart Never.
+
+The **21:15** readback found the original Pod absent, so its container exit code
+is unavailable. Startup checks were retained, but GPU startup acceptance,
+CUDA numerical tests and microbenchmark results were not produced. The exact
+archive prefix contained **0 objects / 0 bytes**. No retry, archive or deletion
+was performed in this read-only check. No CUDA speedup or held-out claim follows.
 
 The initial submission client failed before starting `kubectl` because its
 PATH lacked that executable. Complete and exact-name reads confirmed no job

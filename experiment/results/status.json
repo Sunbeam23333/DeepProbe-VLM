@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
-  "observed_at_utc": "2026-11-12T12:47:41.331903+00:00",
+  "observed_at_utc": "2026-11-12T13:15:03.372650+00:00",
   "display_timezone": "Asia/Shanghai",
-  "observation_note": "Training facts retain their dated November 12 exact Job/Pod and OSS observations. The later engineering QA observation records one Created/Pending CUDA test job and no GPU results. Earlier submissions, Pending states and failure-archive acceptance remain historical. This is not a background monitor or a new benchmark result.",
+  "observation_note": "Training facts retain their dated November 12 exact Job/Pod and OSS observations. The later engineering QA observation confirms external preemption of the exact QA Job/Pod before CUDA results. Earlier submissions, Pending states and failure-archive acceptance remain historical. This is not a background monitor or a new benchmark result.",
   "new_held_out_results": false,
   "runs": {
     "dp-p1-ouro-r4-f8-g4-s17-sft-a1": {
@@ -662,10 +662,10 @@
   "engineering_qa": {
     "run_id": "dp-cuda-pool-qa-20261112-a1",
     "scope": "synthetic CUDA weighted-pooling correctness and microbenchmark; no model training or quality evaluation",
-    "observed_at_utc": "2026-11-12T12:47:41.331903+00:00",
+    "observed_at_utc": "2026-11-12T13:15:03.372650+00:00",
     "source_commit": "bec405e8802232cf4815f1c6dfea968318a12aa9",
-    "job_status": "Created",
-    "pod_phase": "Pending",
+    "job_status": "Failed",
+    "pod_phase": null,
     "allocation": {
       "cluster": "ali-gpu",
       "queue": "stream",
@@ -680,17 +680,11 @@
     "cuda_tests_executed": false,
     "gpu_speedup_accepted": false,
     "archive_accepted": false,
-    "scheduling_reason": "single-node combined CPU/memory/eight-GPU request not yet satisfiable",
+    "scheduling_reason": "Scheduled and Running, then externally preempted before GPU startup acceptance and CUDA tests.",
     "first_client_failure": "kubectl absent from control-side PATH; Popen failed before execution",
     "submission_repair": "complete and exact-name reads confirmed absent; validated original YAML was created once using absolute kubectl; original failure and intent retained",
     "new_training_or_heldout_result": false,
     "evidence": {
-      "latest_exact_job_pod": {
-        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261112/post-submit-20261112T1247Z/READBACK.json",
-        "bytes": 9326,
-        "sha256": "b1717005f4ac0e1620aa55205df54b01dfdea013b7b4e1afc84bf69ab021010a",
-        "available_in_github": false
-      },
       "submission_repair": {
         "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261112/root-submit-repair-v1/stdout.json",
         "bytes": 4411,
@@ -702,8 +696,84 @@
         "bytes": 1624,
         "sha256": "f0ef3cdb59583711895db8bad8118e1afb6df6fb9bd1a3d6ec8de411df3d5b0d",
         "available_in_github": false
+      },
+      "historical_pending_exact_job_pod": {
+        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261112/post-submit-20261112T1247Z/READBACK.json",
+        "bytes": 9326,
+        "sha256": "b1717005f4ac0e1620aa55205df54b01dfdea013b7b4e1afc84bf69ab021010a",
+        "available_in_github": false
+      },
+      "latest_exact_failure": {
+        "source_path": "experiment/docs/operations/evidence/serial-retention-development-20261112/CUDA_QA_FAILURE_READONLY.json",
+        "bytes": 159450,
+        "sha256": "7ee234c6965d176d20c349e9f87983c7f05e6dfa405a1e0c8b975cf080b8bd7d",
+        "available_in_github": false
       }
-    }
+    },
+    "historical_observations": [
+      {
+        "observed_at_utc": "2026-11-12T12:47:41.331903+00:00",
+        "job_status": "Created",
+        "pod_phase": "Pending",
+        "scheduling_reason": "single-node combined CPU/memory/eight-GPU request not yet satisfiable",
+        "evidence_key": "historical_pending_exact_job_pod"
+      }
+    ],
+    "exact_job": "jinhaopeng-dpvlm-cuda-pool-qa-20261112-a1-n1-bb1e7",
+    "job_uid": "2d1b0a1c-da16-4c55-abfc-148e98c5f318",
+    "last_observed_pod_uid": "204a49c4-a53e-480a-a3e9-1e2f10d1dd27",
+    "running_at_utc": "2026-11-12T12:55:46Z",
+    "preempted_at_utc": "2026-11-12T12:56:29.252164Z",
+    "failure_at_utc": "2026-11-12T12:56:31Z",
+    "failure_reason": "external_preemption",
+    "failure_evidence": "Exact Pod UID and startup owner binding match scheduler Preempted and kubelet Killing events.",
+    "original_pod_present": false,
+    "container_exit_code": null,
+    "cuda_result": null,
+    "archive_object_count": 0,
+    "archive_bytes": 0,
+    "archive_observed_at_utc": "2026-11-12T13:15:04.979173+00:00",
+    "retry_submitted_in_this_check": false
   },
-  "training_observed_at_utc": "2026-11-12T12:08:15.294152+00:00"
+  "training_observed_at_utc": "2026-11-12T12:08:15.294152+00:00",
+  "serial_suite_preparation": {
+    "status": "SCRIPTS_CPU_VALIDATED_NOT_GPU_SUBMITTED",
+    "plan_path": "experiment/configs/experiment_suite.json",
+    "plan_sha256": "be12c2aa1f48699fe603be9f84ccc83e7b843b315bfa14495464813337e93cd0",
+    "planned_scope": {
+      "scientific_model_configs": 18,
+      "core_model_seed_configs": 12,
+      "fixed_seed17_ablation_configs": 6,
+      "training_stages": 34,
+      "model_benchmark_evaluations": 36,
+      "latency_runs": 15,
+      "latency_comparisons": 12,
+      "historical_training_acceptance_candidates": 5,
+      "historical_evaluation_acceptance_candidates": 4,
+      "conditional_work_not_claimed_complete": [
+        "mvbench_licensed_media_and_scope",
+        "h20_matched_hardware",
+        "alignment_equal_total_compute",
+        "recurrence_equal_compute",
+        "selective_refresh_budget_kernel_codesign"
+      ]
+    },
+    "planned_dag_tasks": 185,
+    "cpu_tests": {
+      "passed": 624,
+      "skipped": 80,
+      "exit_code": 0,
+      "output_sha256": "cda7bdbf62b4f80faa5ea07385227cc3d5ce3118c04b85844e7cc4343a5c7820"
+    },
+    "full_suite_gpu_submitted": false,
+    "checkpoint_cleanup_executed_this_preparation": false,
+    "actual_frame_variant_caches_created_this_preparation": false,
+    "remaining_admission": [
+      "bind_independent_historical_recovery_and_accepted_inputs",
+      "build_and_accept_actual_original_video_F4_F16_caches",
+      "fresh_two_root_capacity_and_source_CPU_admission",
+      "actual_GPU_startup_and_CUDA_gate"
+    ],
+    "conditional_research_work_completed": false
+  }
 }
