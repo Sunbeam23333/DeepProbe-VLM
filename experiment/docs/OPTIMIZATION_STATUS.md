@@ -50,6 +50,17 @@ parity across cache/head-slicing combinations in eager and SDPA modes. The local
 runtime was Python 3.12, Torch 2.13.0, Transformers 4.57.6 and Accelerate 1.15.0.
 These counts do not certify CUDA, DDP or pretrained-checkpoint performance.
 
+At **20:47 Beijing time on November 12**, the bounded engineering job for run
+`dp-cuda-pool-qa-20261112-a1` had been created and its Pod was **Pending**.
+The actual resource contract passed: stream/low, one node, eight GPUs, restart
+Never, no forced node. The scheduler could not yet satisfy that node's combined
+CPU/memory/GPU request. No startup receipt or CUDA result existed at this check.
+The package binds code commit `bec405e8802232cf4815f1c6dfea968318a12aa9`; it runs
+the numerical tests and separate BF16/FP32 microbenchmarks on one device if
+allocated. [Status evidence](../results/status.json) retains the dated
+observation and the repaired control-side submission failure. This is a queued
+test, not an accepted acceleration result or a background monitor.
+
 Run from `experiment/`, using a compatible existing CUDA-enabled PyTorch/Triton
 environment and a freshly admitted GPU allocation:
 

@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
-  "observed_at_utc": "2026-11-12T12:08:15.294152+00:00",
+  "observed_at_utc": "2026-11-12T12:47:41.331903+00:00",
   "display_timezone": "Asia/Shanghai",
-  "observation_note": "Dated exact Job/Pod and persisted-artifact observation on November 12, followed by one complete exact OSS-prefix listing. Earlier submissions, Pending states and independent failure-archive acceptance remain historical. No background monitor, new benchmark result or GPU admission is implied.",
+  "observation_note": "Training facts retain their dated November 12 exact Job/Pod and OSS observations. The later engineering QA observation records one Created/Pending CUDA test job and no GPU results. Earlier submissions, Pending states and failure-archive acceptance remain historical. This is not a background monitor or a new benchmark result.",
   "new_held_out_results": false,
   "runs": {
     "dp-p1-ouro-r4-f8-g4-s17-sft-a1": {
@@ -658,5 +658,52 @@
     "Additional seeds and declared ablations, controlled cost/latency measurements, and new-model evaluation."
   ],
   "active_run_id": null,
-  "active_run_observation": "The six project-matching jobs in the returned all-namespace PyTorchJob projection were terminal at 20:06 Beijing time on November 12. This does not certify global Pod or scheduler clearance for a new submission."
+  "active_run_observation": "The six project-matching jobs in the returned all-namespace PyTorchJob projection were terminal at 20:06 Beijing time on November 12. This does not certify global Pod or scheduler clearance for a new submission.",
+  "engineering_qa": {
+    "run_id": "dp-cuda-pool-qa-20261112-a1",
+    "scope": "synthetic CUDA weighted-pooling correctness and microbenchmark; no model training or quality evaluation",
+    "observed_at_utc": "2026-11-12T12:47:41.331903+00:00",
+    "source_commit": "bec405e8802232cf4815f1c6dfea968318a12aa9",
+    "job_status": "Created",
+    "pod_phase": "Pending",
+    "allocation": {
+      "cluster": "ali-gpu",
+      "queue": "stream",
+      "priority": "low",
+      "nodes": 1,
+      "gpus": 8,
+      "restart_policy": "Never",
+      "forced_node": false
+    },
+    "measured_devices_if_started": 1,
+    "startup_accepted": false,
+    "cuda_tests_executed": false,
+    "gpu_speedup_accepted": false,
+    "archive_accepted": false,
+    "scheduling_reason": "single-node combined CPU/memory/eight-GPU request not yet satisfiable",
+    "first_client_failure": "kubectl absent from control-side PATH; Popen failed before execution",
+    "submission_repair": "complete and exact-name reads confirmed absent; validated original YAML was created once using absolute kubectl; original failure and intent retained",
+    "new_training_or_heldout_result": false,
+    "evidence": {
+      "latest_exact_job_pod": {
+        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261112/post-submit-20261112T1247Z/READBACK.json",
+        "bytes": 9326,
+        "sha256": "b1717005f4ac0e1620aa55205df54b01dfdea013b7b4e1afc84bf69ab021010a",
+        "available_in_github": false
+      },
+      "submission_repair": {
+        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261112/root-submit-repair-v1/stdout.json",
+        "bytes": 4411,
+        "sha256": "2890b7fd25fbc300e91002a82c5415702c60de8fc6641ac295b3fc3e50e9c103",
+        "available_in_github": false
+      },
+      "root_package_review": {
+        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261112/ROOT_PACKAGE_REVIEW.json",
+        "bytes": 1624,
+        "sha256": "f0ef3cdb59583711895db8bad8118e1afb6df6fb9bd1a3d6ec8de411df3d5b0d",
+        "available_in_github": false
+      }
+    }
+  },
+  "training_observed_at_utc": "2026-11-12T12:08:15.294152+00:00"
 }

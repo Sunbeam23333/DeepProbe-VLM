@@ -1,6 +1,6 @@
 # Experiment status — 2026-11-12
 
-Latest exact Job/Pod observation: **November 12, 20:06 Beijing time
+Latest training Job/Pod observation: **November 12, 20:06 Beijing time
 (UTC+08:00)**. Smol alignment attempt 2 is **Failed**, with its failure transition
 at **November 11, 21:34:31**. Hardware startup passed and training reached
 317/718 updates in the captured log; checkpoint-300 is preserved but full
@@ -97,6 +97,27 @@ above the 99,000,000,000-byte limit, so the R4 recovery job remains gated.
 The sanitized [status record](status.json) preserves the dated R4 failure facts
 and records Smol separately, with hashes linking each claim to private evidence.
 No new benchmark results are claimed by these training and archive updates.
+
+## CUDA engineering validation
+
+The opt-in inference changes and recovery guard are committed as
+`bec405e8802232cf4815f1c6dfea968318a12aa9`. The public CPU suite passed 512 tests
+(80 skipped), and three separate pinned native Ouro CPU tests passed.
+
+The synthetic pooling QA job was created at **20:46:10 on November 12**.
+At **20:47:41**, its Pod was **Pending**: the combined single-node CPU, memory
+and eight-GPU request could not yet be placed. Its actual contract is
+stream/low, one node, eight GPUs and restart Never. No GPU startup, CUDA
+numerical result, microbenchmark or archive had been produced. It measures one
+device if allocated; no model/training speedup or held-out claim follows.
+
+The initial submission client failed before starting `kubectl` because its
+PATH lacked that executable. Complete and exact-name reads confirmed no job
+existed. A separate reviewed repair used the absolute executable and a single
+`create` of the original validated YAML, retaining the original intent and
+failure. The actual Job UID and resource contract were then read back.
+See [optimization scope](../docs/OPTIMIZATION_STATUS.md) and the evidence hashes
+in [status.json](status.json). These are dated facts, not a background monitor.
 
 ## Remaining work
 
