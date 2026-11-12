@@ -1,4 +1,10 @@
-# Experiment status — 2026-11-12
+# Experiment status — 2026-11-13
+
+Latest engineering QA observation: **November 13, 00:31:21 Beijing time
+(UTC+08:00)**. CUDA pooling QA attempt 2 was submitted once and remains
+**Created / Pod Pending**, with no allocated node or run directory. No CUDA
+test, performance result, training completion or new held-out result exists
+for this attempt. The full experiment suite has not been submitted.
 
 Latest training Job/Pod observation: **November 12, 20:06 Beijing time
 (UTC+08:00)**. Smol alignment attempt 2 is **Failed**, with its failure transition
@@ -100,11 +106,35 @@ No new benchmark results are claimed by these training and archive updates.
 
 ## CUDA engineering validation
 
-The opt-in inference changes and recovery guard are committed as
+The earlier opt-in inference changes and recovery guard were committed as
 `bec405e8802232cf4815f1c6dfea968318a12aa9`. The public CPU suite passed 512 tests
 (80 skipped), and three separate pinned native Ouro CPU tests passed.
 
-The synthetic pooling QA job
+Attempt 2 binds source commit `c03ffefa485682d2c737124c07b83473442cf6f4`.
+Its package/control CPU review passed **18 tests, with one skipped**; the
+skipped GPU test is not CUDA acceptance. CPU admission, independent admission
+review, an exact server-side dry-run and independent submission review passed
+before/after the one-shot create as recorded in their individual receipts.
+
+The new exact job
+`jinhaopeng-dpvlm-cuda-pool-qa-20261113-a2-n1-772f8`, UID
+`ca956db5-7166-4452-93b8-d89fecd6cc33`, was created at **00:26:08 on November
+13** (UTC November 12, 16:26:08). The **00:31:21** readback still shows a
+Pending Pod, no assigned node and no run directory. The scheduler cannot yet
+satisfy the combined CPU, memory and eight-GPU request on one permitted node.
+The actual contract is stream/low, one node, eight GPUs, restart Never and no
+forced node. It requires an eight-rank BF16/NCCL startup check before the
+one-device pooling numerical tests and BF16/FP32 microbenchmarks.
+
+The submission-side small-QA capacity projection was **86,352,050,339 bytes**,
+including the 1 GB QA and 7 GB existing media/CPU reserves, below the 99 GB
+limit. This does not admit a training recovery or the full experiment suite.
+There is no completed CUDA result or accepted speedup. A client exception
+must be reconciled against this exact job, not handled by blind resubmission.
+
+### Attempt 1 retained as failed history
+
+The earlier synthetic pooling QA job
 `jinhaopeng-dpvlm-cuda-pool-qa-20261112-a1-n1-bb1e7` was created at **20:46:10
 on November 12**, became Running at **20:55:46**, and Failed at **20:56:31**.
 Exact Pod-UID events confirm **external preemption at 20:56:29**, followed by
@@ -115,7 +145,10 @@ The **21:15** readback found the original Pod absent, so its container exit code
 is unavailable. Startup checks were retained, but GPU startup acceptance,
 CUDA numerical tests and microbenchmark results were not produced. The exact
 archive prefix contained **0 objects / 0 bytes**. No retry, archive or deletion
-was performed in this read-only check. No CUDA speedup or held-out claim follows.
+was performed in that dated read-only check. Its full record remains under
+`engineering_qa_history` in [status.json](status.json); retaining that history
+does not mean its OSS archive was completed. No CUDA speedup or held-out claim
+follows from attempt 1.
 
 The initial submission client failed before starting `kubectl` because its
 PATH lacked that executable. Complete and exact-name reads confirmed no job
@@ -123,7 +156,33 @@ existed. A separate reviewed repair used the absolute executable and a single
 `create` of the original validated YAML, retaining the original intent and
 failure. The actual Job UID and resource contract were then read back.
 See [optimization scope](../docs/OPTIMIZATION_STATUS.md) and the evidence hashes
-in [status.json](status.json). These are dated facts, not a background monitor.
+in [status.json](status.json). That record now separately binds attempt 2's
+package, CPU admission, independent reviews, submission intent/outcome and exact
+readbacks by file path, byte count and SHA256. Raw cluster responses and other
+workload identities are excluded from the public summary. These are dated
+facts, not a background monitor.
+
+## November 13 recovery-capacity observation
+
+A separate read-only snapshot completed at **00:15:52 Beijing time** measured
+**78,345,490,305 bytes** across the two accounted roots. The original R4 and
+Smol checkpoint state files are present, but exact numerical recovery remains
+independently unaccepted. This snapshot did not perform new full GET/SHA
+verification of their large checkpoint payloads or complete CPU admission.
+
+Preserving the old runs and including the new suite's checkpoint copy, current
+conservative projections are **155,547,134,605 bytes for R4** and
+**114,272,309,701 bytes for Smol**, both above the strict 99 GB limit. Additional
+initializer/source/media requirements may increase those figures; future
+cleanup is not credited. The older November 9/11 capacity observations remain
+intact. Exact facts and the receipt pin are appended to
+`recovery_capacity_observations` in [status.json](status.json).
+
+The complete suite's scripts cover 18 model configurations, 34 training stages,
+36 evaluations, 15 latency runs and 12 comparisons. **The suite remains
+unsubmitted** while actual F4/F16 original-video caches, independent historical
+recovery bindings and fresh storage/source admission are outstanding. The
+separate small QA submission does not change those gates.
 
 ## Remaining work
 

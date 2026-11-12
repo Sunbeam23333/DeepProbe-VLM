@@ -1,4 +1,4 @@
-# Training and inference optimization — 2026-11-12
+# Training and inference optimization — 2026-11-13
 
 The code audit identified avoidable inference work and a missing recovery guard.
 This change implements bounded improvements and the measurement tools needed to
@@ -50,16 +50,34 @@ parity across cache/head-slicing combinations in eager and SDPA modes. The local
 runtime was Python 3.12, Torch 2.13.0, Transformers 4.57.6 and Accelerate 1.15.0.
 These counts do not certify CUDA, DDP or pretrained-checkpoint performance.
 
-At **20:47 Beijing time on November 12**, the bounded engineering job for run
-`dp-cuda-pool-qa-20261112-a1` had been created and its Pod was **Pending**.
-The actual resource contract passed: stream/low, one node, eight GPUs, restart
-Never, no forced node. The scheduler could not yet satisfy that node's combined
-CPU/memory/GPU request. No startup receipt or CUDA result existed at this check.
-The package binds code commit `bec405e8802232cf4815f1c6dfea968318a12aa9`; it runs
-the numerical tests and separate BF16/FP32 microbenchmarks on one device if
-allocated. [Status evidence](../results/status.json) retains the dated
-observation and the repaired control-side submission failure. This is a queued
-test, not an accepted acceleration result or a background monitor.
+The earlier bounded engineering run `dp-cuda-pool-qa-20261112-a1`, binding
+commit `bec405e8802232cf4815f1c6dfea968318a12aa9`, progressed from the retained
+**20:47 Pending** observation to Running at **20:55:46**, then failed at
+**20:56:31 on November 12**. Exact Pod-UID events establish external preemption
+at **20:56:29**. It produced no GPU startup acceptance, completed CUDA numerical
+test or microbenchmark result. The **21:15** observation found its original Pod
+absent and its exact archive prefix empty. This complete failed-attempt history
+is retained; it is not an accepted OSS archive or a CUDA performance result.
+
+A separately identified attempt 2 binds source commit
+`c03ffefa485682d2c737124c07b83473442cf6f4`. Its package/control CPU review passed
+**18 tests, one skipped**, followed by CPU admission, independent review and
+the exact submission dry-run. The job
+`jinhaopeng-dpvlm-cuda-pool-qa-20261113-a2-n1-772f8`, UID
+`ca956db5-7166-4452-93b8-d89fecd6cc33`, was created once at **00:26:08 Beijing
+time on November 13** (UTC November 12, 16:26:08). Independent submission
+review checked the intent/create/UID and actual resource-contract linkage.
+
+At **00:31:21 Beijing time**, the exact attempt-2 Pod remained **Pending**,
+with no assigned node or run directory. The scheduler could not satisfy the
+combined CPU/memory/eight-GPU request on one permitted node. Its contract is
+stream/low, one node, eight GPUs, restart Never and no forced node. Eight-rank
+BF16/NCCL startup acceptance is required before the numerical tests and
+separate one-device BF16/FP32 microbenchmarks. None of those GPU results exists
+at this observation. [Status evidence](../results/status.json) binds both
+attempts and the individual admission/submission/readback receipts by file
+path, bytes and SHA256. These are dated observations, not a background monitor
+or an accepted acceleration result.
 
 Run from `experiment/`, using a compatible existing CUDA-enabled PyTorch/Triton
 environment and a freshly admitted GPU allocation:
@@ -89,6 +107,15 @@ held-out quality under a separately frozen protocol. A fast pooling kernel may
 have little effect if recurrent decode or media preparation dominates.
 
 ## Remaining work and thesis scope
+
+The complete serial suite is scripted but **has not been submitted**. Real
+F4/F16 caches sampled from original benchmark videos, independently accepted
+R4/Smol recovery inputs and fresh storage/source admission remain outstanding.
+The November 13 **00:15:52** read-only capacity snapshot measured
+78,345,490,305 bytes in the two accounted roots; conservative new-copy recovery
+projections remain above the 99 GB limit. Small-QA admission is separate from
+these training gates. See [suite operating runbook](EXPERIMENT_SUITE.md) and
+the separately dated capacity evidence in [status.json](../results/status.json).
 
 The paper's selective visual-state refresh, learned compute budget, token
 compaction and algorithm/kernel co-design remain research hypotheses. An
