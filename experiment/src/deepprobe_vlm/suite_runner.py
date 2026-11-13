@@ -27,6 +27,7 @@ import sys
 import time
 
 from .declared_training import staging_bytes
+from .distributed_launch import single_node_torchrun
 
 
 ALLOCATION = {"cluster": "ali-gpu", "queue": "stream", "priority": "low",
@@ -679,8 +680,7 @@ def build_training_argv(python, *, config, train_manifest, eval_manifest, media_
     executable_path(python)
     for path in paths.values():
         safe(path)
-    argv = [str(python), "-B", "-m", "torch.distributed.run", "--standalone", "--nnodes=1",
-            "--nproc_per_node=8", "--max_restarts=0", "-m",
+    argv = single_node_torchrun(python) + ["-m",
             "deepprobe_vlm.train_declared" if declared else "deepprobe_vlm.train"]
     for flag, path in paths.items():
         argv.extend(["--" + flag, str(path)])

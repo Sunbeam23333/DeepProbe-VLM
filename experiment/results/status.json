@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
-  "observed_at_utc": "2026-11-12T16:31:21.884513+00:00",
+  "observed_at_utc": "2026-11-13T03:54:54.201624+00:00",
   "display_timezone": "Asia/Shanghai",
-  "observation_note": "Latest engineering QA observation is November 13 Beijing time: attempt 2 was submitted once and remains Created/Pod Pending, with no allocated node or run outputs. Training facts and attempt-1 engineering failure retain their earlier dated observations. No new training, held-out quality or CUDA performance result is claimed; this is not a background monitor.",
+  "observation_note": "November 13 exact readbacks confirm engineering QA attempt 2 failed during rendezvous hostname resolution before all-rank preflight/CUDA acceptance; its complete failure archive is independently accepted. R4 and Smol training/checkpoint/archive observations are unchanged. The complete project inventory is terminal. Earlier dated Pending, failure, archival and capacity facts are retained. No new GPU performance, training or held-out quality result is claimed.",
   "new_held_out_results": false,
   "runs": {
     "dp-p1-ouro-r4-f8-g4-s17-sft-a1": {
@@ -657,19 +657,19 @@
     "Complete R4 checkpoint-600 recovery checks and capacity admission before its remaining 118 updates.",
     "Additional seeds and declared ablations, controlled cost/latency measurements, and new-model evaluation."
   ],
-  "active_run_id": "dp-cuda-pool-qa-20261113-a2",
-  "active_run_observation": "Only the separately identified engineering QA attempt 2 is reported as active here: exact Job Created and Pod Pending at 2026-11-12T16:31:21.884513+00:00. No node or run directory was observed. Prior training-job observations remain dated history and do not establish later scheduler clearance.",
+  "active_run_id": null,
+  "active_run_observation": "A complete all-namespace framed project Job/Pod inventory at 2026-11-13T03:54:54.201624+00:00 found 8 project Jobs and 4 project Pods, all terminal; no active, Pending or unknown project workload was observed. This is a dated inventory, not scheduler capacity or new-submission admission.",
   "engineering_qa": {
     "run_id": "dp-cuda-pool-qa-20261113-a2",
     "scope": "synthetic CUDA weighted-pooling correctness and microbenchmark; no model training or quality evaluation",
-    "observed_at_utc": "2026-11-12T16:31:21.884513+00:00",
+    "observed_at_utc": "2026-11-13T03:50:24.885942+00:00",
     "source_commit": "c03ffefa485682d2c737124c07b83473442cf6f4",
     "submission_status": "SUBMITTED_EXACT_JOB_OBSERVED",
     "submission_outcome_confirmed": true,
     "submission_client_exit_code": 0,
     "job_created_at_utc": "2026-11-12T16:26:08Z",
-    "job_status": "Created",
-    "pod_phase": "Pending",
+    "job_status": "Failed",
+    "pod_phase": "Failed",
     "exact_job": "jinhaopeng-dpvlm-cuda-pool-qa-20261113-a2-n1-772f8",
     "job_uid": "ca956db5-7166-4452-93b8-d89fecd6cc33",
     "pod_uid": "59084550-b687-468b-95d2-8e83e3633abe",
@@ -682,8 +682,8 @@
       "restart_policy": "Never",
       "forced_node": false
     },
-    "allocated_node_observed": false,
-    "run_directory_present": false,
+    "allocated_node_observed": true,
+    "run_directory_present": true,
     "cpu_admission_passed": true,
     "independent_admission_review_passed": true,
     "server_dry_run_actual_contract_verified": true,
@@ -698,11 +698,11 @@
     "gpu_speedup_accepted": false,
     "cuda_result": null,
     "new_training_or_heldout_result": false,
-    "archive_accepted": false,
+    "archive_accepted": true,
     "exact_archive_prefix": "oss://ss-devbox-stream/jinhaopeng/Paper/DeepProbe-VLM/runs/dp-cuda-pool-qa-20261113-a2/",
     "exact_archive_prefix_empty_at_cpu_admission": true,
     "archive_admission_observed_at_utc": "2026-11-12T16:20:52.141185+00:00",
-    "scheduling_reason": "The scheduler could not satisfy the combined CPU, memory and eight-GPU request on one permitted node; PodScheduled=False/Unschedulable.",
+    "scheduling_reason": null,
     "submission_capacity": {
       "utc": "2026-11-12T16:25:37.090363+00:00",
       "combined_project_bytes": 78352050339,
@@ -783,6 +783,78 @@
         "bytes": 48113,
         "sha256": "3893e457a339be61a07c0324772e7976c01384c6b25e27ebdf379983c7397d8b",
         "available_in_github": false
+      },
+      "latest_exact_failure": {
+        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261113T035022741628Z/READBACK.json",
+        "bytes": 41720,
+        "sha256": "b351da6a85c59633a25952ed899832b24ee3e67d607fc2450d0390ba12279dd6",
+        "available_in_github": false
+      },
+      "failure_receipt": {
+        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261113T035022741628Z/run/FAILED.json",
+        "bytes": 168,
+        "sha256": "9f9bbc5f0a23ce61f9924d71ef15b25e14c4ced5d9b7babb91bee79759d86552",
+        "available_in_github": false
+      },
+      "exit_receipt": {
+        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261113T035022741628Z/run/EXIT.json",
+        "bytes": 161,
+        "sha256": "79713f97d7fa079537eff518c900166e5a4b13271936c49b66357b457061455f",
+        "available_in_github": false
+      },
+      "gpu_identity_command": {
+        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261113T035022741628Z/run/gpu_identity.json",
+        "bytes": 757,
+        "sha256": "652bba43166636a60e7e8662e9da027c36db5239bc9708ef79ec42c0e86ad840",
+        "available_in_github": false
+      },
+      "gpu_identity_result": {
+        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261113T035022741628Z/run/gpu_identity.stdout",
+        "bytes": 2965,
+        "sha256": "a12b1bc4a60513af886daf56a551af2f35430e169f18b67b52c0272580165862",
+        "available_in_github": false
+      },
+      "all_rank_preflight_command": {
+        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261113T035022741628Z/run/all_rank_preflight.json",
+        "bytes": 1273,
+        "sha256": "6f104cf876ad3604a45c534d50299cf5202a386105425e805d38e40ce8e585f7",
+        "available_in_github": false
+      },
+      "all_rank_preflight_stderr": {
+        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261113T035022741628Z/run/all_rank_preflight.stderr",
+        "bytes": 1968,
+        "sha256": "77e46deae1862d78224af549ec79bc8f97d54cf1efa42bdfbac5a4f4419974d4",
+        "available_in_github": false
+      },
+      "automatic_archive_final": {
+        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261113T035022741628Z/run/ARCHIVE_FINAL.json",
+        "bytes": 529,
+        "sha256": "babf4214ee54d3cce1b83597ebd17d53fdf263e6c1e333abfc0021a1dff56a0a",
+        "available_in_github": false
+      },
+      "automatic_archive_manifest": {
+        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261113T035022741628Z/run/ARCHIVE_MANIFEST.json",
+        "bytes": 3955,
+        "sha256": "f000da13fb6af864893b7531c99f2e53f63351d071d2ea2fdf08711cc62a6d45",
+        "available_in_github": false
+      },
+      "automatic_archive_verified": {
+        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261113T035022741628Z/run/ARCHIVE_VERIFIED.json",
+        "bytes": 7676,
+        "sha256": "fc5c5d1fef9da62e2ee2286ea07611f163d802b75ec28d28b9152b3a2d7faf0a",
+        "available_in_github": false
+      },
+      "independent_failure_archive_acceptance": {
+        "source_path": "experiment/docs/operations/evidence/progress-devbox-20261113/qa-archive-independent/stdout.json",
+        "bytes": 26040,
+        "sha256": "af74953ed1ccc15dd5cc439ba010164dec1e12aca69f969afb91cf6bbc8468cc",
+        "available_in_github": false
+      },
+      "rendezvous_failure_diagnosis": {
+        "source_path": "experiment/docs/operations/evidence/progress-devbox-20261113/qa-diagnosis/QA_A2_RENDEZVOUS_DIAGNOSIS.json",
+        "bytes": 19278,
+        "sha256": "6683fedaebf5a33576024a70ff3f745ff7acc3fbe95dd12cbc87cf9910a20da3",
+        "available_in_github": false
       }
     },
     "historical_observations": [
@@ -801,10 +873,56 @@
         "allocated_node_observed": false,
         "run_directory_present": false,
         "evidence_key": "historical_002759_pending_readback"
+      },
+      {
+        "observed_at_utc": "2026-11-12T16:31:21.884513+00:00",
+        "job_status": "Created",
+        "pod_phase": "Pending",
+        "allocated_node_observed": false,
+        "run_directory_present": false,
+        "scheduling_reason": "The scheduler could not satisfy the combined CPU, memory and eight-GPU request on one permitted node; PodScheduled=False/Unschedulable.",
+        "startup_accepted": false,
+        "archive_accepted": false,
+        "evidence_key": "latest_exact_pending_readback",
+        "note": "Preserved Pending observation, superseded by the exact terminal Job/Pod and failure-archive readback."
       }
-    ]
+    ],
+    "original_pod_present": true,
+    "running_at_utc": "2026-11-12T17:11:09Z",
+    "failure_at_utc": "2026-11-12T17:14:39Z",
+    "container_started_at_utc": "2026-11-12T17:11:08Z",
+    "container_finished_at_utc": "2026-11-12T17:14:37Z",
+    "container_exit_code": 1,
+    "restart_count": 0,
+    "gpu_identity_passed": true,
+    "actual_gpu_count": 8,
+    "actual_gpu_model": "NVIDIA L20D",
+    "device_compute_capability": [
+      10,
+      3
+    ],
+    "minimum_device_memory_gib": 267.68890380859375,
+    "eight_rank_preflight_passed": false,
+    "failure_phase": "all_rank_preflight_rendezvous_before_CUDA_QA",
+    "failure_reason": "rendezvous_hostname_resolution_errors_followed_by_120_second_timeout",
+    "failure_interpretation": "The --standalone torchrun preflight repeatedly failed to resolve its rendezvous hostname, then reached its 120-second command timeout. GPU identity acceptance passed first; no all-rank BF16/NCCL acceptance or CUDA correctness/microbenchmark result was produced.",
+    "preflight_timeout_seconds": 120,
+    "preflight_started_at_utc": "2026-11-12T17:12:23.407504+00:00",
+    "preflight_finished_at_utc": "2026-11-12T17:14:24.902712+00:00",
+    "retry_submitted_in_this_check": false,
+    "archive_status": "independent_failure_archive_accepted",
+    "archive_object_count": 26,
+    "archive_bytes": 2172940,
+    "archive_payload_count": 24,
+    "archive_payload_bytes": 2161309,
+    "archive_observed_at_utc": "2026-11-13T03:53:04.985552+00:00",
+    "archive_all_objects_full_get_sha256_verified": true,
+    "archive_local_sources_sha256_matched": true,
+    "archive_scope": "synthetic startup/failure evidence; no model checkpoint or accepted CUDA performance result",
+    "original_run_preserved": true,
+    "files_deleted": false
   },
-  "training_observed_at_utc": "2026-11-12T12:08:15.294152+00:00",
+  "training_observed_at_utc": "2026-11-13T03:51:37.639947+00:00",
   "serial_suite_preparation": {
     "status": "SCRIPTS_CPU_VALIDATED_NOT_GPU_SUBMITTED",
     "plan_path": "experiment/configs/experiment_suite.json",
@@ -845,7 +963,7 @@
     ],
     "conditional_research_work_completed": false,
     "latest_gate_observed_at_utc": "2026-11-12T16:15:52.557667+00:00",
-    "latest_gate_note": "Full suite remains unsubmitted. Real original-video F4/F16 caches, independent historical recovery inputs and current two-root storage admission are still outstanding. Small QA admission does not admit training or the complete suite."
+    "latest_gate_note": "Full suite remains unsubmitted. The current QA attempt failed before all-rank/CUDA acceptance. Actual F4/F16 original-video caches, independent historical recovery bindings and fresh two-root storage/source admission remain outstanding. Failure archive acceptance does not admit training or the complete suite."
   },
   "engineering_qa_history": [
     {
@@ -930,6 +1048,11 @@
       "observed_at_utc": "2026-11-12T12:08:15.294152+00:00",
       "active_run_id": null,
       "observation": "The six project-matching jobs in the returned all-namespace PyTorchJob projection were terminal at 20:06 Beijing time on November 12. This does not certify global Pod or scheduler clearance for a new submission."
+    },
+    {
+      "observed_at_utc": "2026-11-12T16:31:21.884513+00:00",
+      "active_run_id": "dp-cuda-pool-qa-20261113-a2",
+      "observation": "Only the separately identified engineering QA attempt 2 is reported as active here: exact Job Created and Pod Pending at 2026-11-12T16:31:21.884513+00:00. No node or run directory was observed. Prior training-job observations remain dated history and do not establish later scheduler clearance."
     }
   ],
   "recovery_capacity_observations": [
@@ -983,5 +1106,223 @@
         "available_in_github": false
       }
     }
-  ]
+  ],
+  "project_workload_observation": {
+    "job_count": 8,
+    "pod_count": 4,
+    "active_jobs_including_pending_or_unknown": 0,
+    "active_pods_including_pending_or_unknown": 0,
+    "framing_complete": true,
+    "continuation_empty": true,
+    "all_project_workloads_terminal": true,
+    "scope": "One complete all-namespace framed projection for PyTorchJobs and Pods; project selection by dpvlm/deepprobe/dp-dev-format in name or owner; active includes Pending, Running and unknown/nonterminal. No scheduler submission or free-capacity admission.",
+    "observed_at_utc": "2026-11-13T03:54:54.201624+00:00",
+    "evidence": {
+      "source_path": "experiment/docs/operations/evidence/progress-devbox-20261113/training-readonly-20261113T035032Z/PROJECT_JOB_POD_INVENTORY.json",
+      "bytes": 7726,
+      "sha256": "6ea6e203edd383f1c04703511ceb6d9cc468bbcc2c13dced46b42df1fec249bb",
+      "available_in_github": false
+    }
+  },
+  "training_progress_observations": [
+    {
+      "status": "CURRENT_TRAINING_PROGRESS_VERIFIED_UNCHANGED",
+      "generated_utc": "2026-11-13T03:55:37.858083+00:00",
+      "observed_remote_utc": "2026-11-13T03:51:21.839941+00:00",
+      "observed_oss_utc": "2026-11-13T03:51:37.639947+00:00",
+      "runs": {
+        "dp-p1-ouro-r4-f8-g4-s17-sft-a1": {
+          "exact_job_uid": "a0aa5024-b1e4-49a1-8321-21eb593475a8",
+          "original_uid_matches": true,
+          "job_status": "Failed",
+          "job_failure_utc": "2026-11-09T09:04:27Z",
+          "original_pod_currently_not_found": true,
+          "original_container_exit_status_recovered": false,
+          "highest_log_optimizer_step": 602,
+          "latest_persisted_checkpoint": "checkpoint-600",
+          "persisted_optimizer_step": 600,
+          "target_optimizer_steps": 718,
+          "remaining_updates_from_checkpoint": 118,
+          "checkpoint_file_count": 31,
+          "checkpoint_bytes": 22317153372,
+          "checkpoint_stat_inventory_names_sizes_unchanged": true,
+          "checkpoint_trainer_state_sha256": "7afea7498a76f2274ddb7f24b9de2b2de10c55e62477ea663b5dd180505e068e",
+          "checkpoint_trainer_state_unchanged": true,
+          "checkpoint_large_payload_sha256_reverified": false,
+          "training_completion_observed": false,
+          "exact_oss_complete_listing": true,
+          "exact_oss_count": 147,
+          "exact_oss_bytes": 23234938760,
+          "exact_oss_keys_sizes_etags_unchanged": true,
+          "delta_from_prior": "No new optimizer progress, checkpoint, final/completion receipt, or archive object identity change observed."
+        },
+        "dp-p1-smollm2-f8-g4-s29-alignment-a2": {
+          "exact_job_uid": "244826a2-7720-4d3c-9724-b76e3497855c",
+          "original_uid_matches": true,
+          "job_status": "Failed",
+          "job_failure_utc": "2026-11-11T13:34:31Z",
+          "original_pod_currently_not_found": true,
+          "original_container_exit_status_recovered": false,
+          "highest_log_optimizer_step": 317,
+          "latest_persisted_checkpoint": "checkpoint-300",
+          "persisted_optimizer_step": 300,
+          "target_optimizer_steps": 718,
+          "remaining_updates_from_checkpoint": 418,
+          "checkpoint_file_count": 29,
+          "checkpoint_bytes": 8642273132,
+          "checkpoint_stat_inventory_names_sizes_unchanged": true,
+          "checkpoint_trainer_state_sha256": "94321c09b3c4fcbcc9efd38262e4739f4f4388bdc758bb0a423d2ac79fc1c869",
+          "checkpoint_trainer_state_unchanged": true,
+          "checkpoint_large_payload_sha256_reverified": false,
+          "training_completion_observed": false,
+          "exact_oss_complete_listing": true,
+          "exact_oss_count": 0,
+          "exact_oss_bytes": 0,
+          "exact_oss_keys_sizes_etags_unchanged": true,
+          "delta_from_prior": "No new optimizer progress, checkpoint, final/completion receipt, or archive object identity change observed."
+        }
+      },
+      "new_recovery_submission_evidence_observed": false,
+      "capacity_rescanned": false,
+      "large_payloads_downloaded_or_rehashed": false,
+      "gpu_submitted": false,
+      "old_runs_or_frozen_sources_changed": false,
+      "files_deleted": false,
+      "evidence": {
+        "source_path": "experiment/docs/operations/evidence/progress-devbox-20261113/training-readonly-20261113T035032Z/TRAINING_PROGRESS_FACTS.json",
+        "bytes": 8249,
+        "sha256": "27d3883941171d592bd8df497c5f1f54cde8640d0ca8c32ec884a54567498ac6",
+        "available_in_github": false
+      }
+    }
+  ],
+  "public_launcher_repair": {
+    "status": "PUBLIC_LOOPBACK_REPAIR_CPU_VALIDATED_WITH_RECORDED_LEGACY_CHECK_FAILURE",
+    "validated_at_utc": "2026-11-13T04:03:48.913173+00:00",
+    "scope": "Future public single-node training, startup preflight and benchmark-evaluation entrypoints only.",
+    "production_launch_site_count": 5,
+    "production_launch_sites": [
+      {
+        "path": "experiment/src/deepprobe_vlm/suite_runner.py",
+        "site": "build_training_argv"
+      },
+      {
+        "path": "experiment/src/deepprobe_vlm/suite_actions.py",
+        "site": "Actions.startup"
+      },
+      {
+        "path": "experiment/src/deepprobe_vlm/suite_actions.py",
+        "site": "Actions.evaluate"
+      },
+      {
+        "path": "experiment/scripts/operations/run_benchmark_eval.py",
+        "site": "main model loop"
+      },
+      {
+        "path": "experiment/scripts/operations/run_tempcompass_eval.py",
+        "site": "main model loop"
+      }
+    ],
+    "launch_contract": {
+      "nnodes": 1,
+      "node_rank": 0,
+      "nproc_per_node": 8,
+      "max_restarts": 0,
+      "rdzv_backend": "c10d",
+      "rdzv_endpoint": "127.0.0.1:0",
+      "local_addr": "127.0.0.1",
+      "rdzv_conf": "is_host=true",
+      "rdzv_id": "new UUID at runtime command construction, absent from persistent plan/binding",
+      "child_environment_overrides": {
+        "PET_STANDALONE": "0",
+        "TORCH_DISABLE_SHARE_RDZV_TCP_STORE": "0"
+      },
+      "caller_global_environment_mutated": false,
+      "other_environment_settings_preserved": true,
+      "existing_timeouts_and_process_group_lifecycle_preserved": true
+    },
+    "changed_source_and_test_pins": {
+      "experiment/src/deepprobe_vlm/distributed_launch.py": "878a5db55c0cf23fa5cf853d2e4283670213cd9fd210a3731410d88e899a3431",
+      "experiment/src/deepprobe_vlm/suite_runner.py": "4fd7ff00f6ad0034a5ef677c64d997b8881e63a105abb5bc41abdac013bfa180",
+      "experiment/src/deepprobe_vlm/suite_actions.py": "c5fdc21f64726f4217758084b8fbbaabbdd1512edec4af9b3174e363dab0f0f3",
+      "experiment/scripts/operations/run_benchmark_eval.py": "02825bce7fab0aeb69f36cd996de46de2409a66016a0c68516b1c94008b05172",
+      "experiment/scripts/operations/run_tempcompass_eval.py": "312ef83a1e55fe91885ea127a23ea1aeeed7ae0cbe4ab953e167da0e7e52bdca",
+      "experiment/tests/test_distributed_launch.py": "c0728d428b9df62d1ebc7ce9e028472584649a0b52caba0102e6799f737cfec6",
+      "experiment/tests/test_suite_bindings.py": "c78c6fae9f3b33176e59e70361bbc3589b76bb8a8b0be0071e57118971406515"
+    },
+    "source_hashes_verified_before_and_after_both_test_runs": true,
+    "public_targeted_regression": {
+      "passed": 48,
+      "skipped": 10,
+      "exit_code": 0,
+      "skip_reason": "Existing private_evidence tests are opt-in by repository policy.",
+      "scope": "Targeted public launcher, suite binding/runner/action and benchmark-entry tests; not the full repository suite."
+    },
+    "additional_private_targeted_regression": {
+      "passed": 57,
+      "failed": 1,
+      "exit_code": 1,
+      "failure": "TempCompassEvalTests.test_original_model_and_generation_sources_equal_frozen_videomme",
+      "failure_detail": "The legacy test compares the live scientific source against the 2026-10-21 frozen Video-MME plan; modeling.py is the first mismatch. modeling.py and evaluate.py had already diverged in baseline commit 19c4c2621e639b7bc16847f2c522d90376f34b2e. All four tested scientific files remain byte-identical to that baseline.",
+      "scientific_source_baseline_commit": "19c4c2621e639b7bc16847f2c522d90376f34b2e",
+      "all_four_scientific_sources_unchanged_from_baseline": true,
+      "legacy_difference_predates_this_repair": true,
+      "old_test_or_frozen_package_modified": false
+    },
+    "real_cpu_gloo_regression": {
+      "torch_version": "2.13.0",
+      "host_platform": "Darwin",
+      "concurrent_groups": 2,
+      "ranks_per_group": 2,
+      "deliberately_unresolvable_hostname": true,
+      "inherited_conflicting_flags_overridden_in_child": true,
+      "both_groups_all_reduce_accepted": true,
+      "distinct_simultaneously_live_OS_allocated_ports": true
+    },
+    "remote_torch_version_not_tested_by_this_repair": "2.10.0+cu130",
+    "old_qa_attempt2_unchanged": true,
+    "new_gpu_job_submitted": false,
+    "new_eight_rank_BF16_NCCL_accepted": false,
+    "cuda_correctness_or_performance_accepted": false,
+    "full_repository_suite_pass_claimed_for_this_repair": false,
+    "remaining_gpu_admission": "A separately identified attempt needs a new reviewed source/package, fresh storage/input/project-workload admission and actual GPU startup/CUDA validation.",
+    "evidence": {
+      "final_validation": {
+        "source_path": "experiment/docs/operations/evidence/progress-devbox-20261113/qa-diagnosis/PUBLIC_LOOPBACK_REPAIR_VALIDATION.json",
+        "bytes": 7862,
+        "sha256": "fa9d68abdac267358ba6cb8bff0451da24bdf8929deaeeac35b9c8e7260e0f1e",
+        "available_in_github": false
+      },
+      "public_test_client": {
+        "source_path": "experiment/docs/operations/evidence/progress-devbox-20261113/qa-diagnosis/LOOPBACK_PUBLIC_TESTS_V3_CLIENT.json",
+        "bytes": 1941,
+        "sha256": "7a5e939d52f463cb7c38492f1d6ed9c37cc629005ab1f541438122933eec268d",
+        "available_in_github": false
+      },
+      "public_test_output": {
+        "source_path": "experiment/docs/operations/evidence/progress-devbox-20261113/qa-diagnosis/LOOPBACK_PUBLIC_TESTS_V3.stdout",
+        "bytes": 112,
+        "sha256": "97cac4a072162b1261a62c2332b5aa2b7fbbcd5e17b019dd8a11a5a08d0e2437",
+        "available_in_github": false
+      },
+      "additional_private_test_client": {
+        "source_path": "experiment/docs/operations/evidence/progress-devbox-20261113/qa-diagnosis/LOOPBACK_TARGETED_TESTS_V2_CLIENT.json",
+        "bytes": 1971,
+        "sha256": "081f7f99b7f2a749e5514575feb766b7fca3beb82eae053ab43b078cc2d44044",
+        "available_in_github": false
+      },
+      "additional_private_test_output": {
+        "source_path": "experiment/docs/operations/evidence/progress-devbox-20261113/qa-diagnosis/LOOPBACK_TARGETED_TESTS_V2.stdout",
+        "bytes": 1548,
+        "sha256": "b66ae8241332e5d434fa64341b08f72d81bdb082cf0923a700d00516924b273c",
+        "available_in_github": false
+      },
+      "scientific_source_baseline_proof": {
+        "source_path": "experiment/docs/operations/evidence/progress-devbox-20261113/qa-diagnosis/SCIENTIFIC_SOURCE_UNCHANGED_FROM_BASELINE.json",
+        "bytes": 3353,
+        "sha256": "97699484bff2f869af6d27dc5f1635cd7d08026bd245073a58db435c78fc10ce",
+        "available_in_github": false
+      }
+    }
+  }
 }

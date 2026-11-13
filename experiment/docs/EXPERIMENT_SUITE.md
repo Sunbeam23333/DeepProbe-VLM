@@ -71,7 +71,20 @@ declared test does not silently remove it from the scope.
 
 ## Allocation and storage contract
 
-Use `haopengjin2ali` for the authorized remote host. The suite allocation is
+The November 13 human authorization permits both `haopengjin2ali` and
+`haopengjin3ali`; use an authorized alias whose connection works. The dated
+November 13 connectivity check found `haopengjin2ali` reachable and
+`haopengjin3ali` refusing connections. This does not change historical host
+facts or authorize editing `~/.ssh/config`; host addresses remain private.
+
+The existing private frozen QA package restricts its admit/submit entry points
+to `haopengjin2ali`. That package must not be edited in place or its checks
+bypassed to use another alias. A newly prepared package moving to another
+authorized host must freshly verify the shared paths, installed tools and
+admission bindings. This restriction belongs to the old private QA package,
+not a blanket host-name guard in the public suite source.
+
+The suite allocation is
 `ali-gpu` / `stream`, priority `low`, one Master node, eight GPUs, and
 `restartPolicy: Never`. At most one project workload may exist in an active
 state, including Pending Jobs, orphan Pods and terminating workloads. The

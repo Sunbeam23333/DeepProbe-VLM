@@ -1,18 +1,29 @@
 # Experiment status — 2026-11-13
 
-Latest engineering QA observation: **November 13, 00:31:21 Beijing time
-(UTC+08:00)**. CUDA pooling QA attempt 2 was submitted once and remains
-**Created / Pod Pending**, with no allocated node or run directory. No CUDA
-test, performance result, training completion or new held-out result exists
-for this attempt. The full experiment suite has not been submitted.
+Latest engineering QA readback: **November 13, 11:50:24 Beijing time
+(UTC+08:00)**. CUDA pooling QA attempt 2 is **Failed** after an eight-GPU
+allocation. GPU identity passed, but the all-rank preflight timed out while
+resolving its rendezvous hostname. No accepted BF16/NCCL preflight, CUDA
+correctness test or microbenchmark result was produced. Its complete failure
+archive passed independent readback at **11:53:04**.
 
-Latest training Job/Pod observation: **November 12, 20:06 Beijing time
-(UTC+08:00)**. Smol alignment attempt 2 is **Failed**, with its failure transition
-at **November 11, 21:34:31**. Hardware startup passed and training reached
-317/718 updates in the captured log; checkpoint-300 is preserved but full
-recovery has not been validated. A complete exact OSS-prefix listing at
-**20:08:15 on November 12** found zero objects. These are dated observations,
-not a background monitor. No new benchmark result is claimed.
+The **11:51:21** training readback found the same R4 and Smol Job UIDs still
+Failed, with their original Pods absent. Highest logged steps remain 602 and
+317; durable checkpoints remain 600 and 300, without final checkpoints or
+training-completion receipts. The **11:51:37** exact OSS listings remain
+147 objects / 23,234,938,760 bytes for R4 and zero objects for Smol. These are
+dated observations; full numerical recovery remains unaccepted.
+
+At **11:54:54**, a complete project Job/Pod inventory found eight Jobs and four
+Pods, all terminal, with no active/Pending/unknown project workload. No new job
+or old-file deletion was performed in this check. The full suite remains
+unsubmitted, and no new training, held-out quality or GPU-performance result
+is claimed.
+
+The future public single-node launchers now use explicit loopback rendezvous.
+Their final public targeted CPU regression passed **48 tests, with 10 skipped**;
+an additional private-artifact run retained one pre-existing frozen-source
+comparison failure. This repair has not been submitted or accepted on GPUs.
 
 ## Completed
 
@@ -116,21 +127,64 @@ skipped GPU test is not CUDA acceptance. CPU admission, independent admission
 review, an exact server-side dry-run and independent submission review passed
 before/after the one-shot create as recorded in their individual receipts.
 
-The new exact job
+The attempt-2 exact job
 `jinhaopeng-dpvlm-cuda-pool-qa-20261113-a2-n1-772f8`, UID
 `ca956db5-7166-4452-93b8-d89fecd6cc33`, was created at **00:26:08 on November
-13** (UTC November 12, 16:26:08). The **00:31:21** readback still shows a
-Pending Pod, no assigned node and no run directory. The scheduler cannot yet
-satisfy the combined CPU, memory and eight-GPU request on one permitted node.
-The actual contract is stream/low, one node, eight GPUs, restart Never and no
-forced node. It requires an eight-rank BF16/NCCL startup check before the
-one-device pooling numerical tests and BF16/FP32 microbenchmarks.
+13** (UTC November 12, 16:26:08). The **00:26**, **00:27** and **00:31 Pending**
+observations remain in history. It subsequently became Running at **01:11:09**
+and Failed at **01:14:39**. The original Pod is still present; its container
+finished at **01:14:37**, exit code **1**, with zero restarts. The actual
+contract remains stream/low, one node, eight GPUs, restart Never and no forced
+node.
+
+All eight NVIDIA L20D devices passed the complete identity gate: compute
+capability [10,3] and 267.69 GiB per device. The next `torchrun --standalone`
+preflight repeatedly failed to resolve its rendezvous hostname, then hit its
+**120-second timeout**. Its output contains no accepted eight-rank BF16/NCCL
+result, and the pooling numerical tests and BF16/FP32 microbenchmarks were not
+reached. The diagnosis is bound to the actual command, stderr and installed
+Torch source; hardware identity alone does not establish distributed startup
+or CUDA correctness/performance.
+
+The automatic failure archive contains **26 objects / 2,172,940 bytes**,
+including **24 payload objects / 2,161,309 bytes**. At **11:53:04**, independent
+full GET/SHA verification accepted every object against local source bytes and
+the exact stable object inventory. This archives startup/failure evidence,
+not a model checkpoint or performance result. The original run was preserved;
+no files were deleted and no replacement job was submitted in this check.
 
 The submission-side small-QA capacity projection was **86,352,050,339 bytes**,
 including the 1 GB QA and 7 GB existing media/CPU reserves, below the 99 GB
 limit. This does not admit a training recovery or the full experiment suite.
-There is no completed CUDA result or accepted speedup. A client exception
-must be reconciled against this exact job, not handled by blind resubmission.
+There is no completed CUDA result or accepted speedup. A new GPU attempt still
+needs its own reviewed source, fresh admission and separate identity; the frozen
+attempt-2 source and failure evidence remain intact.
+
+### Public launcher repair
+
+The five future training, startup-preflight and evaluation launch sites now
+use explicit c10d loopback rendezvous, with OS-allocated ports and a fresh ID
+for each invocation. Child-process environment guards prevent inherited
+standalone/store-sharing flags from overriding that path. The one-node,
+eight-rank and zero-restart defaults remain unchanged.
+
+At **12:03:48 Beijing time on November 13**, the final repair receipt bound all
+seven changed code/test files and the completed CPU checks. The public targeted
+run passed **48 tests, with 10 private-evidence tests skipped**. Two simultaneous
+real Gloo groups, each with two CPU ranks, passed all-reduce while hostname
+resolution was deliberately broken and conflicting flags were inherited; the
+groups used distinct live ports. This ran on local Torch **2.13.0**, not the
+remote Torch **2.10.0+cu130** GPU runtime.
+
+An additional run with private-artifact tests enabled recorded **57 passed and
+one failed**. The failed legacy TempCompass check compares current model and
+generation source with the October 21 frozen Video-MME snapshot. SHA evidence
+shows that difference predates this repair, and all four checked scientific
+source files are unchanged from the pre-repair baseline. The old test and frozen
+snapshot were preserved. These scoped results are not a full-suite pass, new
+eight-rank BF16/NCCL acceptance or a CUDA correctness/performance result. The
+repair, both test outputs and baseline proof are pinned separately under
+`public_launcher_repair` in [status.json](status.json).
 
 ### Attempt 1 retained as failed history
 
@@ -158,7 +212,8 @@ failure. The actual Job UID and resource contract were then read back.
 See [optimization scope](../docs/OPTIMIZATION_STATUS.md) and the evidence hashes
 in [status.json](status.json). That record now separately binds attempt 2's
 package, CPU admission, independent reviews, submission intent/outcome and exact
-readbacks by file path, byte count and SHA256. Raw cluster responses and other
+readbacks, terminal command/error evidence, diagnosis and independent archive
+acceptance by file path, byte count and SHA256. Raw cluster responses and other
 workload identities are excluded from the public summary. These are dated
 facts, not a background monitor.
 
@@ -170,13 +225,20 @@ Smol checkpoint state files are present, but exact numerical recovery remains
 independently unaccepted. This snapshot did not perform new full GET/SHA
 verification of their large checkpoint payloads or complete CPU admission.
 
-Preserving the old runs and including the new suite's checkpoint copy, current
-conservative projections are **155,547,134,605 bytes for R4** and
+Preserving the old runs and including the new suite's checkpoint copy, that
+snapshot's conservative projections are **155,547,134,605 bytes for R4** and
 **114,272,309,701 bytes for Smol**, both above the strict 99 GB limit. Additional
 initializer/source/media requirements may increase those figures; future
 cleanup is not credited. The older November 9/11 capacity observations remain
 intact. Exact facts and the receipt pin are appended to
 `recovery_capacity_observations` in [status.json](status.json).
+
+The later **11:51** training inspection verified unchanged checkpoint names,
+sizes and Trainer-state SHA values, plus unchanged exact archive keys/sizes/
+ETags. It did not rehash the large checkpoint payloads, rerun preflight or
+rescan capacity. No new recovery-submission evidence was found. These fresh
+observations are separately retained under `training_progress_observations`;
+the older training and capacity facts remain unchanged.
 
 The complete suite's scripts cover 18 model configurations, 34 training stages,
 36 evaluations, 15 latency runs and 12 comparisons. **The suite remains

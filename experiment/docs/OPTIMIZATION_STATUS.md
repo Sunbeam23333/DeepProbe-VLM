@@ -28,6 +28,11 @@ their frozen implementations.
   diagnostic ranges/traces, and an artifact comparator that requires matching
   hardware/software, inputs and exact generated token sequences before timing
   ratios are emitted. See [latency protocol](LATENCY_PROTOCOL.md).
+- **Single-node distributed startup:** five future training, startup-preflight
+  and evaluation launch sites use explicit c10d loopback rendezvous with live
+  OS-allocated ports and per-invocation IDs. Child environment guards neutralize
+  inherited standalone/store-sharing overrides. One-node/eight-rank defaults,
+  zero restarts and existing timeouts are retained.
 
 The model-shaped `[8,729,1152]` weighted-feature FP32 intermediate occupies
 26,873,856 bytes by shape arithmetic. Avoiding that intermediate is a design
@@ -68,16 +73,47 @@ the exact submission dry-run. The job
 time on November 13** (UTC November 12, 16:26:08). Independent submission
 review checked the intent/create/UID and actual resource-contract linkage.
 
-At **00:31:21 Beijing time**, the exact attempt-2 Pod remained **Pending**,
-with no assigned node or run directory. The scheduler could not satisfy the
-combined CPU/memory/eight-GPU request on one permitted node. Its contract is
-stream/low, one node, eight GPUs, restart Never and no forced node. Eight-rank
-BF16/NCCL startup acceptance is required before the numerical tests and
-separate one-device BF16/FP32 microbenchmarks. None of those GPU results exists
-at this observation. [Status evidence](../results/status.json) binds both
-attempts and the individual admission/submission/readback receipts by file
-path, bytes and SHA256. These are dated observations, not a background monitor
-or an accepted acceleration result.
+The **00:26–00:31 Pending** observations remain historical. Attempt 2 became
+Running at **01:11:09 Beijing time**, then Failed at **01:14:39**. The
+**11:50:24** exact readback found the original Pod still present, with container
+exit code **1** at **01:14:37** and zero restarts. Its contract was stream/low,
+one node, eight GPUs, restart Never and no forced node.
+
+The complete identity check passed for eight NVIDIA L20D devices, each with
+compute capability [10,3] and 267.69 GiB. The following single-node
+`torchrun --standalone` preflight repeatedly failed to resolve its rendezvous
+hostname and reached its **120-second timeout**. No eight-rank BF16/NCCL
+acceptance was produced, so the CUDA pooling correctness tests and BF16/FP32
+microbenchmarks were not reached. The diagnosis is pinned to the actual
+command/stderr and the installed Torch source path that chooses the rendezvous
+address. It does not establish a pooling-kernel performance result.
+
+The automatic archive preserved **26 objects / 2,172,940 bytes**, including
+24 payload objects / 2,161,309 bytes. Independent verification at **11:53:04**
+accepted the complete exact archive after full GET/SHA comparison with local
+source bytes. No original file was deleted or replacement GPU job submitted in
+this check. [Status evidence](../results/status.json) binds both attempts,
+the terminal diagnostics and archive acceptance by file path, bytes and
+SHA256. Earlier Pending observations and attempt-1 failure remain intact.
+
+The later public launcher repair was validated at **12:03:48 Beijing time on
+November 13**. Its final targeted public run passed **48 tests, with 10 private
+evidence tests skipped**, with all seven changed code/test SHA values unchanged
+before and after the run. Two concurrent real Gloo groups, each with two CPU
+ranks, passed all-reduce despite deliberately broken hostname resolution and
+inherited conflicting flags; their live ports differed. Local Torch **2.13.0**
+was used. Remote Torch **2.10.0+cu130**, eight-rank BF16/NCCL and the CUDA pooling
+kernel still require a fresh admitted GPU attempt.
+
+The additional private-artifact run recorded **57 passed and one failed**. Its
+legacy TempCompass check requires the current model/generation source to match
+the October 21 frozen Video-MME snapshot. The mismatch predates this repair;
+all four checked scientific sources remain byte-identical to the pre-repair
+baseline. No old test expectation or frozen package was changed. Both scoped
+test results and that baseline proof are pinned under `public_launcher_repair`
+in [status.json](../results/status.json); no full-suite pass is claimed for this
+repair. Attempt 2 remains Failed and unchanged, and no replacement job or GPU
+result was produced.
 
 Run from `experiment/`, using a compatible existing CUDA-enabled PyTorch/Triton
 environment and a freshly admitted GPU allocation:
@@ -113,7 +149,11 @@ F4/F16 caches sampled from original benchmark videos, independently accepted
 R4/Smol recovery inputs and fresh storage/source admission remain outstanding.
 The November 13 **00:15:52** read-only capacity snapshot measured
 78,345,490,305 bytes in the two accounted roots; conservative new-copy recovery
-projections remain above the 99 GB limit. Small-QA admission is separate from
+projections remained above the 99 GB limit at that observation. The **11:51**
+training check found unchanged R4/Smol logged steps 602/317, durable checkpoints
+600/300, and exact archive inventories; it did not rescan capacity or establish
+numerical recovery. The **11:54:54** project inventory was entirely terminal.
+Small-QA admission is separate from
 these training gates. See [suite operating runbook](EXPERIMENT_SUITE.md) and
 the separately dated capacity evidence in [status.json](../results/status.json).
 

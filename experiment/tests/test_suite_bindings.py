@@ -7,6 +7,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 from deepprobe_vlm import experiment_suite
 from deepprobe_vlm import suite_bindings as bindings
@@ -67,6 +68,13 @@ class SuiteBindingsTest(unittest.TestCase):
             self.assertNotIn("bash", value["argv"])
         self.assertEqual(result["environment"]["PYTHONPATH"], str(self.a / "src"))
         self.assertTrue(result["startup"]["receipts"][0]["path"].startswith("{invocation_dir}/"))
+
+    def test_binding_rebuild_is_deterministic_without_rendezvous_ids(self):
+        with mock.patch("deepprobe_vlm.distributed_launch.uuid.uuid4",
+                        side_effect=AssertionError("rendezvous ID generated during planning")):
+            first = runner.canonical(self.build())
+            self.assertEqual(first, runner.canonical(self.build()))
+        self.assertNotIn(b"--rdzv-id", first)
 
     def test_accepted_history_has_no_training_reserve_and_override_is_explicit(self):
         task = next(x for x in self.plan["tasks"] if x["kind"] == "train")

@@ -30,6 +30,7 @@ from deepprobe_vlm.evaluate import (VIDEOMME_PROTOCOL, canonical_sha256, check_p
     read_prediction_rows, sha256_file, shard_output, shard_records, summarise_groups,
     summarise_metrics, validate_videomme_subset, write_json_once)
 from deepprobe_vlm.data import MultimodalCollator
+from deepprobe_vlm.distributed_launch import single_node_torchrun, single_node_torchrun_environment
 from deepprobe_vlm.manifest import load_manifest, safe_relative_path, resolve_media_path
 
 
@@ -381,8 +382,7 @@ def main(argv=None):
             model_root.mkdir(exist_ok=True)
             provenance = model_root / "CHECKPOINT_PROVENANCE.json"
             write_json_once(provenance, result["checkpoints"][name])
-            command = [sys.executable, "-m", "torch.distributed.run", "--standalone", "--nnodes=1",
-                       "--nproc_per_node=8", "--max_restarts=0", "-m", "deepprobe_vlm.evaluate",
+            command = single_node_torchrun(sys.executable) + ["-m", "deepprobe_vlm.evaluate",
                        "--checkpoint", result["checkpoints"][name]["checkpoint"],
                        "--manifest", plan["manifest"]["path"], "--media-root", plan["media_root"],
                        "--output", str(model_root / "predictions.jsonl"), "--max-new-tokens", "16",
@@ -391,7 +391,8 @@ def main(argv=None):
                 command.append("--resume")
             print(json.dumps({"event": "START_BENCHMARK", "model": name, "command": command}), flush=True)
             with (root / f"{name}-{stamp}.log").open("xb") as log:
-                process = subprocess.Popen(command, cwd=EXPERIMENT, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                process = subprocess.Popen(command, cwd=EXPERIMENT, env=single_node_torchrun_environment(env),
+                                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                 for line in iter(process.stdout.readline, b""):
                     log.write(line)
                     log.flush()

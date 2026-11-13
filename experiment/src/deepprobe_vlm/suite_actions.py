@@ -21,6 +21,7 @@ import sys
 from . import suite_runner as runner
 from . import checkpoint_retention as retention
 from .experiment_suite import checkpoint_consumers
+from .distributed_launch import single_node_torchrun, single_node_torchrun_environment
 
 require, digest, sha, safe = runner.require, runner.digest, runner.sha, runner.safe
 pin, verify_pin, read = runner.artifact, runner.verify_pin, runner.read
@@ -250,6 +251,8 @@ class Actions:
                                                        self.env['runtime_environment'].get('PYTHONPATH', '')]))
         if extra_env:
             env.update(extra_env)
+        if list(argv[1:4]) == ['-B', '-m', 'torch.distributed.run']:
+            env = single_node_torchrun_environment(env)
         save(logs.with_suffix('.intent.json'), {'argv': list(map(str, argv)), 'source_root': str(source_root or self.root)})
         with logs.with_suffix('.stdout').open('xb') as out, logs.with_suffix('.stderr').open('xb') as err:
             # Inherit runner process group so timeout/SIGTERM covers all ranks.
@@ -303,8 +306,8 @@ class Actions:
         uuids = gpu.stdout.strip().splitlines()
         require(gpu.returncode == 0 and len(uuids) == len(set(uuids)) == 8, 'Eight actual GPU UUIDs required')
         hardware = safe(output).parent / 'HARDWARE.json'
-        self.command([self.env['python'], '-B', '-m', 'torch.distributed.run', '--standalone', '--nnodes=1',
-                      '--nproc_per_node=8', '--max_restarts=0', self.root / 'scripts/preflight.py', '--output', hardware],
+        self.command(single_node_torchrun(self.env['python']) +
+                     [self.root / 'scripts/preflight.py', '--output', hardware],
                      safe(output).parent, 'hardware')
         report = read(hardware)
         require(report.get('status') == 'gpu_gate_passed' and report.get('world_size') == 8
@@ -577,8 +580,7 @@ class Actions:
             'data_acceptance_sha256': data['acceptance']['sha256'], 'source_identity_sha256': self.source_sha})
         engine = task['protocol'] if task['protocol'] == 'videomme-899-no-subtitles-no-audio-v1' else 'reference'
         output = directory / 'raw' / 'predictions.jsonl'
-        argv = [self.env['python'], '-B', '-m', 'torch.distributed.run', '--standalone', '--nnodes=1',
-                '--nproc_per_node=8', '--max_restarts=0', '-m', 'deepprobe_vlm.evaluate',
+        argv = single_node_torchrun(self.env['python']) + ['-m', 'deepprobe_vlm.evaluate',
                 '--checkpoint', checkpoint, '--manifest', data['manifest']['path'], '--media-root', data['media_root'],
                 '--output', output, '--max-new-tokens', '16', '--protocol', engine, '--distributed-env',
                 '--run-provenance', provenance['path']]

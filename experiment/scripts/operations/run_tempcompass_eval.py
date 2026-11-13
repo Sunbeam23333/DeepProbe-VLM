@@ -22,6 +22,8 @@ OPS=Path(__file__).resolve().parent
 EXPERIMENT=OPS.parents[1]
 PACKAGE=EXPERIMENT.parent
 sys.path.insert(0,str(OPS))
+sys.path.insert(0,str(EXPERIMENT/'src'))
+from deepprobe_vlm.distributed_launch import single_node_torchrun, single_node_torchrun_environment
 from model_registry import model_sequence, verify_registered_checkpoint, validate_model_config, canonical_sha
 from prepare_tempcompass_reviewed_data import (PROTOCOL,COUNTS,PINS,REMOTE_ROOT,require,canonical,digest,sha,safe,
                                               json_once,verify_accepted_data)
@@ -251,11 +253,12 @@ def main(argv=None):
         for name in plan['model_sequence']:
             model_root=root/name;(model_root/'raw').mkdir(parents=True)
             provenance=model_root/'MODEL_PROVENANCE.json';json_once(provenance,result['models'][name])
-            command=[sys.executable,'-m','torch.distributed.run','--standalone','--nnodes=1','--nproc_per_node=8',
-                '--max_restarts=0','-m','deepprobe_vlm.evaluate_tempcompass','--plan',str(a.plan),'--plan-sha256',a.plan_sha256,
+            command=single_node_torchrun(sys.executable)+[
+                '-m','deepprobe_vlm.evaluate_tempcompass','--plan',str(a.plan),'--plan-sha256',a.plan_sha256,
                 '--model',name,'--provenance',str(provenance)]
             with (model_root/'inference.log').open('xb') as log:
-                completed=subprocess.run(command,cwd=EXPERIMENT,env=environment,stdout=log,stderr=subprocess.STDOUT)
+                completed=subprocess.run(command,cwd=EXPERIMENT,env=single_node_torchrun_environment(environment),
+                                         stdout=log,stderr=subprocess.STDOUT)
             json_once(model_root/'EXIT.json',{'exit_code':completed.returncode,'argv':command,'automatic_retry':False})
             if completed.returncode:return completed.returncode
             scores[name]=merge_and_score(model_root,data['records'],provenance,plan,a.plan_sha256)
