@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
-  "observed_at_utc": "2026-11-13T03:54:54.201624+00:00",
+  "observed_at_utc": "2026-11-14T04:19:52.301638+00:00",
   "display_timezone": "Asia/Shanghai",
-  "observation_note": "November 13 exact readbacks confirm engineering QA attempt 2 failed during rendezvous hostname resolution before all-rank preflight/CUDA acceptance; its complete failure archive is independently accepted. R4 and Smol training/checkpoint/archive observations are unchanged. The complete project inventory is terminal. Earlier dated Pending, failure, archival and capacity facts are retained. No new GPU performance, training or held-out quality result is claimed.",
+  "observation_note": "November 14 engineering QA attempt 3 was created once after fresh admission. The exact Job is Created and its Pod Pending/Unschedulable; the run directory is absent. A complete project inventory identifies only this attempt as active. The complete failed attempt-2 record and older training/quality evidence remain dated history. No new GPU startup, CUDA performance, training or held-out quality result is claimed.",
   "new_held_out_results": false,
   "runs": {
     "dp-p1-ouro-r4-f8-g4-s17-sft-a1": {
@@ -657,22 +657,22 @@
     "Complete R4 checkpoint-600 recovery checks and capacity admission before its remaining 118 updates.",
     "Additional seeds and declared ablations, controlled cost/latency measurements, and new-model evaluation."
   ],
-  "active_run_id": null,
-  "active_run_observation": "A complete all-namespace framed project Job/Pod inventory at 2026-11-13T03:54:54.201624+00:00 found 8 project Jobs and 4 project Pods, all terminal; no active, Pending or unknown project workload was observed. This is a dated inventory, not scheduler capacity or new-submission admission.",
+  "active_run_id": "dp-cuda-pool-qa-20261114-a3",
+  "active_run_observation": "Exact Job Created and Pod Pending at 2026-11-14T04:19:28.046026+00:00; no node or run directory observed. The complete project Job/Pod inventory finished at 2026-11-14T04:19:52.301638+00:00, with only engineering QA attempt 3 active and every other project resource terminal.",
   "engineering_qa": {
-    "run_id": "dp-cuda-pool-qa-20261113-a2",
+    "run_id": "dp-cuda-pool-qa-20261114-a3",
     "scope": "synthetic CUDA weighted-pooling correctness and microbenchmark; no model training or quality evaluation",
-    "observed_at_utc": "2026-11-13T03:50:24.885942+00:00",
-    "source_commit": "c03ffefa485682d2c737124c07b83473442cf6f4",
+    "observed_at_utc": "2026-11-14T04:19:28.046026+00:00",
+    "source_commit": "5a14d3e7bd65a5869f21cb32d79221a03d695af9",
     "submission_status": "SUBMITTED_EXACT_JOB_OBSERVED",
     "submission_outcome_confirmed": true,
     "submission_client_exit_code": 0,
-    "job_created_at_utc": "2026-11-12T16:26:08Z",
-    "job_status": "Failed",
-    "pod_phase": "Failed",
-    "exact_job": "jinhaopeng-dpvlm-cuda-pool-qa-20261113-a2-n1-772f8",
-    "job_uid": "ca956db5-7166-4452-93b8-d89fecd6cc33",
-    "pod_uid": "59084550-b687-468b-95d2-8e83e3633abe",
+    "job_created_at_utc": "2026-11-14T04:14:46Z",
+    "job_status": "Created",
+    "pod_phase": "Pending",
+    "exact_job": "jinhaopeng-dpvlm-cuda-pool-qa-20261114-a3-n1-abd5f",
+    "job_uid": "152670ef-e80f-4ec0-8359-1060e0db32dc",
+    "pod_uid": "150ce228-91e4-4fa2-b173-39002f95b0f7",
     "allocation": {
       "cluster": "ali-gpu",
       "queue": "stream",
@@ -682,10 +682,12 @@
       "restart_policy": "Never",
       "forced_node": false
     },
-    "allocated_node_observed": true,
-    "run_directory_present": true,
+    "allocated_node_observed": false,
+    "run_directory_present": false,
     "cpu_admission_passed": true,
+    "independent_code_and_cpu_review_passed": true,
     "independent_admission_review_passed": true,
+    "independent_submission_review_status": "passed",
     "server_dry_run_actual_contract_verified": true,
     "single_create_intent_and_uid_bound": true,
     "automatic_retry": false,
@@ -693,234 +695,145 @@
     "required_startup_rank_count": 8,
     "all_rank_bf16_nccl_required_before_measurements": true,
     "startup_accepted": false,
+    "gpu_identity_passed": false,
+    "eight_rank_preflight_passed": false,
     "cuda_tests_executed": false,
     "microbenchmark_completed": false,
     "gpu_speedup_accepted": false,
     "cuda_result": null,
     "new_training_or_heldout_result": false,
-    "archive_accepted": true,
-    "exact_archive_prefix": "oss://ss-devbox-stream/jinhaopeng/Paper/DeepProbe-VLM/runs/dp-cuda-pool-qa-20261113-a2/",
+    "archive_accepted": false,
+    "archive_status": "not_started",
+    "exact_archive_prefix": "oss://ss-devbox-stream/jinhaopeng/Paper/DeepProbe-VLM/runs/dp-cuda-pool-qa-20261114-a3/",
     "exact_archive_prefix_empty_at_cpu_admission": true,
-    "archive_admission_observed_at_utc": "2026-11-12T16:20:52.141185+00:00",
-    "scheduling_reason": null,
+    "exact_archive_prefix_empty_before_submission": true,
+    "archive_admission_observed_at_utc": "2026-11-14T04:07:55.632222+00:00",
+    "scheduling_reason": "The permitted single-node pool could not satisfy the combined CPU, memory and eight-GPU request; PodScheduled=False/Unschedulable.",
     "submission_capacity": {
-      "utc": "2026-11-12T16:25:37.090363+00:00",
-      "combined_project_bytes": 78352050339,
+      "utc": "2026-11-14T04:14:13.703369+00:00",
+      "combined_project_bytes": 78365643249,
       "existing_media_cpu_reserve_bytes": 7000000000,
       "qa_reserve_bytes": 1000000000,
-      "projected_bytes": 86352050339,
+      "projected_bytes": 86365643249,
       "limit_bytes": 99000000000
     },
+    "local_cpu_review": {
+      "passed": 36,
+      "skipped": 1,
+      "skip_reason": "GPU opt-in; not CUDA acceptance"
+    },
+    "target_linux_cpu_review": {
+      "passed": 15,
+      "scope": "Exact frozen process helper: Linux ownership/independent-session cleanup and pidfd compatibility; no GPU execution"
+    },
+    "preflight_timeout_seconds": 120,
+    "compute_max_seconds": 420,
+    "hard_wall_seconds": 900,
+    "package_candidates_are_not_gpu_attempts": true,
+    "earlier_package_candidates_deployed_or_submitted": false,
     "evidence": {
       "source_binding": {
-        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/package-v1/SOURCE_BINDING.json",
-        "bytes": 2227,
-        "sha256": "58d26ea0b478dace289fdb0aef25574ec49a8da21b2bd3b89ec70f1808fe9422",
+        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261114-a3/package-v3/SOURCE_BINDING.json",
+        "bytes": 2852,
+        "sha256": "2c1810490f2c658917123e64a2b6a6013267949f72efe0fede5206b0aaae461f",
         "available_in_github": false
       },
       "package_manifest": {
-        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/package-v1/PACKAGE_MANIFEST.json",
-        "bytes": 2750,
-        "sha256": "c2625b36db2e2139675962d41cbc0b77649bc5e451d201559355f5cc2546ed98",
+        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261114-a3/package-v3/PACKAGE_MANIFEST.json",
+        "bytes": 3456,
+        "sha256": "ab53cce89a00e061b9d7104908958315650cea1a3b497323d2ec2649494f7914",
         "available_in_github": false
       },
       "local_cpu_review": {
-        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/cpu-review-v1/CPU_REVIEW.json",
-        "bytes": 797,
-        "sha256": "a476bad2917d4b4b336e947818c880bff577a93c6a67053592ee00d4731034e9",
+        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261114-a3/cpu-review-v3/CPU_REVIEW.json",
+        "bytes": 3753,
+        "sha256": "a9bffa9e47fc4f3031487c5f64a678e8c42795c03c0ee3896e77b67ac95ad0b6",
+        "available_in_github": false
+      },
+      "target_linux_cpu_review": {
+        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261114-a3/LINUX_CPU_REVIEW_V3.stdout",
+        "bytes": 2835,
+        "sha256": "618a1c6ddfc446b1fd41e37b53320ea6ecd81a7d19b5fca61045c21bbf64329d",
+        "available_in_github": false
+      },
+      "independent_code_cpu_review": {
+        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261114-a3/independent-review-v3/REVIEW.json",
+        "bytes": 8893,
+        "sha256": "1a5712838d153da16948cd3a2d847da00a5fd286951e2a0186eebec838e244f6",
+        "available_in_github": false
+      },
+      "deployment_readback": {
+        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261114-a3/DEPLOY.stdout",
+        "bytes": 2729,
+        "sha256": "d3c0616bfa3940af14bbb2f850b974d5c22062a16135cb2d3084d5c376e16403",
         "available_in_github": false
       },
       "cpu_admission": {
-        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/ADMISSION.json",
-        "bytes": 5687,
-        "sha256": "9bd97ffdf651e3c9f1fd81e3dee3930a5f219599c0fefd98297aeaf5355eaf04",
+        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261114-a3/admission-readback/ADMISSION.json",
+        "bytes": 4871,
+        "sha256": "2cfba46f4ba1cc1f29d4a062b3a58a02660136777437ad95aa25558a2beb8f3b",
         "available_in_github": false
       },
       "independent_admission_review": {
-        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/INDEPENDENT_ADMISSION_REVIEW.json",
-        "bytes": 2903,
-        "sha256": "1d954d1548a5ddfa4c990e5ea76404e1a4ad9442ab60f2698255206afdd63f46",
-        "available_in_github": false
-      },
-      "root_package_review": {
-        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/ROOT_PACKAGE_REVIEW.json",
-        "bytes": 637,
-        "sha256": "c0173705a0fc4d854c033100f1e5def52c4c679b384e93222ff8b4d25eeeac3c",
+        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261114-a3/independent-admission/REVIEW.json",
+        "bytes": 8952,
+        "sha256": "9f9ea3459a715c65fba155082e2a0cef7b9a4bca14a76392716889a88612bbbd",
         "available_in_github": false
       },
       "submission_intent": {
-        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261112T162645925870Z/submit/INTENT.json",
+        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261114-a3/submit-readback/SUBMISSION_INTENT.json",
         "bytes": 4245,
-        "sha256": "613f9c855a702b3c574f79a8029294d1449412485d21a5a631c85b26dd306461",
+        "sha256": "5507c042c8d97d4db5d50eb1f004701b2191eb3bd168465927365770d76f74ed",
         "available_in_github": false
       },
       "submission_outcome": {
-        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261112T162645925870Z/submit/SUBMISSION.json",
-        "bytes": 1988,
-        "sha256": "1800d5d9990678d25ce1f068835d4ca9cf297451d80f960d9455a32c4384a8c4",
+        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261114-a3/submit-readback/SUBMISSION.json",
+        "bytes": 2068,
+        "sha256": "60946821d947a49e79035fd196b53d7a6201e47077d9784f55708635137e8aea",
         "available_in_github": false
       },
-      "independent_submission_audit": {
-        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/INDEPENDENT_SUBMISSION_AUDIT.json",
-        "bytes": 3359,
-        "sha256": "bc05d067b098a8ce017d685061fba531992a2dffc327f36c34ef469e8aa0bd81",
+      "server_dry_run": {
+        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261114-a3/submit-readback/server_dryrun.stdout",
+        "bytes": 8069,
+        "sha256": "eb23b6efcbadeeece921b1616ba155cdccb12a51e422ab4b3651fe9dfa38c1cc",
+        "available_in_github": false
+      },
+      "submission_exact_job": {
+        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261114-a3/submit-readback/exact_job.stdout",
+        "bytes": 8643,
+        "sha256": "43b2fcb03bde4509b82d48b72f96f4d1ba6f5c90d1dd00c44d02f77ec09c61de",
         "available_in_github": false
       },
       "first_exact_pending_readback": {
-        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261112T162645925870Z/READBACK.json",
-        "bytes": 42919,
-        "sha256": "4af39a2dea36615d9cce57c2b09bd832a8cb9d12a9384fdda5cc56a2405a6711",
+        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261114-a3/observe-20261114T041545Z/stdout.json",
+        "bytes": 2157851,
+        "sha256": "7fe00080e2b741e4f76c2ea45a79dd94ca971d327ff0082efac8340d32442250",
+        "available_in_github": false
+      },
+      "independent_submission_review": {
+        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261114-a3/independent-submission/REVIEW.json",
+        "bytes": 10127,
+        "sha256": "a6d1a28095264addbd284b0cf0f5b596138c5c29dee90a15453f30b98e602a15",
         "available_in_github": false
       },
       "latest_exact_pending_readback": {
-        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261112T163120673717Z/READBACK.json",
-        "bytes": 94869,
-        "sha256": "607a0abb24e5c4d3e680f396e96ff4943ca0a4467aff689897ae0ed40857c750",
-        "available_in_github": false
-      },
-      "historical_002759_pending_readback": {
-        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261112T162758377378Z/READBACK.json",
-        "bytes": 48113,
-        "sha256": "3893e457a339be61a07c0324772e7976c01384c6b25e27ebdf379983c7397d8b",
-        "available_in_github": false
-      },
-      "latest_exact_failure": {
-        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261113T035022741628Z/READBACK.json",
-        "bytes": 41720,
-        "sha256": "b351da6a85c59633a25952ed899832b24ee3e67d607fc2450d0390ba12279dd6",
-        "available_in_github": false
-      },
-      "failure_receipt": {
-        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261113T035022741628Z/run/FAILED.json",
-        "bytes": 168,
-        "sha256": "9f9bbc5f0a23ce61f9924d71ef15b25e14c4ced5d9b7babb91bee79759d86552",
-        "available_in_github": false
-      },
-      "exit_receipt": {
-        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261113T035022741628Z/run/EXIT.json",
-        "bytes": 161,
-        "sha256": "79713f97d7fa079537eff518c900166e5a4b13271936c49b66357b457061455f",
-        "available_in_github": false
-      },
-      "gpu_identity_command": {
-        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261113T035022741628Z/run/gpu_identity.json",
-        "bytes": 757,
-        "sha256": "652bba43166636a60e7e8662e9da027c36db5239bc9708ef79ec42c0e86ad840",
-        "available_in_github": false
-      },
-      "gpu_identity_result": {
-        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261113T035022741628Z/run/gpu_identity.stdout",
-        "bytes": 2965,
-        "sha256": "a12b1bc4a60513af886daf56a551af2f35430e169f18b67b52c0272580165862",
-        "available_in_github": false
-      },
-      "all_rank_preflight_command": {
-        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261113T035022741628Z/run/all_rank_preflight.json",
-        "bytes": 1273,
-        "sha256": "6f104cf876ad3604a45c534d50299cf5202a386105425e805d38e40ce8e585f7",
-        "available_in_github": false
-      },
-      "all_rank_preflight_stderr": {
-        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261113T035022741628Z/run/all_rank_preflight.stderr",
-        "bytes": 1968,
-        "sha256": "77e46deae1862d78224af549ec79bc8f97d54cf1efa42bdfbac5a4f4419974d4",
-        "available_in_github": false
-      },
-      "automatic_archive_final": {
-        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261113T035022741628Z/run/ARCHIVE_FINAL.json",
-        "bytes": 529,
-        "sha256": "babf4214ee54d3cce1b83597ebd17d53fdf263e6c1e333abfc0021a1dff56a0a",
-        "available_in_github": false
-      },
-      "automatic_archive_manifest": {
-        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261113T035022741628Z/run/ARCHIVE_MANIFEST.json",
-        "bytes": 3955,
-        "sha256": "f000da13fb6af864893b7531c99f2e53f63351d071d2ea2fdf08711cc62a6d45",
-        "available_in_github": false
-      },
-      "automatic_archive_verified": {
-        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261113T035022741628Z/run/ARCHIVE_VERIFIED.json",
-        "bytes": 7676,
-        "sha256": "fc5c5d1fef9da62e2ee2286ea07611f163d802b75ec28d28b9152b3a2d7faf0a",
-        "available_in_github": false
-      },
-      "independent_failure_archive_acceptance": {
-        "source_path": "experiment/docs/operations/evidence/progress-devbox-20261113/qa-archive-independent/stdout.json",
-        "bytes": 26040,
-        "sha256": "af74953ed1ccc15dd5cc439ba010164dec1e12aca69f969afb91cf6bbc8468cc",
-        "available_in_github": false
-      },
-      "rendezvous_failure_diagnosis": {
-        "source_path": "experiment/docs/operations/evidence/progress-devbox-20261113/qa-diagnosis/QA_A2_RENDEZVOUS_DIAGNOSIS.json",
-        "bytes": 19278,
-        "sha256": "6683fedaebf5a33576024a70ff3f745ff7acc3fbe95dd12cbc87cf9910a20da3",
+        "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261114-a3/observe-20261114T041927Z/stdout.json",
+        "bytes": 2160666,
+        "sha256": "5c5bd3d542382fbce6dd871434df72c8e08e2dd60cfbae25bd5202eb2c2677a8",
         "available_in_github": false
       }
     },
+    "independent_submission_review_passed": true,
     "historical_observations": [
       {
-        "observed_at_utc": "2026-11-12T16:26:47.092826+00:00",
+        "observed_at_utc": "2026-11-14T04:15:46.007733+00:00",
         "job_status": "Created",
         "pod_phase": "Pending",
         "allocated_node_observed": false,
         "run_directory_present": false,
         "evidence_key": "first_exact_pending_readback"
-      },
-      {
-        "observed_at_utc": "2026-11-12T16:27:59.747882+00:00",
-        "job_status": "Created",
-        "pod_phase": "Pending",
-        "allocated_node_observed": false,
-        "run_directory_present": false,
-        "evidence_key": "historical_002759_pending_readback"
-      },
-      {
-        "observed_at_utc": "2026-11-12T16:31:21.884513+00:00",
-        "job_status": "Created",
-        "pod_phase": "Pending",
-        "allocated_node_observed": false,
-        "run_directory_present": false,
-        "scheduling_reason": "The scheduler could not satisfy the combined CPU, memory and eight-GPU request on one permitted node; PodScheduled=False/Unschedulable.",
-        "startup_accepted": false,
-        "archive_accepted": false,
-        "evidence_key": "latest_exact_pending_readback",
-        "note": "Preserved Pending observation, superseded by the exact terminal Job/Pod and failure-archive readback."
       }
-    ],
-    "original_pod_present": true,
-    "running_at_utc": "2026-11-12T17:11:09Z",
-    "failure_at_utc": "2026-11-12T17:14:39Z",
-    "container_started_at_utc": "2026-11-12T17:11:08Z",
-    "container_finished_at_utc": "2026-11-12T17:14:37Z",
-    "container_exit_code": 1,
-    "restart_count": 0,
-    "gpu_identity_passed": true,
-    "actual_gpu_count": 8,
-    "actual_gpu_model": "NVIDIA L20D",
-    "device_compute_capability": [
-      10,
-      3
-    ],
-    "minimum_device_memory_gib": 267.68890380859375,
-    "eight_rank_preflight_passed": false,
-    "failure_phase": "all_rank_preflight_rendezvous_before_CUDA_QA",
-    "failure_reason": "rendezvous_hostname_resolution_errors_followed_by_120_second_timeout",
-    "failure_interpretation": "The --standalone torchrun preflight repeatedly failed to resolve its rendezvous hostname, then reached its 120-second command timeout. GPU identity acceptance passed first; no all-rank BF16/NCCL acceptance or CUDA correctness/microbenchmark result was produced.",
-    "preflight_timeout_seconds": 120,
-    "preflight_started_at_utc": "2026-11-12T17:12:23.407504+00:00",
-    "preflight_finished_at_utc": "2026-11-12T17:14:24.902712+00:00",
-    "retry_submitted_in_this_check": false,
-    "archive_status": "independent_failure_archive_accepted",
-    "archive_object_count": 26,
-    "archive_bytes": 2172940,
-    "archive_payload_count": 24,
-    "archive_payload_bytes": 2161309,
-    "archive_observed_at_utc": "2026-11-13T03:53:04.985552+00:00",
-    "archive_all_objects_full_get_sha256_verified": true,
-    "archive_local_sources_sha256_matched": true,
-    "archive_scope": "synthetic startup/failure evidence; no model checkpoint or accepted CUDA performance result",
-    "original_run_preserved": true,
-    "files_deleted": false
+    ]
   },
   "training_observed_at_utc": "2026-11-13T03:51:37.639947+00:00",
   "serial_suite_preparation": {
@@ -1041,6 +954,269 @@
       "archive_bytes": 0,
       "archive_observed_at_utc": "2026-11-12T13:15:04.979173+00:00",
       "retry_submitted_in_this_check": false
+    },
+    {
+      "run_id": "dp-cuda-pool-qa-20261113-a2",
+      "scope": "synthetic CUDA weighted-pooling correctness and microbenchmark; no model training or quality evaluation",
+      "observed_at_utc": "2026-11-13T03:50:24.885942+00:00",
+      "source_commit": "c03ffefa485682d2c737124c07b83473442cf6f4",
+      "submission_status": "SUBMITTED_EXACT_JOB_OBSERVED",
+      "submission_outcome_confirmed": true,
+      "submission_client_exit_code": 0,
+      "job_created_at_utc": "2026-11-12T16:26:08Z",
+      "job_status": "Failed",
+      "pod_phase": "Failed",
+      "exact_job": "jinhaopeng-dpvlm-cuda-pool-qa-20261113-a2-n1-772f8",
+      "job_uid": "ca956db5-7166-4452-93b8-d89fecd6cc33",
+      "pod_uid": "59084550-b687-468b-95d2-8e83e3633abe",
+      "allocation": {
+        "cluster": "ali-gpu",
+        "queue": "stream",
+        "priority": "low",
+        "nodes": 1,
+        "gpus": 8,
+        "restart_policy": "Never",
+        "forced_node": false
+      },
+      "allocated_node_observed": true,
+      "run_directory_present": true,
+      "cpu_admission_passed": true,
+      "independent_admission_review_passed": true,
+      "server_dry_run_actual_contract_verified": true,
+      "single_create_intent_and_uid_bound": true,
+      "automatic_retry": false,
+      "measured_devices_if_started": 1,
+      "required_startup_rank_count": 8,
+      "all_rank_bf16_nccl_required_before_measurements": true,
+      "startup_accepted": false,
+      "cuda_tests_executed": false,
+      "microbenchmark_completed": false,
+      "gpu_speedup_accepted": false,
+      "cuda_result": null,
+      "new_training_or_heldout_result": false,
+      "archive_accepted": true,
+      "exact_archive_prefix": "oss://ss-devbox-stream/jinhaopeng/Paper/DeepProbe-VLM/runs/dp-cuda-pool-qa-20261113-a2/",
+      "exact_archive_prefix_empty_at_cpu_admission": true,
+      "archive_admission_observed_at_utc": "2026-11-12T16:20:52.141185+00:00",
+      "scheduling_reason": null,
+      "submission_capacity": {
+        "utc": "2026-11-12T16:25:37.090363+00:00",
+        "combined_project_bytes": 78352050339,
+        "existing_media_cpu_reserve_bytes": 7000000000,
+        "qa_reserve_bytes": 1000000000,
+        "projected_bytes": 86352050339,
+        "limit_bytes": 99000000000
+      },
+      "evidence": {
+        "source_binding": {
+          "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/package-v1/SOURCE_BINDING.json",
+          "bytes": 2227,
+          "sha256": "58d26ea0b478dace289fdb0aef25574ec49a8da21b2bd3b89ec70f1808fe9422",
+          "available_in_github": false
+        },
+        "package_manifest": {
+          "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/package-v1/PACKAGE_MANIFEST.json",
+          "bytes": 2750,
+          "sha256": "c2625b36db2e2139675962d41cbc0b77649bc5e451d201559355f5cc2546ed98",
+          "available_in_github": false
+        },
+        "local_cpu_review": {
+          "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/cpu-review-v1/CPU_REVIEW.json",
+          "bytes": 797,
+          "sha256": "a476bad2917d4b4b336e947818c880bff577a93c6a67053592ee00d4731034e9",
+          "available_in_github": false
+        },
+        "cpu_admission": {
+          "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/ADMISSION.json",
+          "bytes": 5687,
+          "sha256": "9bd97ffdf651e3c9f1fd81e3dee3930a5f219599c0fefd98297aeaf5355eaf04",
+          "available_in_github": false
+        },
+        "independent_admission_review": {
+          "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/INDEPENDENT_ADMISSION_REVIEW.json",
+          "bytes": 2903,
+          "sha256": "1d954d1548a5ddfa4c990e5ea76404e1a4ad9442ab60f2698255206afdd63f46",
+          "available_in_github": false
+        },
+        "root_package_review": {
+          "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/ROOT_PACKAGE_REVIEW.json",
+          "bytes": 637,
+          "sha256": "c0173705a0fc4d854c033100f1e5def52c4c679b384e93222ff8b4d25eeeac3c",
+          "available_in_github": false
+        },
+        "submission_intent": {
+          "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261112T162645925870Z/submit/INTENT.json",
+          "bytes": 4245,
+          "sha256": "613f9c855a702b3c574f79a8029294d1449412485d21a5a631c85b26dd306461",
+          "available_in_github": false
+        },
+        "submission_outcome": {
+          "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261112T162645925870Z/submit/SUBMISSION.json",
+          "bytes": 1988,
+          "sha256": "1800d5d9990678d25ce1f068835d4ca9cf297451d80f960d9455a32c4384a8c4",
+          "available_in_github": false
+        },
+        "independent_submission_audit": {
+          "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/INDEPENDENT_SUBMISSION_AUDIT.json",
+          "bytes": 3359,
+          "sha256": "bc05d067b098a8ce017d685061fba531992a2dffc327f36c34ef469e8aa0bd81",
+          "available_in_github": false
+        },
+        "first_exact_pending_readback": {
+          "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261112T162645925870Z/READBACK.json",
+          "bytes": 42919,
+          "sha256": "4af39a2dea36615d9cce57c2b09bd832a8cb9d12a9384fdda5cc56a2405a6711",
+          "available_in_github": false
+        },
+        "latest_exact_pending_readback": {
+          "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261112T163120673717Z/READBACK.json",
+          "bytes": 94869,
+          "sha256": "607a0abb24e5c4d3e680f396e96ff4943ca0a4467aff689897ae0ed40857c750",
+          "available_in_github": false
+        },
+        "historical_002759_pending_readback": {
+          "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261112T162758377378Z/READBACK.json",
+          "bytes": 48113,
+          "sha256": "3893e457a339be61a07c0324772e7976c01384c6b25e27ebdf379983c7397d8b",
+          "available_in_github": false
+        },
+        "latest_exact_failure": {
+          "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261113T035022741628Z/READBACK.json",
+          "bytes": 41720,
+          "sha256": "b351da6a85c59633a25952ed899832b24ee3e67d607fc2450d0390ba12279dd6",
+          "available_in_github": false
+        },
+        "failure_receipt": {
+          "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261113T035022741628Z/run/FAILED.json",
+          "bytes": 168,
+          "sha256": "9f9bbc5f0a23ce61f9924d71ef15b25e14c4ced5d9b7babb91bee79759d86552",
+          "available_in_github": false
+        },
+        "exit_receipt": {
+          "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261113T035022741628Z/run/EXIT.json",
+          "bytes": 161,
+          "sha256": "79713f97d7fa079537eff518c900166e5a4b13271936c49b66357b457061455f",
+          "available_in_github": false
+        },
+        "gpu_identity_command": {
+          "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261113T035022741628Z/run/gpu_identity.json",
+          "bytes": 757,
+          "sha256": "652bba43166636a60e7e8662e9da027c36db5239bc9708ef79ec42c0e86ad840",
+          "available_in_github": false
+        },
+        "gpu_identity_result": {
+          "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261113T035022741628Z/run/gpu_identity.stdout",
+          "bytes": 2965,
+          "sha256": "a12b1bc4a60513af886daf56a551af2f35430e169f18b67b52c0272580165862",
+          "available_in_github": false
+        },
+        "all_rank_preflight_command": {
+          "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261113T035022741628Z/run/all_rank_preflight.json",
+          "bytes": 1273,
+          "sha256": "6f104cf876ad3604a45c534d50299cf5202a386105425e805d38e40ce8e585f7",
+          "available_in_github": false
+        },
+        "all_rank_preflight_stderr": {
+          "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261113T035022741628Z/run/all_rank_preflight.stderr",
+          "bytes": 1968,
+          "sha256": "77e46deae1862d78224af549ec79bc8f97d54cf1efa42bdfbac5a4f4419974d4",
+          "available_in_github": false
+        },
+        "automatic_archive_final": {
+          "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261113T035022741628Z/run/ARCHIVE_FINAL.json",
+          "bytes": 529,
+          "sha256": "babf4214ee54d3cce1b83597ebd17d53fdf263e6c1e333abfc0021a1dff56a0a",
+          "available_in_github": false
+        },
+        "automatic_archive_manifest": {
+          "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261113T035022741628Z/run/ARCHIVE_MANIFEST.json",
+          "bytes": 3955,
+          "sha256": "f000da13fb6af864893b7531c99f2e53f63351d071d2ea2fdf08711cc62a6d45",
+          "available_in_github": false
+        },
+        "automatic_archive_verified": {
+          "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261113-a2/readback-20261113T035022741628Z/run/ARCHIVE_VERIFIED.json",
+          "bytes": 7676,
+          "sha256": "fc5c5d1fef9da62e2ee2286ea07611f163d802b75ec28d28b9152b3a2d7faf0a",
+          "available_in_github": false
+        },
+        "independent_failure_archive_acceptance": {
+          "source_path": "experiment/docs/operations/evidence/progress-devbox-20261113/qa-archive-independent/stdout.json",
+          "bytes": 26040,
+          "sha256": "af74953ed1ccc15dd5cc439ba010164dec1e12aca69f969afb91cf6bbc8468cc",
+          "available_in_github": false
+        },
+        "rendezvous_failure_diagnosis": {
+          "source_path": "experiment/docs/operations/evidence/progress-devbox-20261113/qa-diagnosis/QA_A2_RENDEZVOUS_DIAGNOSIS.json",
+          "bytes": 19278,
+          "sha256": "6683fedaebf5a33576024a70ff3f745ff7acc3fbe95dd12cbc87cf9910a20da3",
+          "available_in_github": false
+        }
+      },
+      "historical_observations": [
+        {
+          "observed_at_utc": "2026-11-12T16:26:47.092826+00:00",
+          "job_status": "Created",
+          "pod_phase": "Pending",
+          "allocated_node_observed": false,
+          "run_directory_present": false,
+          "evidence_key": "first_exact_pending_readback"
+        },
+        {
+          "observed_at_utc": "2026-11-12T16:27:59.747882+00:00",
+          "job_status": "Created",
+          "pod_phase": "Pending",
+          "allocated_node_observed": false,
+          "run_directory_present": false,
+          "evidence_key": "historical_002759_pending_readback"
+        },
+        {
+          "observed_at_utc": "2026-11-12T16:31:21.884513+00:00",
+          "job_status": "Created",
+          "pod_phase": "Pending",
+          "allocated_node_observed": false,
+          "run_directory_present": false,
+          "scheduling_reason": "The scheduler could not satisfy the combined CPU, memory and eight-GPU request on one permitted node; PodScheduled=False/Unschedulable.",
+          "startup_accepted": false,
+          "archive_accepted": false,
+          "evidence_key": "latest_exact_pending_readback",
+          "note": "Preserved Pending observation, superseded by the exact terminal Job/Pod and failure-archive readback."
+        }
+      ],
+      "original_pod_present": true,
+      "running_at_utc": "2026-11-12T17:11:09Z",
+      "failure_at_utc": "2026-11-12T17:14:39Z",
+      "container_started_at_utc": "2026-11-12T17:11:08Z",
+      "container_finished_at_utc": "2026-11-12T17:14:37Z",
+      "container_exit_code": 1,
+      "restart_count": 0,
+      "gpu_identity_passed": true,
+      "actual_gpu_count": 8,
+      "actual_gpu_model": "NVIDIA L20D",
+      "device_compute_capability": [
+        10,
+        3
+      ],
+      "minimum_device_memory_gib": 267.68890380859375,
+      "eight_rank_preflight_passed": false,
+      "failure_phase": "all_rank_preflight_rendezvous_before_CUDA_QA",
+      "failure_reason": "rendezvous_hostname_resolution_errors_followed_by_120_second_timeout",
+      "failure_interpretation": "The --standalone torchrun preflight repeatedly failed to resolve its rendezvous hostname, then reached its 120-second command timeout. GPU identity acceptance passed first; no all-rank BF16/NCCL acceptance or CUDA correctness/microbenchmark result was produced.",
+      "preflight_timeout_seconds": 120,
+      "preflight_started_at_utc": "2026-11-12T17:12:23.407504+00:00",
+      "preflight_finished_at_utc": "2026-11-12T17:14:24.902712+00:00",
+      "retry_submitted_in_this_check": false,
+      "archive_status": "independent_failure_archive_accepted",
+      "archive_object_count": 26,
+      "archive_bytes": 2172940,
+      "archive_payload_count": 24,
+      "archive_payload_bytes": 2161309,
+      "archive_observed_at_utc": "2026-11-13T03:53:04.985552+00:00",
+      "archive_all_objects_full_get_sha256_verified": true,
+      "archive_local_sources_sha256_matched": true,
+      "archive_scope": "synthetic startup/failure evidence; no model checkpoint or accepted CUDA performance result",
+      "original_run_preserved": true,
+      "files_deleted": false
     }
   ],
   "historical_activity_observations": [
@@ -1053,6 +1229,28 @@
       "observed_at_utc": "2026-11-12T16:31:21.884513+00:00",
       "active_run_id": "dp-cuda-pool-qa-20261113-a2",
       "observation": "Only the separately identified engineering QA attempt 2 is reported as active here: exact Job Created and Pod Pending at 2026-11-12T16:31:21.884513+00:00. No node or run directory was observed. Prior training-job observations remain dated history and do not establish later scheduler clearance."
+    },
+    {
+      "observed_at_utc": "2026-11-13T03:54:54.201624+00:00",
+      "active_run_id": null,
+      "observation": "A complete all-namespace framed project Job/Pod inventory at 2026-11-13T03:54:54.201624+00:00 found 8 project Jobs and 4 project Pods, all terminal; no active, Pending or unknown project workload was observed. This is a dated inventory, not scheduler capacity or new-submission admission.",
+      "project_workload_observation": {
+        "job_count": 8,
+        "pod_count": 4,
+        "active_jobs_including_pending_or_unknown": 0,
+        "active_pods_including_pending_or_unknown": 0,
+        "framing_complete": true,
+        "continuation_empty": true,
+        "all_project_workloads_terminal": true,
+        "scope": "One complete all-namespace framed projection for PyTorchJobs and Pods; project selection by dpvlm/deepprobe/dp-dev-format in name or owner; active includes Pending, Running and unknown/nonterminal. No scheduler submission or free-capacity admission.",
+        "observed_at_utc": "2026-11-13T03:54:54.201624+00:00",
+        "evidence": {
+          "source_path": "experiment/docs/operations/evidence/progress-devbox-20261113/training-readonly-20261113T035032Z/PROJECT_JOB_POD_INVENTORY.json",
+          "bytes": 7726,
+          "sha256": "6ea6e203edd383f1c04703511ceb6d9cc468bbcc2c13dced46b42df1fec249bb",
+          "available_in_github": false
+        }
+      }
     }
   ],
   "recovery_capacity_observations": [
@@ -1108,19 +1306,23 @@
     }
   ],
   "project_workload_observation": {
-    "job_count": 8,
-    "pod_count": 4,
-    "active_jobs_including_pending_or_unknown": 0,
-    "active_pods_including_pending_or_unknown": 0,
+    "job_count": 6,
+    "pod_count": 3,
+    "active_jobs_including_pending_or_unknown": 1,
+    "active_pods_including_pending_or_unknown": 1,
     "framing_complete": true,
     "continuation_empty": true,
-    "all_project_workloads_terminal": true,
-    "scope": "One complete all-namespace framed projection for PyTorchJobs and Pods; project selection by dpvlm/deepprobe/dp-dev-format in name or owner; active includes Pending, Running and unknown/nonterminal. No scheduler submission or free-capacity admission.",
-    "observed_at_utc": "2026-11-13T03:54:54.201624+00:00",
+    "all_project_workloads_terminal": false,
+    "only_active_run_id": "dp-cuda-pool-qa-20261114-a3",
+    "other_active_project_jobs_or_pods": 0,
+    "scope": "Complete all-namespace framed Job/Pod projections; only sanitized project counts and the current exact identity are published. This is a dated observation, not a free-node forecast.",
+    "observed_at_utc": "2026-11-14T04:19:52.301638+00:00",
+    "job_inventory_observed_at_utc": "2026-11-14T04:19:33.855328+00:00",
+    "pod_inventory_observed_at_utc": "2026-11-14T04:19:52.301638+00:00",
     "evidence": {
-      "source_path": "experiment/docs/operations/evidence/progress-devbox-20261113/training-readonly-20261113T035032Z/PROJECT_JOB_POD_INVENTORY.json",
-      "bytes": 7726,
-      "sha256": "6ea6e203edd383f1c04703511ceb6d9cc468bbcc2c13dced46b42df1fec249bb",
+      "source_path": "experiment/docs/operations/evidence/cuda-pool-qa-admission-20261114-a3/observe-20261114T041927Z/stdout.json",
+      "bytes": 2160666,
+      "sha256": "5c5bd3d542382fbce6dd871434df72c8e08e2dd60cfbae25bd5202eb2c2677a8",
       "available_in_github": false
     }
   },
@@ -1324,5 +1526,15 @@
         "available_in_github": false
       }
     }
+  },
+  "public_launcher_gpu_followup": {
+    "run_id": "dp-cuda-pool-qa-20261114-a3",
+    "source_commit": "5a14d3e7bd65a5869f21cb32d79221a03d695af9",
+    "observed_at_utc": "2026-11-14T04:19:28.046026+00:00",
+    "job_submitted": true,
+    "pod_phase": "Pending",
+    "eight_rank_bf16_nccl_accepted": false,
+    "cuda_correctness_or_performance_accepted": false,
+    "note": "The November 13 public_launcher_repair record retains its original CPU-only scope. This later GPU follow-up uses its exact public helper; execution remains pending."
   }
 }

@@ -1,29 +1,25 @@
-# Experiment status — 2026-11-13
+# Experiment status — 2026-11-14
 
-Latest engineering QA readback: **November 13, 11:50:24 Beijing time
-(UTC+08:00)**. CUDA pooling QA attempt 2 is **Failed** after an eight-GPU
-allocation. GPU identity passed, but the all-rank preflight timed out while
-resolving its rendezvous hostname. No accepted BF16/NCCL preflight, CUDA
-correctness test or microbenchmark result was produced. Its complete failure
-archive passed independent readback at **11:53:04**.
+CUDA pooling QA attempt 3 was submitted once at **12:14:46 Beijing time
+(UTC+08:00) on November 14**. The **12:19:28** exact readback shows Job
+**Created**, Pod **Pending/Unschedulable**, with no allocated node or run
+directory. The permitted pool could not satisfy its combined CPU, memory and
+eight-GPU request on one node. At **12:19:52**, the complete project inventory
+contained six Jobs and three Pods; only this QA attempt was active, and every
+other project resource was terminal.
 
-The **11:51:21** training readback found the same R4 and Smol Job UIDs still
-Failed, with their original Pods absent. Highest logged steps remain 602 and
-317; durable checkpoints remain 600 and 300, without final checkpoints or
-training-completion receipts. The **11:51:37** exact OSS listings remain
-147 objects / 23,234,938,760 bytes for R4 and zero objects for Smol. These are
-dated observations; full numerical recovery remains unaccepted.
+The new attempt uses the reviewed loopback launcher and stream/low, one node,
+eight GPUs, restart Never and no forced node. Local package checks passed
+**36 tests, with one GPU test skipped**, and the exact target Linux process
+checks passed **15 tests**. Fresh admission and the exact server-side dry-run
+passed before the single create. GPU startup, CUDA correctness and measurements
+have not started; no new training, held-out quality or performance result is
+claimed. The full experiment suite remains unsubmitted.
 
-At **11:54:54**, a complete project Job/Pod inventory found eight Jobs and four
-Pods, all terminal, with no active/Pending/unknown project workload. No new job
-or old-file deletion was performed in this check. The full suite remains
-unsubmitted, and no new training, held-out quality or GPU-performance result
-is claimed.
-
-The future public single-node launchers now use explicit loopback rendezvous.
-Their final public targeted CPU regression passed **48 tests, with 10 skipped**;
-an additional private-artifact run retained one pre-existing frozen-source
-comparison failure. This repair has not been submitted or accepted on GPUs.
+Attempt 2 remains Failed, with its independently accepted failure archive.
+The earlier R4/Smol training, checkpoint and archive observations below retain
+their dates and remain unresolved. The November 13 public launcher CPU result
+also retains its recorded private-artifact comparison failure.
 
 ## Completed
 
@@ -117,6 +113,27 @@ No new benchmark results are claimed by these training and archive updates.
 
 ## CUDA engineering validation
 
+### Attempt 3 submitted, awaiting allocation
+
+Run `dp-cuda-pool-qa-20261114-a3` binds source commit
+`5a14d3e7bd65a5869f21cb32d79221a03d695af9` and the separately reviewed v3
+package. Its exact job is
+`jinhaopeng-dpvlm-cuda-pool-qa-20261114-a3-n1-abd5f`, UID
+`152670ef-e80f-4ec0-8359-1060e0db32dc`. The **12:19:28** Pending readback
+contains no GPU acceptance or measurement artifacts.
+
+The target process checks cover descendants that create separate sessions,
+timeout and controller termination, and safe process-identity handling. Fresh
+storage, complete project inventories and exact empty archive-prefix checks
+passed. The submission-side capacity projection was **86,365,643,249 bytes**,
+including 1 GB QA and 7 GB existing media/CPU reserves, below the strict 99 GB
+limit. This admits only the bounded synthetic QA job. Its runtime must still
+pass the eight-rank BF16/NCCL preflight before CUDA numerical tests and the
+single-device BF16/FP32 microbenchmarks. Evidence digests are in
+[status.json](status.json); these CPU and submission checks are not GPU results.
+
+### Attempt 2 failure and retained validation
+
 The earlier opt-in inference changes and recovery guard were committed as
 `bec405e8802232cf4815f1c6dfea968318a12aa9`. The public CPU suite passed 512 tests
 (80 skipped), and three separate pinned native Ouro CPU tests passed.
@@ -156,9 +173,9 @@ no files were deleted and no replacement job was submitted in this check.
 The submission-side small-QA capacity projection was **86,352,050,339 bytes**,
 including the 1 GB QA and 7 GB existing media/CPU reserves, below the 99 GB
 limit. This does not admit a training recovery or the full experiment suite.
-There is no completed CUDA result or accepted speedup. A new GPU attempt still
-needs its own reviewed source, fresh admission and separate identity; the frozen
-attempt-2 source and failure evidence remain intact.
+There is no completed CUDA result or accepted speedup. The separately admitted
+attempt 3 has its own source/package and Job identity; the frozen attempt-2
+source and failure evidence remain intact.
 
 ### Public launcher repair
 

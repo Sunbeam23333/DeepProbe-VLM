@@ -1,4 +1,4 @@
-# Training and inference optimization — 2026-11-13
+# Training and inference optimization — 2026-11-14
 
 The code audit identified avoidable inference work and a missing recovery guard.
 This change implements bounded improvements and the measurement tools needed to
@@ -102,8 +102,9 @@ evidence tests skipped**, with all seven changed code/test SHA values unchanged
 before and after the run. Two concurrent real Gloo groups, each with two CPU
 ranks, passed all-reduce despite deliberately broken hostname resolution and
 inherited conflicting flags; their live ports differed. Local Torch **2.13.0**
-was used. Remote Torch **2.10.0+cu130**, eight-rank BF16/NCCL and the CUDA pooling
-kernel still require a fresh admitted GPU attempt.
+was used. That CPU run did not validate remote Torch **2.10.0+cu130**,
+eight-rank BF16/NCCL or the CUDA pooling kernel. Attempt 3 below is the later
+GPU follow-up.
 
 The additional private-artifact run recorded **57 passed and one failed**. Its
 legacy TempCompass check requires the current model/generation source to match
@@ -112,8 +113,26 @@ all four checked scientific sources remain byte-identical to the pre-repair
 baseline. No old test expectation or frozen package was changed. Both scoped
 test results and that baseline proof are pinned under `public_launcher_repair`
 in [status.json](../results/status.json); no full-suite pass is claimed for this
-repair. Attempt 2 remains Failed and unchanged, and no replacement job or GPU
-result was produced.
+repair. Attempt 2 remains Failed and unchanged; no replacement job or GPU
+result was produced during that November 13 check.
+
+Attempt 3, `dp-cuda-pool-qa-20261114-a3`, binds source commit
+`5a14d3e7bd65a5869f21cb32d79221a03d695af9` and was created once at
+**12:14:46 Beijing time on November 14**. Its exact **12:19:28** readback shows
+Pod **Pending/Unschedulable**, without an allocated node or run directory.
+The complete **12:19:52** project inventory found only this attempt active.
+The contract remains stream/low, one node, eight GPUs, restart Never and no
+forced node.
+
+The frozen package passed **36 local CPU checks, with one GPU test skipped**,
+and **15 target Linux process checks**. The latter verify descendant cleanup
+across independent sessions and the process-identity interface on the actual
+runtime. Fresh admission and exact server dry-run passed; the single-create
+intent and actual Job UID are bound in [status.json](../results/status.json).
+The small-QA capacity projection was **86,365,643,249 bytes**. The job still
+needs eight-rank BF16/NCCL startup acceptance before correctness tests and
+BF16/FP32 pooling measurements; none has run at this observation. This
+submission does not admit training recovery or establish an optimization gain.
 
 Run from `experiment/`, using a compatible existing CUDA-enabled PyTorch/Triton
 environment and a freshly admitted GPU allocation:
