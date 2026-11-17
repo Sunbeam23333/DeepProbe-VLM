@@ -1,25 +1,24 @@
-# Experiment status — 2026-11-14
+# Experiment status — 2026-11-17
 
-CUDA pooling QA attempt 3 was submitted once at **12:14:46 Beijing time
-(UTC+08:00) on November 14**. The **12:19:28** exact readback shows Job
-**Created**, Pod **Pending/Unschedulable**, with no allocated node or run
-directory. The permitted pool could not satisfy its combined CPU, memory and
-eight-GPU request on one node. At **12:19:52**, the complete project inventory
-contained six Jobs and three Pods; only this QA attempt was active, and every
-other project resource was terminal.
+CUDA pooling QA attempt 3 **Succeeded on November 14 at 13:51:28 Beijing
+time (UTC+08:00)**, with container exit code 0 and no restarts. The November
+17 readback confirms that all eight ranks passed BF16 attention
+forward/backward and NCCL all-reduce. The pooling test suite passed **13 tests,
+including one explicit GPU numerical test**; both BF16 and FP32 operator
+microbenchmarks completed with real Triton kernel events recorded.
 
-The new attempt uses the reviewed loopback launcher and stream/low, one node,
-eight GPUs, restart Never and no forced node. Local package checks passed
-**36 tests, with one GPU test skipped**, and the exact target Linux process
-checks passed **15 tests**. Fresh admission and the exact server-side dry-run
-passed before the single create. GPU startup, CUDA correctness and measurements
-have not started; no new training, held-out quality or performance result is
-claimed. The full experiment suite remains unsubmitted.
+For this single-device synthetic weighted-pooling workload, the ratios of
+reference to Triton median CUDA-event time were **2.41× for BF16** and
+**2.28× for FP32**. These measure the pooling operator only. They do not measure
+full-model inference, training speed or held-out quality. The complete
+**56-object / 2,518,835-byte** archive passed independent full GET/SHA checks,
+and the timing statistics were recomputed from every recorded call.
 
-Attempt 2 remains Failed, with its independently accepted failure archive.
-The earlier R4/Smol training, checkpoint and archive observations below retain
-their dates and remain unresolved. The November 13 public launcher CPU result
-also retains its recorded private-artifact comparison failure.
+At **11:15:15 on November 17**, the complete project inventory contained five
+Jobs and three Pods, all terminal. The full experiment suite remains
+unsubmitted. R4 still needs recovery from step 600, including restoration of
+five model/optimizer files now missing locally; Smol remains at checkpoint
+300. No new training completion or held-out result was produced.
 
 ## Completed
 
@@ -65,6 +64,13 @@ The scientific recipe remains F8/G4/R1 and global batch 128, with 91,826 train
 and 4,472 dev QA and a target of 718 optimizer updates. No Smol training
 completion or held-out result has been accepted.
 
+The November 17 readback found the same failed Job UID, log step 317 and
+checkpoint step 300. Its 29 local checkpoint files / 8,642,273,132 bytes match
+the prior names, sizes and timestamps; large payloads were not rehashed.
+The exact archive prefix remains empty. Failure archival, complete recovery
+validation and fresh admission remain necessary before the 418 remaining
+alignment updates and subsequent SFT/evaluation.
+
 ## Smol attempt-1 failure retained
 
 Attempt 1 was submitted once at 14:36. Its container started at **16:01:50**,
@@ -91,7 +97,7 @@ overwrite or resubmit attempt 1.
 ## R4 SFT interruption and recovery
 
 R4 SFT attempt 1 failed on **November 9 at 17:04:27 Beijing time**. Its log last
-reached **602/718 updates**, while the preserved durable checkpoint is at step
+reached **602/718 updates**, while its checkpoint Trainer metadata remains at step
 600. SIGTERM was observed, but the original process exit code and termination
 source remain unknown. There is no final checkpoint or R4 held-out score.
 
@@ -107,30 +113,56 @@ accepted. Recovery from step 600 requires 118 further updates. The November 11
 capacity analysis retains the checkpoint and projects 122,687,970,220 bytes,
 above the 99,000,000,000-byte limit, so the R4 recovery job remains gated.
 
+The November 17 readback found the exact R4 Job and original Pod **NotFound**;
+this does not change its previously observed failure. Five model/optimizer
+payloads totaling **22,312,029,341 bytes** are now missing locally, leaving
+26 metadata/state files / 5,124,031 bytes. The cause of their absence is unknown.
+The log and Trainer state are unchanged at 602 and 600 respectively.
+
+The corresponding archived keys remain present with matching sizes, and the
+147-object archive listing is unchanged. This check did not download or rehash
+those large payloads. Restore them against the original SHA256 evidence, then
+validate complete optimizer/RNG recovery and fresh admission before resuming
+the remaining 118 updates. Local Trainer metadata alone is insufficient.
+
 The sanitized [status record](status.json) preserves the dated R4 failure facts
 and records Smol separately, with hashes linking each claim to private evidence.
 No new benchmark results are claimed by these training and archive updates.
 
 ## CUDA engineering validation
 
-### Attempt 3 submitted, awaiting allocation
+### Attempt 3 completed: synthetic CUDA operator QA
 
 Run `dp-cuda-pool-qa-20261114-a3` binds source commit
-`5a14d3e7bd65a5869f21cb32d79221a03d695af9` and the separately reviewed v3
-package. Its exact job is
-`jinhaopeng-dpvlm-cuda-pool-qa-20261114-a3-n1-abd5f`, UID
-`152670ef-e80f-4ec0-8359-1060e0db32dc`. The **12:19:28** Pending readback
-contains no GPU acceptance or measurement artifacts.
+`5a14d3e7bd65a5869f21cb32d79221a03d695af9` and the reviewed v3 package.
+Its exact job is `jinhaopeng-dpvlm-cuda-pool-qa-20261114-a3-n1-abd5f`, UID
+`152670ef-e80f-4ec0-8359-1060e0db32dc`. The earlier November 14 Pending
+observations remain in history. The Job became Running at **13:48:11** and
+Succeeded at **13:51:28**; its container ran from **13:48:10 to 13:51:26**,
+exit code 0, with no restarts. The contract was stream/low, one node, eight
+GPUs, restart Never and no forced node.
 
-The target process checks cover descendants that create separate sessions,
-timeout and controller termination, and safe process-identity handling. Fresh
-storage, complete project inventories and exact empty archive-prefix checks
-passed. The submission-side capacity projection was **86,365,643,249 bytes**,
-including 1 GB QA and 7 GB existing media/CPU reserves, below the strict 99 GB
-limit. This admits only the bounded synthetic QA job. Its runtime must still
-pass the eight-rank BF16/NCCL preflight before CUDA numerical tests and the
-single-device BF16/FP32 microbenchmarks. Evidence digests are in
-[status.json](status.json); these CPU and submission checks are not GPU results.
+Actual eight-rank BF16/NCCL startup passed before the pooling suite and
+measurements. Of the **13 passing pooling tests**, 12 cover CPU/reference or
+guards and one explicitly exercises CUDA numerical cases. Both dtype
+microbenchmarks passed their numerical gates and recorded the real
+`_weighted_spatial_pool_kernel` in separate profiler passes.
+
+The measurement protocol uses one device, synthetic `[8,729,1152]` inputs,
+G4 and seed 17, with 25 warmups and 100 measured calls per backend. Alternating
+backend order, synchronized CUDA events and separate profiling are retained.
+The timed operation includes output allocation and excludes the gate,
+projector, vision encoder and language model. Ratios are ratios of backend
+medians; one run and one synthetic shape do not establish model-level gains.
+See [operator measurements and scope](../docs/OPTIMIZATION_STATUS.md).
+
+Independent archive acceptance on November 17 verified **56 objects /
+2,518,835 bytes**, including 54 payload objects / 2,494,061 bytes, against
+local source bytes and the stable exact OSS inventory. Recalculation of all
+200 rows per dtype matched the recorded mean, median, R7 P95 and other
+summary fields. Original run files were preserved. [status.json](status.json)
+binds the complete success, archive and measurement evidence; no model
+checkpoint or held-out result is part of this QA run.
 
 ### Attempt 2 failure and retained validation
 
@@ -173,9 +205,9 @@ no files were deleted and no replacement job was submitted in this check.
 The submission-side small-QA capacity projection was **86,352,050,339 bytes**,
 including the 1 GB QA and 7 GB existing media/CPU reserves, below the 99 GB
 limit. This does not admit a training recovery or the full experiment suite.
-There is no completed CUDA result or accepted speedup. The separately admitted
-attempt 3 has its own source/package and Job identity; the frozen attempt-2
-source and failure evidence remain intact.
+Attempt 2 supplies no accepted CUDA result. The later successful attempt 3
+has its own source/package and Job identity; the frozen attempt-2 source and
+failure evidence remain intact.
 
 ### Public launcher repair
 

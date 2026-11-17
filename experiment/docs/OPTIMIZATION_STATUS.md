@@ -1,8 +1,9 @@
-# Training and inference optimization — 2026-11-14
+# Training and inference optimization — 2026-11-17
 
 The code audit identified avoidable inference work and a missing recovery guard.
 This change implements bounded improvements and the measurement tools needed to
-evaluate them. No CUDA speedup, H20/B300 ratio or optimized held-out score has
+evaluate them. Synthetic weighted-pooling operator measurements are now
+accepted. No full-model speedup, H20/B300 ratio or optimized held-out score has
 been accepted. Historical releases, checkpoints and benchmark results retain
 their frozen implementations.
 
@@ -117,22 +118,43 @@ repair. Attempt 2 remains Failed and unchanged; no replacement job or GPU
 result was produced during that November 13 check.
 
 Attempt 3, `dp-cuda-pool-qa-20261114-a3`, binds source commit
-`5a14d3e7bd65a5869f21cb32d79221a03d695af9` and was created once at
-**12:14:46 Beijing time on November 14**. Its exact **12:19:28** readback shows
-Pod **Pending/Unschedulable**, without an allocated node or run directory.
-The complete **12:19:52** project inventory found only this attempt active.
-The contract remains stream/low, one node, eight GPUs, restart Never and no
-forced node.
+`5a14d3e7bd65a5869f21cb32d79221a03d695af9`. It completed on **November 14 at
+13:51:28 Beijing time**, exit code 0, without restarts, using stream/low,
+one node and eight GPUs. Its earlier Pending observations are retained.
+The November 17 readback confirms actual eight-rank BF16 attention
+forward/backward and NCCL all-reduce acceptance, followed by **13 passing
+pooling tests**: 12 CPU/reference/guard checks and one explicit CUDA test.
 
-The frozen package passed **36 local CPU checks, with one GPU test skipped**,
-and **15 target Linux process checks**. The latter verify descendant cleanup
-across independent sessions and the process-identity interface on the actual
-runtime. Fresh admission and exact server dry-run passed; the single-create
-intent and actual Job UID are bound in [status.json](../results/status.json).
-The small-QA capacity projection was **86,365,643,249 bytes**. The job still
-needs eight-rank BF16/NCCL startup acceptance before correctness tests and
-BF16/FP32 pooling measurements; none has run at this observation. This
-submission does not admit training recovery or establish an optimization gain.
+Both dtype microbenchmarks completed on one allocated device, reported as
+NVIDIA L20D with compute capability [10,3], using Torch 2.10.0+cu130 and
+Triton 3.6.0. They used synthetic `[8,729,1152]` states, G4, seed 17,
+25 warmups and 100 alternating-order calls per backend. Median synchronized
+CUDA-event times were:
+
+- **BF16:** reference **0.270224 ms**, Triton **0.112144 ms**; ratio of medians
+  **2.4096×**.
+- **FP32:** reference **0.210192 ms**, Triton **0.092048 ms**; ratio of medians
+  **2.2835×**.
+
+The corresponding ratios of means are 2.5118× and 2.4702×; they are separate
+statistics. Maximum absolute numerical errors were 1.19e-7 and 1.49e-7,
+within the declared atol/rtol 3e-5 gates. Separate profiler traces contain
+the actual Triton pooling kernel. All raw timing rows were independently
+recomputed; the mean, median, R7 P95 and other summary fields match.
+
+These timings cover **weighted pooling and its output allocation only**.
+The gate, projector, vision encoder and language model are excluded. They
+measure neither a full-model or training speedup nor quality parity, and one
+shape/seed/run cannot establish cross-workload or cross-hardware performance.
+Peak allocated-memory values in [status.json](../results/status.json) include
+resident synthetic inputs and other live tensors; they are not whole-model
+memory or incremental temporary-allocation estimates.
+
+The complete archive passed independent full GET/SHA checks: **56 objects /
+2,518,835 bytes**. The evidence, exact job identity, protocol, descriptive
+statistics and retained Pending history are bound in
+[status.json](../results/status.json). No new model checkpoint or held-out
+result was produced by this QA run.
 
 Run from `experiment/`, using a compatible existing CUDA-enabled PyTorch/Triton
 environment and a freshly admitted GPU allocation:
@@ -155,8 +177,8 @@ and an independent profiler pass with actual kernel-event verification. Gate
 and projector are outside its measured scope. It measures one device even when
 the required scheduler allocation contains eight. It submits no job itself.
 
-Before promoting an optimization, execute real GPU numerical tests, measure
-each switch alone and together against a new reference plan, inspect exact
+Before promoting an optimization into the model path, measure each switch
+alone and together against a new reference plan, inspect exact
 generated-token agreement and measure checkpoint-level latency/memory. Assess
 held-out quality under a separately frozen protocol. A fast pooling kernel may
 have little effect if recurrent decode or media preparation dominates.
@@ -172,8 +194,10 @@ projections remained above the 99 GB limit at that observation. The **11:51**
 training check found unchanged R4/Smol logged steps 602/317, durable checkpoints
 600/300, and exact archive inventories; it did not rescan capacity or establish
 numerical recovery. The **11:54:54** project inventory was entirely terminal.
-Small-QA admission is separate from
-these training gates. See [suite operating runbook](EXPERIMENT_SUITE.md) and
+The November 17 inventory is also entirely terminal. R4 now lacks five local
+model/optimizer payloads and requires verified restoration from its accepted
+archive before recovery; Smol remains at checkpoint 300 with no archive.
+The successful small operator QA is separate from these training gates. See [suite operating runbook](EXPERIMENT_SUITE.md) and
 the separately dated capacity evidence in [status.json](../results/status.json).
 
 The paper's selective visual-state refresh, learned compute budget, token

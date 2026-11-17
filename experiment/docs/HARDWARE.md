@@ -69,8 +69,9 @@ BF16, activation checkpointing, and distributed data parallel training.
 
 Opt-in inference additions: last-position language-head projection and a Triton
 weighted spatial pooling kernel with a standalone numerical/microbenchmark
-runner. No actual CUDA speedup or end-to-end quality parity is yet accepted;
-see [optimization status](OPTIMIZATION_STATUS.md). Triton is optional and loaded
+runner. Single-device synthetic pooling measurements are accepted; full-model
+speedup and end-to-end quality parity remain unaccepted. See
+[optimization status](OPTIMIZATION_STATUS.md). Triton is optional and loaded
 only when explicitly requested. Keep the CUDA-enabled PyTorch distribution's
 compatible Triton runtime rather than installing an arbitrary newer version.
 
