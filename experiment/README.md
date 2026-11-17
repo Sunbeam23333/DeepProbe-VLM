@@ -8,9 +8,11 @@
 
 这版先建立一个正确、可复现的稠密循环基线：**SigLIP 编码视频帧 → 可训练视觉连接器 → Ouro 原生共享权重循环 → 回答**。不是把普通 Transformer 在外面调用几次，也不是直接拿浅层 KV 冒充深层 KV。
 
-截至 2026-11-17，已有 R1/R2 seed17 的真实训练与评测结果，见[已验收结果与协议](results/RESULTS.md)和[当前进度](results/STATUS.md)。CUDA QA a3 的八卡启动、BF16/FP32 池化数值、单卡合成算子计时及完整归档已独立验收；多种子稳健性、完整模型延迟和正式 H20/B300 对比仍待完成。旧的冻结模型/选择性深层补算草稿不作为这版的实现说明；[实验协议 PDF](../paper/experiment_protocol.pdf) 是实验设计文档。
+截至 2026-11-18，已有 R1/R2 seed17 的真实训练与评测结果，见[已验收结果与协议](results/RESULTS.md)和[当前进度](results/STATUS.md)。CUDA QA a3 的八卡启动、BF16/FP32 池化数值、单卡合成算子计时及完整归档已独立验收；多种子稳健性、完整模型延迟和正式 H20/B300 对比仍待完成。旧的冻结模型/选择性深层补算草稿不作为这版的实现说明；[实验协议 PDF](../paper/experiment_protocol.pdf) 是实验设计文档。
 
-完整训练、消融、评测、归档与清理的单节点串行入口见 [EXPERIMENT_SUITE.md](docs/EXPERIMENT_SUITE.md)。该矩阵覆盖 18 个模型配置、36 次评测和 185 个计划任务，尚未提交；实际启动仍须绑定历史恢复证据、完整媒体缓存并通过准入。Smol seed29 a2 的失败归档和 300 步检查点已独立验收；a3 修正版经准入提交后，于 11 月 17 日北京时间 14:20:58 Running、14:25:50 Failed。八卡身份、BF16 前后向和 NCCL 检查通过，但 preflight 进程在 58.5 秒处受到 SIGTERM，未正常退出；信号来源未确认，尚无正式训练启动、300 → 718 步原生恢复或新增步数证据。23:16 回读的 6 个课题 Job、3 个 Pod 均为终态。这次单独恢复不改变全套矩阵的默认 DAG。R4 SFT 的 600 步检查点仍缺 5 个本地模型/优化器文件，恢复受归档还原和容量门槛约束。
+完整训练、消融、评测、归档与清理的单节点串行入口见 [EXPERIMENT_SUITE.md](docs/EXPERIMENT_SUITE.md)。该矩阵覆盖 18 个模型配置、36 次评测和 185 个计划任务，尚未提交；实际启动仍须绑定历史恢复证据、完整媒体缓存并通过准入。Smol a5 已于 11 月 18 日北京时间 **01:19:04** 以单节点八卡 stream/low 作业真实提交，**01:22:49** 回读为 Pending，等待资源；8 个课题 Job、5 个 Pod 中仅它未终止。仍以 a2 已验 checkpoint300 为原生恢复来源，尚未观察到 GPU 启动握手、实际恢复或新增步数。这次独立恢复不改变全套矩阵的默认 DAG。R4 SFT 的 600 步检查点仍缺 5 个本地模型/优化器文件，恢复受归档还原和容量门槛约束。
+
+a3、a4 的失败归档均已独立验收。a5 的提交回执原子发布、有界等待机制已通过 90 项 CPU 测试和真实 Linux 共享盘模拟验证；真实提交与 READY 回执也已独立验收，实际 GPU 握手和恢复仍待运行验证。
 
 ## 已交付与边界
 
@@ -18,7 +20,7 @@
 |---|---|
 | 原生 Ouro 循环 + 视频前缀 + final-loop answer-only loss | 已实现；小模型 CPU 契约测试 |
 | 连接器对齐 → 全语言主干 SFT；视觉编码器可训练 | 已实现；无 LoRA，循环间不截断梯度 |
-| 普通 SmolLM2 对照、DDP、保存/重载、断点续训 | 已实现；Ouro 八卡训练已验收；Smol a3 八卡自检通过后收到 SIGTERM 并 Failed，尚无原生恢复或新增步数证据 |
+| 普通 SmolLM2 对照、DDP、保存/重载、断点续训 | 已实现；Ouro 八卡训练已验收；Smol a5 已排队等待资源，尚无原生恢复或新增步数证据 |
 | 数据下载/转换/分组/泄漏检查/抽帧缓存 | 已实现；默认仅预览下载计划 |
 | 多选/EM 评测、逐样本记录、配对成簇 bootstrap | 已实现；不是官方语义 judge |
 | 可选 Triton 加权池化、末 token 投影、独立 CUDA profiling/速度对照 | 池化单算子的真实 CUDA 数值、合成计时及归档已验收；完整模型与末 token 优化收益待测 |
@@ -166,4 +168,4 @@ python scripts/analysis/summarize.py \
 
 ## Release status
 
-This is an experimental **baseline implementation**. Accepted R1/R2 seed17 training, eight-GPU execution and benchmark results are documented in [results](results/RESULTS.md); this is not a full official benchmark reproduction or a completed research result. CPU tests cover recurrence, cache parity, gradients, checkpoint round trips, training-stage transitions and evaluation contracts. CUDA QA attempt 3 adds independently accepted BF16/FP32 numerical and timing evidence for one synthetic pooling shape on one device, following an eight-rank startup gate. Additional training seeds, remaining baselines/ablations, Docker compatibility, warmed full-model performance and cross-hardware comparisons remain unverified. The 185-task suite has not been submitted. The separate Smol a3 recovery passed admission and was submitted at low priority; it subsequently Failed after eight-rank GPU checks passed but SIGTERM interrupted the preflight process. The signal source is unconfirmed, and no formal training startup, native recovery or new optimizer step is observed. No datasets, weights, copied third-party code or fabricated benchmark scores are distributed. Private-evidence integration tests require separately provisioned authorized artifacts.
+This is an experimental **baseline implementation**. Accepted R1/R2 seed17 training, eight-GPU execution and benchmark results are documented in [results](results/RESULTS.md); this is not a full official benchmark reproduction or a completed research result. CPU tests cover recurrence, cache parity, gradients, checkpoint round trips, training-stage transitions and evaluation contracts. CUDA QA attempt 3 adds independently accepted BF16/FP32 numerical and timing evidence for one synthetic pooling shape on one device, following an eight-rank startup gate. Additional training seeds, remaining baselines/ablations, Docker compatibility, warmed full-model performance and cross-hardware comparisons remain unverified. The 185-task suite has not been submitted. Smol attempt 5 was submitted once at stream/low and is Pending for resources. Its actual submission and atomic READY receipt passed independent review after 90 CPU tests and a real Linux shared-filesystem synthetic handshake smoke. No actual GPU startup handshake, native recovery or new optimizer step is observed yet. Attempts 3 and 4 retain their separately accepted failure archives. No datasets, weights, copied third-party code or fabricated benchmark scores are distributed. Private-evidence integration tests require separately provisioned authorized artifacts.

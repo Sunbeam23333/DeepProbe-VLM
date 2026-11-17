@@ -7,7 +7,7 @@ states. Only the real task's verified outputs advance its completion journal.
 
 ## Current admission status
 
-As of **2026-11-17**, the 185-task suite has **not been submitted**. Its declared
+As of **2026-11-18**, the 185-task suite has **not been submitted**. Its declared
 DAG and scientific scope are unchanged. The separately controlled Smol recovery
 below does not start the full suite or complete a suite-history binding.
 
@@ -42,9 +42,43 @@ below does not start the full suite or complete a suite-history binding.
   bindings remain intact; the v1 attempt and its failure evidence are retained.
   At **15:18:48 UTC**, exact Job/Pod UID event queries returned no events and
   the exact attempt-3 OSS run prefix contained zero objects. Its failure archive
-  remains incomplete. The source checkpoint still has 29 files / 8,642,273,132
+  was incomplete at that observation. The source checkpoint still had 29 files / 8,642,273,132
   bytes by count/size inspection; its large payloads were not rehashed in that
   check. This attempt produced no training-directory files.
+  On November 18 at **00:40:07 Beijing time**, a separate one-time failure
+  archive passed independent full GET/SHA acceptance: 337 objects / 940,846,953
+  bytes. Original run/control files were preserved; the accepted attempt-2
+  archive was not repeated. Attempt-4 control is sealed around the same
+  attempt-2 checkpoint 300. Fresh CPU/live admission and independent review
+  passed at **00:47:33** and **00:48:09 Beijing time**, with a 77,200,884,510-byte
+  capacity projection. Client/server dry-runs created no actual job. The actual
+  attempt-4 Job `jinhaopeng-dpvlm-p1-smollm2-s29-align-a4-n1-0aece`, UID
+  `01f3dce0-998d-47c3-95c0-98d7c5c833d2`, was submitted once at **00:52:31**,
+  became Running at **00:52:59** and Failed at **00:53:02 Beijing time**.
+  Its container exited1 with no restarts after startup could not read its
+  exact submission receipt. The later submission collection contains that
+  receipt. No startup admission, hardware/preflight, native recovery or new
+  optimizer update was observed. The **00:53:30** readback finds all seven
+  project Jobs and four Pods terminal. This failure remains separately recorded
+  and does not invalidate its earlier CPU admission.
+- Attempt-4 metadata/startup failure archival passed independent full GET/SHA
+  acceptance on November 18 at **01:06:57 Beijing time**: **124 objects /
+  15,310,756 bytes**. No new training checkpoint was created; original trees
+  remain preserved and the attempt-2 checkpoint/archive was not repeated.
+  Attempt 5 adds atomic submission READY publication and a bounded startup
+  wait, with 90 passing CPU tests and a real Linux shared-filesystem synthetic
+  smoke. These checks do not establish actual GPU submission or recovery;
+  Fresh CPU/live admission and independent review subsequently passed at
+  **01:14:19** and **01:14:54 Beijing time**, with a **77,216,548,305-byte**
+  capacity projection. The actual attempt-5 Job
+  `jinhaopeng-dpvlm-p1-smollm2-s29-align-a5-n1-6e7fe`, UID
+  `f9761d5d-7e4e-4e0b-8e45-78dd658f580a`, was created once at **01:19:04**.
+  Root confirmed its identity and published the atomic READY receipt at
+  **01:19:36**. Independent submission review accepted the complete 45-file
+  readback and READY/intent bindings. At **01:22:49 Beijing time**, the exact
+  Pod was Pending/Unschedulable for CPU, memory and GPU resources; it was the
+  sole nonterminal project Job/Pod among eight Jobs and five Pods. No container,
+  real GPU handshake, native recovery or new optimizer step is observed.
 - R4 seed17 SFT has a durable step600/718 checkpoint, but five model/optimizer
   payload files are missing locally. Recovery still needs their exact archived
   bytes restored and rehashed, followed by complete native-state and fresh
