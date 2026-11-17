@@ -7,23 +7,54 @@ states. Only the real task's verified outputs advance its completion journal.
 
 ## Current admission status
 
-As of the 2026-11-12 preparation, the long suite has **not been submitted**.
-The following real prerequisites remain gated:
+As of **2026-11-17**, the 185-task suite has **not been submitted**. Its declared
+DAG and scientific scope are unchanged. The separately controlled Smol recovery
+below does not start the full suite or complete a suite-history binding.
 
-- R4 seed17 SFT recovery and SmolLM2 seed29 alignment recovery still need
-  independently accepted, byte-bound historical recovery inputs in the suite
-  environment. Their recorded step600/step300 candidates are not automatic
-  permission to resume, declare success, or restart from zero.
+- CUDA QA attempt 3 completed eight-rank BF16/NCCL startup, the pooling tests
+  including a real CUDA numerical test, and BF16/FP32 single-device synthetic
+  operator measurements. Its complete 56-object archive and raw timing
+  statistics were independently accepted. These are operator-level results;
+  full-model, distributed-training and H20/B300 speed comparisons remain open.
+  See [the accepted QA evidence and scope](../results/STATUS.md#cuda-engineering-validation).
+- SmolLM2 seed29 alignment a2 remains a failed training attempt. Its exact
+  268-object failure archive and all 29 checkpoint300 files have now passed
+  independent full GET/SHA verification. A fresh a3 control package for native
+  recovery from step 300 to 718 passed its first source review, but its v1 CPU
+  admission then failed on an overly broad framework-import guard. A real Linux
+  probe confirmed that the unchanged native CPU safetensor header reader imports
+  PyTorch without materializing tensors, loading optimizer state or initializing
+  CUDA. The v2 control corrects this guard and its reported facts, preserves the
+  original source and allocation mask, and has passed targeted local tests.
+  The v2 package has now passed fresh CPU admission and independent review and
+  was submitted once as `jinhaopeng-dpvlm-p1-smollm2-s29-align-a3-n1-bdff2`, UID
+  `ab061a99-000f-4283-b806-249ea5287fdf`. The November 17 **04:37:10 UTC** readback
+  shows the Job Created and its Pod Pending/Unschedulable for node resources.
+  The stream/low, one-node/eight-GPU, restart-Never contract passed, with no
+  forced node. **Training has not started and no new optimizer steps are
+  reported**; the requested native recovery remains 300 → 718. The original
+  recipe, optimizer/scheduler/RNG state and external checkpoint remain unchanged;
+  the v1 attempt and its failure evidence are retained.
+- R4 seed17 SFT has a durable step600/718 checkpoint, but five model/optimizer
+  payload files are missing locally. Recovery still needs their exact archived
+  bytes restored and rehashed, followed by complete native-state and fresh
+  capacity/source/scheduler admission. Its larger recovery remains capacity
+  gated; a recorded checkpoint is not a completed R4 model or benchmark result.
+- The full suite still needs its own independently accepted, byte-bound
+  historical entries and complete machine environment. A separate failure
+  archive or recovery package does not supply `SUITE_HISTORY_ACCEPTED` or prove
+  a successful GPU resume by itself.
 - Real F4/F16 original-video caches have not been generated and admitted. The
   cache builder, hydration adapter and synthetic-data tests do not replace
   those actual bucket artifacts.
-- The CUDA QA job
-  `jinhaopeng-dpvlm-cuda-pool-qa-20261112-a1-n1-bb1e7` was externally preempted;
-  this attempt supplies no completed CUDA measurement. Its exact UID is
-  `2d1b0a1c-da16-4c55-abfc-148e98c5f318`. The retained
-  `operations/evidence/serial-suite-20261112/LIVE_PROJECT_STATE.json` records
-  its failed terminal state. It must not be cited as a successful speedup or
-  parity result.
+
+The current model results and curated evidence identities are linked from
+[STATUS.md](../results/STATUS.md) and [status.json](../results/status.json).
+The Smol failure-archive acceptance SHA256 is
+`ee0fdcb1e2c6198e1cb6b10b9c167787a4c9875d545f06ba82a4caa5cb052b6f`;
+the corrected a3 v2 control manifest is
+`ec16b955ebe27da3971e2290d44447eb01e596552593373af8d555d04eba24f4`.
+Original operational artifacts remain private.
 
 These are a preparation snapshot, not permanent assumptions. Re-read the
 latest human instructions, source artifacts, exact scheduler Job/Pod state
@@ -62,6 +93,7 @@ SmolLM2 seed29 recovery. Remaining core models and ablations follow. Ready
 cleanup tasks are placed as early as their dependencies allow. R4 alignment
 weights stay until the shared frozen-vision consumer also completes; R4 SFT
 weights can be released earlier after their own measurements and archival.
+The separate November 17 Smol recovery does not reorder this default DAG.
 
 MVBench licensed media/scope, a matched H20 hardware comparison, alignment and
 recurrence controls with matched total compute, and the proposed selective
@@ -71,18 +103,19 @@ declared test does not silently remove it from the scope.
 
 ## Allocation and storage contract
 
-The November 13 human authorization permits both `haopengjin2ali` and
-`haopengjin3ali`; use an authorized alias whose connection works. The dated
-November 13 connectivity check found `haopengjin2ali` reachable and
-`haopengjin3ali` refusing connections. This does not change historical host
-facts or authorize editing `~/.ssh/config`; host addresses remain private.
+Human authorization permits both `haopengjin2ali` and `haopengjin3ali`.
+The latest November 17 operations use the authorized `haopengjin3ali` alias;
+fresh read-only checks matched the shared runtime versions and source pins.
+The November 13 connection observations are historical and must not override
+this newer evidence. SSH configuration is unchanged; host addresses remain
+private.
 
-The existing private frozen QA package restricts its admit/submit entry points
-to `haopengjin2ali`. That package must not be edited in place or its checks
-bypassed to use another alias. A newly prepared package moving to another
-authorized host must freshly verify the shared paths, installed tools and
-admission bindings. This restriction belongs to the old private QA package,
-not a blanket host-name guard in the public suite source.
+Historical private packages retain their original host guards and frozen
+bytes. The new reviewed Smol recovery package explicitly binds the authorized
+third devbox and freshly verifies shared paths, installed tools and admission
+inputs. Moving execution to another authorized host requires that same review
+and verification, without editing or bypassing an old frozen package. The
+public suite does not impose a blanket alias-name guard.
 
 The suite allocation is
 `ali-gpu` / `stream`, priority `low`, one Master node, eight GPUs, and

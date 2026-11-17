@@ -8,9 +8,9 @@
 
 这版先建立一个正确、可复现的稠密循环基线：**SigLIP 编码视频帧 → 可训练视觉连接器 → Ouro 原生共享权重循环 → 回答**。不是把普通 Transformer 在外面调用几次，也不是直接拿浅层 KV 冒充深层 KV。
 
-当前已有 R1/R2 seed17 的真实训练与评测结果，见[已验收结果与协议](results/RESULTS.md)和[当前进度](results/STATUS.md)。尚未完成多种子稳健性或正式 H20/B300 速度对比。旧的冻结模型/选择性深层补算草稿不作为这版的实现说明；[实验协议 PDF](../paper/experiment_protocol.pdf) 是实验设计文档。
+截至 2026-11-17，已有 R1/R2 seed17 的真实训练与评测结果，见[已验收结果与协议](results/RESULTS.md)和[当前进度](results/STATUS.md)。CUDA QA a3 的八卡启动、BF16/FP32 池化数值、单卡合成算子计时及完整归档已独立验收；多种子稳健性、完整模型延迟和正式 H20/B300 对比仍待完成。旧的冻结模型/选择性深层补算草稿不作为这版的实现说明；[实验协议 PDF](../paper/experiment_protocol.pdf) 是实验设计文档。
 
-完整训练、消融、评测、归档与清理的单节点串行入口见 [EXPERIMENT_SUITE.md](docs/EXPERIMENT_SUITE.md)。该矩阵覆盖 18 个模型配置和 36 次评测；实际启动仍须绑定历史恢复证据、完整媒体缓存并通过准入。
+完整训练、消融、评测、归档与清理的单节点串行入口见 [EXPERIMENT_SUITE.md](docs/EXPERIMENT_SUITE.md)。该矩阵覆盖 18 个模型配置、36 次评测和 185 个计划任务，尚未提交；实际启动仍须绑定历史恢复证据、完整媒体缓存并通过准入。Smol seed29 a2 的失败归档和 300 步检查点已独立验收；a3 修正版已通过准入并提交单节点八卡 low 作业，目前 Pending 等待资源，目标为原生恢复 300 → 718 步，尚未启动训练或产生新增步数。这次单独恢复不改变全套矩阵的默认 DAG。R4 SFT 的 600 步检查点仍缺 5 个本地模型/优化器文件，恢复受归档还原和容量门槛约束。
 
 ## 已交付与边界
 
@@ -18,10 +18,10 @@
 |---|---|
 | 原生 Ouro 循环 + 视频前缀 + final-loop answer-only loss | 已实现；小模型 CPU 契约测试 |
 | 连接器对齐 → 全语言主干 SFT；视觉编码器可训练 | 已实现；无 LoRA，循环间不截断梯度 |
-| 普通 SmolLM2 对照、DDP、保存/重载、断点续训 | 已实现；Ouro 八卡训练已验收，Smol GPU 基线待跑 |
+| 普通 SmolLM2 对照、DDP、保存/重载、断点续训 | 已实现；Ouro 八卡训练已验收；Smol a3 恢复作业已提交，Pending 等待资源，尚无新增步数 |
 | 数据下载/转换/分组/泄漏检查/抽帧缓存 | 已实现；默认仅预览下载计划 |
 | 多选/EM 评测、逐样本记录、配对成簇 bootstrap | 已实现；不是官方语义 judge |
-| 可选 Triton 加权池化、末 token 投影、独立 CUDA profiling/速度对照 | 已实现脚本与 CPU 契约测试；真实 CUDA 数值和速度尚待验收 |
+| 可选 Triton 加权池化、末 token 投影、独立 CUDA profiling/速度对照 | 池化单算子的真实 CUDA 数值、合成计时及归档已验收；完整模型与末 token 优化收益待测 |
 | 选择性视觉更新、跨轮 KV 共享、TTT、自定义 PTX | **未实现，属于后续研究分支** |
 
 模型权重、数据集视频、个人邮件和账号信息均不在仓库中。需要审阅 Ouro 固定版本的自定义模型代码，因为加载会使用 `trust_remote_code=True`。
@@ -166,4 +166,4 @@ python scripts/analysis/summarize.py \
 
 ## Release status
 
-This is an experimental **baseline implementation**. Accepted R1/R2 seed17 training, eight-GPU execution and benchmark results are documented in [results](results/RESULTS.md); this is not a full official benchmark reproduction or a completed research result. CPU tests cover recurrence, cache parity, gradients, checkpoint round trips, training-stage transitions and evaluation contracts. Additional training seeds, the remaining baselines/ablations, Docker compatibility and warmed hardware performance remain unverified. No datasets, weights, copied third-party code or synthetic benchmark scores are distributed. Private-evidence integration tests require separately provisioned authorized artifacts.
+This is an experimental **baseline implementation**. Accepted R1/R2 seed17 training, eight-GPU execution and benchmark results are documented in [results](results/RESULTS.md); this is not a full official benchmark reproduction or a completed research result. CPU tests cover recurrence, cache parity, gradients, checkpoint round trips, training-stage transitions and evaluation contracts. CUDA QA attempt 3 adds independently accepted BF16/FP32 numerical and timing evidence for one synthetic pooling shape on one device, following an eight-rank startup gate. Additional training seeds, remaining baselines/ablations, Docker compatibility, warmed full-model performance and cross-hardware comparisons remain unverified. The 185-task suite has not been submitted. The separate Smol a3 recovery has passed admission and been submitted at low priority; its Pod is Pending for resources, with no training startup or new optimizer steps yet. No datasets, weights, copied third-party code or fabricated benchmark scores are distributed. Private-evidence integration tests require separately provisioned authorized artifacts.

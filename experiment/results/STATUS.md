@@ -14,11 +14,18 @@ full-model inference, training speed or held-out quality. The complete
 **56-object / 2,518,835-byte** archive passed independent full GET/SHA checks,
 and the timing statistics were recomputed from every recorded call.
 
-At **11:15:15 on November 17**, the complete project inventory contained five
-Jobs and three Pods, all terminal. The full experiment suite remains
-unsubmitted. R4 still needs recovery from step 600, including restoration of
-five model/optimizer files now missing locally; Smol remains at checkpoint
-300. No new training completion or held-out result was produced.
+Smol attempt 2's failure archive and complete checkpoint-300 payload passed
+independent acceptance on **November 17 at 12:06:47 Beijing time**. Its separate
+attempt-3 recovery control passed CPU/live admission at **12:29:02** and
+independent review at **12:31:57**, with a **75,879,340,811-byte** capacity
+projection below the 99 GB limit. The separate recovery Job was submitted once
+at **12:36:14**. The **12:37:10** exact readback found its Pod
+**Pending/Unschedulable**, with insufficient schedulable CPU, memory and GPU
+resources. No GPU startup or new optimizer update has been observed.
+
+The full experiment suite remains unsubmitted. R4 still needs recovery from
+step 600, including restoration of five model/optimizer files now missing
+locally. No new training completion or held-out result was produced.
 
 ## Completed
 
@@ -45,15 +52,16 @@ training completion or CUDA performance.
 
 The log reaches **317/718 optimizer updates**. The preserved checkpoint
 directory and its Trainer state both identify **step 300**, leaving **418
-updates** if recovery is accepted. Its complete weight/optimizer/RNG payload
-has not been validated, so its presence is not a resumability guarantee. No
-final checkpoint or training-completion receipt was observed. Captured NCCL
+updates** if recovery is accepted. The later November 17 verification accepted
+all 29 checkpoint files by content hash. Actual optimizer/RNG deserialization
+and GPU recovery remain separate runtime checks. No final checkpoint or
+training-completion receipt was observed. Captured NCCL
 environment deprecation warnings do not establish the failure cause.
 
-The exact run archive prefix was completely listed once and contained **0
-objects / 0 bytes**; no local archive manifest or success receipt was present.
-Failure archival, full recovery validation and fresh submission admission
-remain outstanding. No retry was submitted in this observation.
+The earlier exact-prefix observations contained **0 objects / 0 bytes** and no
+archive receipts. Those dated snapshots remain in the history. A separate
+one-time failure archive was completed and independently accepted on November
+17; it does not change the original failed Job or establish training success.
 
 Fresh CPU/source/input/storage admission and independent review passed before
 the November 11 submission. Its submission-side capacity projection was
@@ -64,12 +72,53 @@ The scientific recipe remains F8/G4/R1 and global batch 128, with 91,826 train
 and 4,472 dev QA and a target of 718 optimizer updates. No Smol training
 completion or held-out result has been accepted.
 
-The November 17 readback found the same failed Job UID, log step 317 and
-checkpoint step 300. Its 29 local checkpoint files / 8,642,273,132 bytes match
-the prior names, sizes and timestamps; large payloads were not rehashed.
-The exact archive prefix remains empty. Failure archival, complete recovery
-validation and fresh admission remain necessary before the 418 remaining
-alignment updates and subsequent SFT/evaluation.
+The initial November 17 readback found the same failed Job UID, log step 317
+and checkpoint step 300. A subsequent complete inventory freshly hashed all
+29 checkpoint files / **8,642,273,132 bytes**. The failure archive contains
+**268 objects / 9,561,086,447 bytes**, including 266 payload objects /
+9,560,833,055 bytes. Every object passed independent full GET/SHA verification,
+with a stable exact object set and unchanged original run and control files.
+The original checkpoint was neither copied for recovery nor deleted.
+
+## Smol attempt-3 recovery submitted, awaiting resources
+
+The new recovery control is configured to resume the original step-300 checkpoint with the
+same scientific recipe and final-step selection. CPU admission v1 stopped
+because the unchanged native safetensors PT metadata reader imports torch,
+which the earlier no-framework guard rejected. No GPU Job was created.
+
+Control v2 permits this specific CPU metadata import while still rejecting
+model/training imports and CUDA initialization. The metadata checks did not
+materialize tensors or deserialize optimizer/RNG state. A real Linux probe
+and independent source review passed; the frozen scientific validator and
+training source remain unchanged.
+Fresh source/data/checkpoint/capacity/live checks completed at **12:29:02**,
+and independent admission review passed at **12:31:57**. The two roots total
+**48,594,794,547 bytes**; the additional 27,284,546,264-byte reservation yields
+**75,879,340,811 bytes**, without crediting future cleanup or copying the
+checkpoint.
+
+The new exact OSS prefix was empty, all five project Jobs and three Pods were
+terminal, and client/server dry-runs verified stream/low, one node, eight GPUs,
+restart policy Never and no forced node. The server dry-run object was **not
+created**; its temporary UID is not an actual Job identity.
+
+After fresh submission checks, attempt 3 was submitted once at **12:36:14** as
+`jinhaopeng-dpvlm-p1-smollm2-s29-align-a3-n1-bdff2`, UID
+`ab061a99-000f-4283-b806-249ea5287fdf`. The client exited 0, and the actual Job
+contract matches stream/low, one node, eight GPUs, restartNever and no forced
+node. The final submission-side capacity projection was **75,879,399,133
+bytes**, still below 99 GB. This actual Job is distinct from the earlier
+dry-run name ending in `792fb`.
+
+At **12:37:10**, the Job had `Created=True` and its exact Pod was
+**Pending/Unschedulable** because matching nodes lacked sufficient CPU, memory
+and GPU capacity. The project inventory contains this single nonterminal Job
+and Pod; all other project workloads are terminal. No node or container has
+been allocated, and there is no startup-admission or completion receipt.
+Allocation checks, eight-rank startup and actual native recovery remain
+pending. The accepted source remains checkpoint 300, with **418 alignment
+updates** still to run before matched SFT and evaluation.
 
 ## Smol attempt-1 failure retained
 
@@ -275,9 +324,12 @@ independently unaccepted. This snapshot did not perform new full GET/SHA
 verification of their large checkpoint payloads or complete CPU admission.
 
 Preserving the old runs and including the new suite's checkpoint copy, that
-snapshot's conservative projections are **155,547,134,605 bytes for R4** and
-**114,272,309,701 bytes for Smol**, both above the strict 99 GB limit. Additional
-initializer/source/media requirements may increase those figures; future
+snapshot's conservative projections were **155,547,134,605 bytes for R4** and
+**114,272,309,701 bytes for Smol**, both above the strict 99 GB limit. The later
+November 17 dedicated Smol recovery uses its original checkpoint in place and
+has a separately accepted 75,879,340,811-byte projection; the older suite-copy
+estimate remains historical. Additional initializer/source/media requirements
+may increase those figures; future
 cleanup is not credited. The older November 9/11 capacity observations remain
 intact. Exact facts and the receipt pin are appended to
 `recovery_capacity_observations` in [status.json](status.json).
@@ -293,12 +345,15 @@ The complete suite's scripts cover 18 model configurations, 34 training stages,
 36 evaluations, 15 latency runs and 12 comparisons. **The suite remains
 unsubmitted** while actual F4/F16 original-video caches, independent historical
 recovery bindings and fresh storage/source admission are outstanding. The
-separate small QA submission does not change those gates.
+completed small QA validates only its synthetic pooling scope. Smol failure
+archival and dedicated recovery CPU admission now pass, and the separate
+recovery Job is Pending. This single recovery submission does not submit the
+complete serial suite; R4 and full-suite admission retain their separate gates.
 
 ## Remaining work
 
-1. Archive Smol attempt-2 failure evidence and validate checkpoint-300 recovery;
-   after fresh admission finish the remaining 418 alignment updates, then run
+1. Wait for the single Pending Smol attempt-3 Job, verify actual GPU startup
+   and native recovery, finish the remaining 418 alignment updates, then run
    matched SFT and benchmark evaluations.
 2. Finish R4 checkpoint recovery and storage admission, run the remaining SFT,
    then archive and evaluate the completed model.
