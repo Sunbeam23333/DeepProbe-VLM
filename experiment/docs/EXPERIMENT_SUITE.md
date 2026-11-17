@@ -29,12 +29,22 @@ below does not start the full suite or complete a suite-history binding.
   The v2 package has now passed fresh CPU admission and independent review and
   was submitted once as `jinhaopeng-dpvlm-p1-smollm2-s29-align-a3-n1-bdff2`, UID
   `ab061a99-000f-4283-b806-249ea5287fdf`. The November 17 **04:37:10 UTC** readback
-  shows the Job Created and its Pod Pending/Unschedulable for node resources.
+  recorded the Job Created and its Pod Pending/Unschedulable for node resources.
   The stream/low, one-node/eight-GPU, restart-Never contract passed, with no
-  forced node. **Training has not started and no new optimizer steps are
-  reported**; the requested native recovery remains 300 → 718. The original
-  recipe, optimizer/scheduler/RNG state and external checkpoint remain unchanged;
-  the v1 attempt and its failure evidence are retained.
+  forced node. The **15:16:12 UTC** exact readback now confirms Running at
+  **06:20:58 UTC** and Failed at **06:25:50 UTC**. Hardware identity and all
+  eight ranks' BF16 forward/backward and NCCL checks passed, but the preflight
+  process received SIGTERM after 58.5 seconds and did not exit normally.
+  The signal source is unconfirmed. **No formal training startup, native
+  recovery or new optimizer step is observed**; the requested recovery remains
+  300 → 718. All six project Jobs and three remaining Pods are terminal in this
+  readback. The original CPU admission, Pending history, recipe and checkpoint
+  bindings remain intact; the v1 attempt and its failure evidence are retained.
+  At **15:18:48 UTC**, exact Job/Pod UID event queries returned no events and
+  the exact attempt-3 OSS run prefix contained zero objects. Its failure archive
+  remains incomplete. The source checkpoint still has 29 files / 8,642,273,132
+  bytes by count/size inspection; its large payloads were not rehashed in that
+  check. This attempt produced no training-directory files.
 - R4 seed17 SFT has a durable step600/718 checkpoint, but five model/optimizer
   payload files are missing locally. Recovery still needs their exact archived
   bytes restored and rehashed, followed by complete native-state and fresh
