@@ -8,19 +8,20 @@ contact the scheduler. The plan remains 18 models, 34 training stages,
 
 ## Machine discovery and one entry point
 
-The final worker-count candidates and command script use
-`/home/jinhaopeng/.cache/Paper/DeepProbe-VLM-p1/suite-suite-remaining-20261119/control-v4`.
-Their immutable, SHA-verified private inputs are retained in the sibling
-`control-v3/inputs` directory.
+The deployed v5 worker-count candidates and command script use
+`/home/jinhaopeng/.cache/Paper/DeepProbe-VLM-p1/suite-suite-remaining-20261119/control-v5`.
+Their immutable, SHA-verified private inputs remain in the sibling
+`control-v3/inputs` directory. V5 adds a separately derived R4 source review and
+recovery index under `control-v5/inputs`, retaining the original entry bytes.
 Their commands use the new immutable executable source at
-`/home/jinhaopeng/.cache/Paper/DeepProbe-VLM/suite-source/20261119-v1/experiment`
+`/home/jinhaopeng/.cache/Paper/DeepProbe-VLM/suite-source/20261120-v1/experiment`
 and isolated runtime at
 `/home/jinhaopeng/.cache/Paper/DeepProbe-VLM/suite-runtime/20261119-v1/bin/python`.
 The frozen historical runtimes and old runs are preserved. The isolated runtime
 has the training dependencies plus `requirements/suite.txt`.
 
 Choose one worker count for this fleet. Run the selected chain on
-`haopengjin3ali`; `prepare` must finish successfully before dry-run or submission.
+`haopengjin3ali`; `prepare` must finish successfully before `launch-prepared`.
 The `discover` phase verifies the actual byte-pinned discovery candidate already
 produced on that machine, including its four evaluation imports, five accepted
 training preparations and two checkpoint recoveries. It reports current source
@@ -30,24 +31,24 @@ One normal-priority worker, one node and eight GPUs:
 
 ```bash
 set -e
-DP_SUITE=/home/jinhaopeng/.cache/Paper/DeepProbe-VLM-p1/suite-suite-remaining-20261119/control-v4/RUN_COMMANDS.sh
+DP_SUITE=/home/jinhaopeng/.cache/Paper/DeepProbe-VLM-p1/suite-suite-remaining-20261119/control-v5/RUN_COMMANDS.sh
 bash "$DP_SUITE" 1 discover
 bash "$DP_SUITE" 1 plan
 bash "$DP_SUITE" 1 prepare
-bash "$DP_SUITE" 1 dry-run
-bash "$DP_SUITE" 1 submit
+# After independent review of the prepared CPU admission and bindings:
+bash "$DP_SUITE" 1 launch-prepared
 ```
 
 Four normal-priority workers, each one node and eight GPUs:
 
 ```bash
 set -e
-DP_SUITE=/home/jinhaopeng/.cache/Paper/DeepProbe-VLM-p1/suite-suite-remaining-20261119/control-v4/RUN_COMMANDS.sh
+DP_SUITE=/home/jinhaopeng/.cache/Paper/DeepProbe-VLM-p1/suite-suite-remaining-20261119/control-v5/RUN_COMMANDS.sh
 bash "$DP_SUITE" 4 discover
 bash "$DP_SUITE" 4 plan
 bash "$DP_SUITE" 4 prepare
-bash "$DP_SUITE" 4 dry-run
-bash "$DP_SUITE" 4 submit
+# After independent review of the prepared CPU admission and bindings:
+bash "$DP_SUITE" 4 launch-prepared
 ```
 
 The one-worker and four-worker candidates are alternatives for the same suite;
@@ -63,6 +64,40 @@ The underlying discovery CLI is
 `--recovery-preparation-index`, `--capacity-snapshot` and
 `--capacity-recovery-plan`. Changed inputs or a changed worker profile require a
 new candidate and reviewable hash; the saved candidate is never silently edited.
+
+The current authorized policy removes the OSS capacity quota while retaining the
+home limit. New candidates must explicitly use `--unlimited-oss`, which writes
+`storage.oss_limit_bytes: null`; discovery without this flag keeps the previous
+150 GB OSS limit. Unlimited-OSS candidates also omit the ModelScope-token
+dependency because verified model archives remain in OSS. The private token
+file and previously published results are preserved. The old v4 candidates are
+immutable historical artifacts and do not express this new policy. The actual
+v5 candidates bind the new policy, all eleven historical inputs and new source.
+
+The v5 command script adds `launch-prepared` for the reviewed preparation path.
+After shared-ledger migration, prepare once:
+
+```bash
+DP_SUITE=/home/jinhaopeng/.cache/Paper/DeepProbe-VLM-p1/suite-suite-remaining-20261119/control-v5/RUN_COMMANDS.sh
+bash "$DP_SUITE" 1 prepare
+```
+
+After independently reviewing the latest CPU admission and prepared bindings,
+submit those exact prepared files without repeating the full checkpoint GETs:
+
+```bash
+DP_SUITE=/home/jinhaopeng/.cache/Paper/DeepProbe-VLM-p1/suite-suite-remaining-20261119/control-v5/RUN_COMMANDS.sh
+bash "$DP_SUITE" 1 launch-prepared
+```
+
+Use `4` in both commands only when the four-worker candidate was selected.
+`launch-prepared` verifies the candidate, its authorization and input indexes,
+the saved preparation request, and all five plan/binding/environment/Jobs/CPU
+preflight pins before invoking `launch_experiment_fleet.py --submit`. The
+launcher still performs fresh capacity, cluster, exact-prefix and server dry-run
+checks and rejects expired CPU admission. It does not repeat asset preparation.
+The original `submit` phase remains a combined preparation/admission/submission
+operation; invoking it after `prepare` repeats the complete asset readback.
 
 Add `--prepare-assets --cpu-admission` to perform preparation and admission.
 Add `--dry-run` to also run server-side scheduler dry-run, or `--submit` to
@@ -83,7 +118,7 @@ An existing submission intent is reconciled against exact Job identity and UID.
 For a partial or uncertain four-worker submission, use the same pinned inputs:
 
 ```bash
-DP_SUITE=/home/jinhaopeng/.cache/Paper/DeepProbe-VLM-p1/suite-suite-remaining-20261119/control-v4/RUN_COMMANDS.sh
+DP_SUITE=/home/jinhaopeng/.cache/Paper/DeepProbe-VLM-p1/suite-suite-remaining-20261119/control-v5/RUN_COMMANDS.sh
 bash "$DP_SUITE" 4 reconcile
 bash "$DP_SUITE" 4 continue-unsubmitted
 ```
@@ -124,6 +159,12 @@ metadata facts. A draft with `approved=false` cannot perform any transfer.
   only into `environment.run_root/.recovery-inputs/.../checkpoint-<step>`. Every
   streamed byte is counted and SHA-checked. The complete native eight-rank state
   and Trainer schedule are checked before history import.
+* `verify_archived_resume` performs complete streaming GET/SHA and records only
+  the three bound JSON metadata files. It checks the checkpoint inventory and
+  Trainer step/schedule without hydrating checkpoint weights. The training
+  action later hydrates one copy and performs native optimizer/RNG restoration.
+  This is the current R4 checkpoint-600 preparation policy and requires its own
+  derived source review; the earlier restore request and review stay unchanged.
 
 The accepted preparation includes the archive readback receipt and metadata
 verification; it does not claim optimizer/RNG deserialization or numerical
@@ -156,15 +197,26 @@ All workers and maintenance commands share this one configuration:
   `/home/jinhaopeng/.config/deepprobe-vlm`.
 * Ledger: `/home/jinhaopeng/.cache/Paper/DeepProbe-VLM/locks/suite-storage-ledger`.
 * OSS prefix: `oss://ss-devbox-stream/jinhaopeng/Paper/DeepProbe-VLM/`.
-* Home and OSS independently stay below 150,000,000,000 bytes, with 2 GB safety
-  for each domain and a 1 GB filesystem-free guard. Reservations are global
-  across 1–4 workers, including caches, transfers and partial uploads.
+* Home stays below 150,000,000,000 bytes, including its 2 GB safety reserve,
+  with a 1 GB filesystem-free guard. Reservations are global across 1–4 workers,
+  including caches, transfers and partial uploads.
+* Explicit unlimited-OSS candidates set `oss_limit_bytes: null`. Their quota
+  snapshots record OSS usage and projected bytes as null and skip project-wide
+  quota scans. Exact archive-prefix inventories, payload SHA checks and bounded
+  local staging remain mandatory. The default finite policy still enforces the
+  independent 150 GB OSS ceiling and 2 GB OSS safety reserve.
+
+The shared ledger must be migrated under its lock before the new policy is used.
+The migration requires no active reservations, keeps every other configuration
+field identical, and preserves its old configuration, events and artifacts.
+Changing a candidate alone does not silently migrate a ledger.
 
 The workflow checks fresh capacity before recovery or benchmark transfers. A
 capacity block records actual usage and the pinned exact retirement/migration
 plan; it never bypasses the reservation or deletes anything automatically.
-Original archives and every cache shape need a reviewed hot/cold retention plan;
-keeping all of them resident is not an assumed capacity optimization.
+Cache shapes are hydrated only while needed and evicted locally after consumers
+finish; complete verified OSS copies remain available. Model checkpoints follow
+the existing archival and consumer-retention requirements.
 
 For successful models, intermediate checkpoints can be retired only after
 complete final/model-result archival and after consumers and resume references
@@ -173,7 +225,67 @@ readback SHA verification. Publishing a small result bundle is not a backup of
 model weights. Load the ModelScope token from the private owner-only 0600 file;
 never put its value in candidate JSON, YAML, logs or Git.
 
-## Actual readiness evidence on 2026-11-19
+## V5 metadata deployment evidence on 2026-11-20
+
+The actual v5 controls and small-file deployment receipts are retained under
+`evidence/suite-machine-readonly-20261120-v5/`. The immutable source manifest SHA
+is `073eb1a243b8bbc14feedd7bfb7e69f3ebf824a149509396f5a055f2c3b9efd8`, covering
+181 executable source files. Both one-worker and four-worker plans completed
+with exit code 0, 185 operational tasks, `production_admitted=false` and
+`gpu_submitted=false`.
+
+The candidate SHA values are
+`24f99ae5dc5167945bd9fbe38dcd82c3823c7caab1cd335e03e00bb8d3bd834b` for one worker
+and `d14a4faf6f9aa4579ffd7d3b2186d9fff38cc0329395290f839a159843ff87f2` for four.
+`RUN_COMMANDS.sh` is pinned to
+`d944b96dc53232582f08c86179224698579b1a38a75495b06e6133dcddaa1151`.
+Freshly generated candidates were compared against the exact v4 candidates;
+only the reviewed policy/source/R4 preparation changes and removal of the
+superseded quota evidence were permitted.
+The independent control audit checked 293 files totaling 27,592,762 bytes,
+including all 181 source files, eleven historical inputs and the exact command
+template. Its receipt is
+`independent-control-audit-v1/audit-20261119T164336Z/INDEPENDENT_V5_CONTROL_AUDIT.json`,
+SHA `395965c5b330ce93e3ac20cfe3d56a7aa4dc1eb7557da1bb9662ea6f0b0796f4`.
+
+The copied `control-v5/migrate_policy.py` has SHA
+`1d26fff5f90c7e4c8207979b67d035dd87e6eb051244435c7f56eb0bab0ffb5c` and uses
+`control-v5/inputs/HUMAN_STORAGE_POLICY.json`, SHA
+`eceee9b22dcb5a62c4cf73363151dd453d6d432c42a72013690c4d7e4f63d38d`.
+The metadata deployment and plan receipts do not claim that migration, model
+readback, cache preparation, CPU admission or GPU submission has occurred.
+Those stages require their own actual receipts.
+
+The shared ledger policy was subsequently migrated successfully with
+`migrate_policy_v2.py` (SHA
+`4a96bbb5afe748b17e416d0addb8c6417424913075851e25b69056dfe0ab04d2`).
+This metadata-only wrapper queries Jobs and Pods separately in parallel; its
+policy mutation still uses the frozen `disable_oss_quota` implementation.
+The new policy SHA is
+`13984027010389c7dab3ddccfe0533c5c5c1ccabd7aa9e029d6340812a0e16b8`.
+The completed migration receipt SHA is
+`6e52607d15c0a79ee4732346a3c70f529f1730a7c8aa381c115ab1ff8995c1d2`;
+the exact previous ledger was retained before atomic replacement.
+
+At 2026-11-19 16:52:05 UTC (November 20 in Asia/Shanghai), the one-worker CPU
+preparation driver started on the development machine. Its persistent status
+is in `control-v5/CPU_PREPARE_ACTIVE.json` and
+`control-v5/cpu-prepare/<invocation>/START.json`, `CHILD.json`, `stdout`, `stderr`
+and, when it exits, `EXIT.json`. Do not start another preparation while this
+driver or its descendants are active. It cannot submit a GPU Job. Successful
+preparation still requires a `WORKFLOW_PREPARED.json` with `cpu_admitted=true`;
+then use `launch-prepared` with the verified binding and fresh admission.
+The 16:52:57 UTC cluster snapshot had zero unallocated GPUs across the 56
+matching stream B300-platform nodes and zero active project GPU Jobs.
+The final local regression for this source passed 240 tests across 21 modules.
+The fresh preparation capacity gate passed with 60,510,285,511 bytes home
+(62,510,285,511 with safety), no blocked domains, and OSS explicitly unmeasured
+under the unlimited policy. Its SHA is
+`112a3e220be578dae15e94e5bf7a6dff18aababbd521b2381cad2fe031e9f5d1`.
+This accepts preparation capacity only; historical transfers, cache completion
+and complete CPU admission are still separate requirements.
+
+## Historical finite-policy evidence on 2026-11-19
 
 The final v4 evidence is retained under
 `evidence/suite-machine-readonly-20261119-v4/`. On 2026-11-19 at 12:47:41 UTC,
@@ -200,12 +312,15 @@ completion reviews; and the two recovery checkpoints have independent source
 reviews. Their fresh archive/recovery/cache/CPU gates still execute before any
 GPU launch. Historical completion is not counted as freshly restored weights.
 
-The reviewed P0 retirement plan covers 640,178,450,792 bytes. Even if every
+The old finite-policy P0 retirement plan covers 640,178,450,792 bytes. Even if every
 listed retirement completes, its projection is 383,244,997,438 bytes of live OSS,
-still above the 150 GB ceiling. It therefore does not by itself admit this suite.
+still above the former 150 GB OSS ceiling. This quota blocker is superseded by
+the user's explicit unlimited-OSS authorization; the old observation does not
+block a freshly admitted unlimited-OSS candidate.
 The attempted P0 deletions returned `AccessDenied:403`; no completed deletion
 or reclaimed byte was credited, and the maintenance processes exited. The
-current OSS total above confirms that capacity has not been released. No GPU
+observed OSS total above confirms that capacity was not released by those
+attempts. No new OSS deletion is required to satisfy the removed quota. No GPU
 training or server dry-run was performed by this preparation work.
 
 The real clean Job template preserves the observed image, volumes, mounts and

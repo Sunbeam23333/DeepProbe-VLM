@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import argparse
 from collections import defaultdict
-from contextlib import nullcontext
+from contextlib import contextmanager, nullcontext
 from copy import deepcopy
 import importlib.util
 import json
@@ -266,6 +266,23 @@ class Actions:
             self._shared_budget = budget_for(self.env)
         return self._shared_budget
 
+    def retain_oss_weights(self):
+        storage = self.env['storage']
+        return storage.get('schema_version') == 2 and 'oss_limit_bytes' in storage and storage['oss_limit_bytes'] is None
+
+    def retained_oss_receipt(self, directory, plan, local_cleanup):
+        """Record policy, without crediting a deletion or a reclaimed OSS byte."""
+        require(self.retain_oss_weights(), 'Unlimited OSS retention policy required')
+        retention.check_pin(local_cleanup['receipt'])
+        return save(directory / 'OSS_WEIGHTS_RETAINED.json', {
+            'status': 'OSS_CHECKPOINT_WEIGHT_DELETION_DISABLED',
+            'retention_policy': 'retain_existing_archives_with_unlimited_oss_quota',
+            'manifest_sha256': digest(plan['manifest']),
+            'archive_prefix': plan['manifest']['archive_prefix'],
+            'checkpoints': plan['checkpoints'], 'local_cleanup_receipt': local_cleanup['receipt'],
+            'remote_deletion_performed': False, 'remote_deleted_objects': 0,
+            'confirmed_reclaimed_oss_bytes': 0, 'modelscope_weight_backup_required': False})
+
     def budget(self, extra, oss_extra=0):
         budget = self.shared_budget()
         if budget is None:
@@ -289,11 +306,33 @@ class Actions:
         if list(argv[1:4]) == ['-B', '-m', 'torch.distributed.run']:
             env = single_node_torchrun_environment(env)
         save(logs.with_suffix('.intent.json'), {'argv': list(map(str, argv)), 'source_root': str(source_root or self.root)})
-        with logs.with_suffix('.stdout').open('xb') as out, logs.with_suffix('.stderr').open('xb') as err:
-            # The runner's inherited process token and pidfd supervisor cover
-            # descendants even when a rank creates a new session/process group.
-            result = subprocess.run(list(map(str, argv)), cwd=source_root or self.root, env=env, stdout=out, stderr=err)
-        save(logs.with_suffix('.exit.json'), {'returncode': result.returncode})
+        lease = getattr(self, '_benchmark_lease', None) if label == 'evaluate' else None
+        if lease is None:
+            with logs.with_suffix('.stdout').open('xb') as out, logs.with_suffix('.stderr').open('xb') as err:
+                result = subprocess.run(list(map(str, argv)), cwd=source_root or self.root, env=env, stdout=out, stderr=err)
+            save(logs.with_suffix('.exit.json'), {'returncode': result.returncode})
+        else:
+            # Cache eviction happens inside this action, before the outer suite
+            # supervisor returns. Prove this command's entire process tree has
+            # exited first, including ranks that created a new session.
+            from .suite_process import run_group
+            lease['readers_quiet'] = False
+            code, error = None, None
+            try:
+                with logs.with_suffix('.stdout').open('xb') as out, logs.with_suffix('.stderr').open('xb') as err:
+                    result = run_group(list(map(str, argv)), cwd=source_root or self.root, env=env,
+                        stdout=out, stderr=err, timeout=30 * 24 * 3600)
+                code = result.returncode
+                lease['readers_quiet'] = result.group_cleanup_verified is True
+            except BaseException as exc:
+                code = getattr(exc, 'group_returncode', None)
+                lease['readers_quiet'] = getattr(exc, 'group_cleanup_verified', False) is True
+                error = type(exc).__name__
+                raise
+            finally:
+                lease['command_exit'] = save(logs.with_suffix('.exit.json'), {
+                    'returncode': code, 'error_type': error, 'group_cleanup_verified': lease['readers_quiet']})
+            require(lease['readers_quiet'], 'Benchmark process tree has not been proven quiescent')
         require(result.returncode == 0, 'Task subprocess failed; retained logs at ' + str(logs))
 
     def live(self, *, require_startup=True):
@@ -625,27 +664,99 @@ class Actions:
         return {'owner': owner, 'checkpoint': str(output / 'final'), 'checkpoint_files': files,
                 'training_complete': complete, 'outputs': [complete], 'consumer_receipts': consumers}
 
-    def benchmark_data(self, task):
+    def release_benchmark_pngs(self, task, data, items, lease):
+        """Release only this exact owned local cache after its readers exit."""
+        from .suite_media import encode
+        root = safe(data['media_root'])
+        owner = {'schema_version': 1, 'kind': 'suite_benchmark_media',
+            'cache_binding_sha256': digest(data['cache']), 'media_root': str(root),
+            'max_bytes': data['max_bytes'], 'png_bytes': sum(row['bytes'] for row in items)}
+        require(lease['readers_quiet'], 'Benchmark readers are not quiescent; cache preserved')
+        require((root / '.suite-media-owner.json').read_bytes() == encode(owner), 'Local cache owner differs')
+        wanted = {row['path']: row for row in items}
+        require(len(wanted) == len(items), 'Duplicate local frame inventory')
+        files = {}
+        for path in root.rglob('*'):
+            safe(path)
+            if path.is_file():
+                relative = path.relative_to(root).as_posix()
+                require(relative == '.suite-media-owner.json' or relative in wanted,
+                        'Unowned local cache file prevents release')
+                require(path.stat().st_nlink == 1, 'Linked local cache file prevents release')
+                if relative in wanted:
+                    row = wanted[relative]
+                    retention.check_pin({'path': str(path), 'bytes': row['bytes'], 'sha256': row['sha256']})
+                    files[relative] = retention.fingerprint(path.lstat())
+        require(set(files) == set(wanted), 'Local cache inventory changed before release')
+        for relative, fingerprint in files.items():
+            path = safe(root / relative)
+            require(retention.fingerprint(path.lstat()) == fingerprint, 'Local cache changed before unlink')
+            path.unlink()
+        return save(self.task_dir(task['id']) / ('MEDIA_RELEASE-' + os.urandom(6).hex() + '.json'), {
+            'status': 'OWNED_LOCAL_BENCHMARK_PNGS_RELEASED', 'cache_binding_sha256': digest(data['cache']),
+            'media_root': str(root), 'files': [{'path': row['path'], 'bytes': row['bytes'], 'sha256': row['sha256']}
+                                             for row in items],
+            'released_home_bytes': sum(row['bytes'] for row in items),
+            'reader_processes_quiescent': True, 'command_exit': lease['command_exit'],
+            'oss_deletion_performed': False, 'metadata_and_owner_preserved': True})
+
+    @contextmanager
+    def benchmark_asset(self, task):
         data = self.env['assets']['benchmarks'][task['benchmark']][str(task['frames'])]
         if 'cache' not in data:
-            return data
+            yield {'data': data, 'release_receipt': None}
+            return
         from .suite_media import hydrate_frame_cache, OSSStore, PROJECT_PREFIX, _bound_cache_inventory
         budget = self.shared_budget()
-        with budget.asset_lock({'media_root': data['media_root']}) if budget else nullcontext():
-            # Another worker may have finished hydration while this one waited.
-            # Recompute missing bytes and verify ownership under the same lock.
+        require(budget is not None, 'Managed benchmark cache requires the shared reader lock')
+        with budget.asset_lock({'media_root': data['media_root']}):
+            # Hold this lock through evaluation/consumption and release. A
+            # killed or unverified reader leaves a durable reconciliation gate.
+            media_root = safe(data['media_root'])
+            metadata = safe(media_root.parent / (media_root.name + '.acceptance'))
+            active = metadata / 'ACTIVE_READERS.json'
+            require(not active.exists(), 'Unreconciled benchmark reader lease; preserve cache and reconcile exact processes')
             _, _, items, _, _, _ = _bound_cache_inventory(data['cache'])
             needed = sum(r['bytes'] for r in items if not (Path(data['media_root']) / r['path']).exists())
             self.budget(needed + 32 * 1024 * 1024)
-            media_root = safe(data['media_root'])
             require(any(media_root != safe(root) and media_root.is_relative_to(safe(root))
                         for root in self.env['storage']['roots']), 'Hydrated media root escapes accounted project storage')
             media_root.parent.mkdir(parents=True, exist_ok=True)
-            return hydrate_frame_cache(data['cache'], media_root=data['media_root'], max_bytes=data['max_bytes'],
+            hydrated = hydrate_frame_cache(data['cache'], media_root=data['media_root'], max_bytes=data['max_bytes'],
                 store=OSSStore(self.env['tools']['oss_config'], allowed_prefix=PROJECT_PREFIX + 'suite-media-readonly/'), resume=True)
+            lease_pin = save(active, {'task_id': task['id'], 'pid': os.getpid(),
+                'lease_id': os.urandom(16).hex(), 'cache_binding_sha256': digest(data['cache'])})
+            lease = {'readers_quiet': True, 'command_exit': None}
+            asset = {'data': hydrated, 'release_receipt': None}
+            require(not hasattr(self, '_benchmark_lease'), 'Nested benchmark reader lease')
+            self._benchmark_lease = lease
+            try:
+                yield asset
+            finally:
+                del self._benchmark_lease
+                if lease['readers_quiet']:
+                    # Revalidate the immutable cache binding before unlinking.
+                    _, _, final_items, _, _, _ = _bound_cache_inventory(data['cache'])
+                    require(items == final_items, 'Bound frame inventory changed while reading')
+                    try:
+                        asset['release_receipt'] = self.release_benchmark_pngs(task, data, items, lease)
+                    finally:
+                        verify_pin(lease_pin)
+                        active.unlink()
+                # Unknown descendants retain both PNGs and ACTIVE_READERS. The
+                # outer supervisor independently proves whole-task quiescence
+                # before it may release the task's storage reservation.
+                else:
+                    raise ValueError('Benchmark readers are not quiescent; cache and reader lease preserved')
 
     def evaluate(self, task):
-        data = self.benchmark_data(task)
+        with self.benchmark_asset(task) as asset:
+            result = self.evaluate_with_data(task, asset['data'])
+        if asset['release_receipt']:
+            result['outputs'].append(asset['release_receipt'])
+        return result
+
+    def evaluate_with_data(self, task, data):
         records = validate_benchmark(data, task)
         checkpoint, parent = self.checkpoint(task['checkpoint_task_id'])
         provenance_sources = read(checkpoint / 'training_provenance.json')
@@ -762,9 +873,12 @@ class Actions:
                                        reference_guard=self.reference_guard(manifest, intermediate))
             outputs.append(save(self.task_dir(task['id']) / 'INTERMEDIATE_CLEANUP.json', result))
             if self.shared_budget():
-                retired = retention.retire_intermediate_remote_weights(cleanup, store, guard=guard, execute=True,
-                    reference_guard=self.reference_guard(manifest, intermediate))
-                outputs.append(save(self.task_dir(task['id']) / 'INTERMEDIATE_REMOTE_RETIREMENT.json', retired))
+                if self.retain_oss_weights():
+                    outputs.append(self.retained_oss_receipt(self.task_dir(task['id']), cleanup, result))
+                else:
+                    retired = retention.retire_intermediate_remote_weights(cleanup, store, guard=guard, execute=True,
+                        reference_guard=self.reference_guard(manifest, intermediate))
+                    outputs.append(save(self.task_dir(task['id']) / 'INTERMEDIATE_REMOTE_RETIREMENT.json', retired))
         return {'outputs': outputs, 'manifest': pin(manifest_path), 'owner': owner}
 
     def archive_results(self, task):
@@ -848,7 +962,7 @@ class Actions:
         guard = lambda: self.guard(manifest['owner'])
         directory = self.task_dir(task['id'])
         outputs = []
-        if self.shared_budget():
+        if self.shared_budget() and not self.retain_oss_weights():
             from .checkpoint_backup import ModelScopeCheckpointStore, backup_final, configured_api
             final_plan = retention.plan_cleanup(manifest, consumers, checkpoints=['training/final'])
             # SDK uses a bounded upload buffer; final readback is streamed and
@@ -884,8 +998,11 @@ class Actions:
                     reference_guard=self.reference_guard(manifest, ['training/final'], consumers))
                 outputs.append(save(directory / 'FINAL_REMOTE_CLEANUP.json', remote))
         else:
-            result = retention.cleanup(plan, store, guard=guard, execute=True)
+            result = retention.cleanup(plan, store, guard=guard, execute=True,
+                reference_guard=self.reference_guard(manifest, plan['checkpoints'], consumers))
             outputs.append(save(directory / 'CLEANUP.json', result))
+            if self.retain_oss_weights():
+                outputs.append(self.retained_oss_receipt(directory, plan, result))
         return {'outputs': outputs}
 
     def run(self, task_id, output):

@@ -1,7 +1,8 @@
 """Shared, fail-closed storage admission for a one-to-four-node suite.
 
-The two limits are independent: project home and project OSS each have their
-own ceiling. A reservation is a conservative *additional peak*, not credit for
+The limits are independent: project home always has a ceiling; an explicitly
+null OSS limit disables only its quota scan and comparison. Exact archive and
+content verification remain separate and mandatory. A reservation is a conservative *additional peak*, not credit for
 files that might later be deleted. Complete objects and uploaded multipart
 parts count. Old versions count where readable; the shared-bucket permission
 fallback explicitly reports its logical live-object scope and unknown legacy
@@ -13,6 +14,7 @@ cross-node POSIX flock/atomic replace. This is admission, not a filesystem quota
 from __future__ import annotations
 
 from contextlib import contextmanager
+from datetime import datetime, timezone
 import fcntl
 import hashlib
 import json
@@ -23,7 +25,7 @@ import stat
 import subprocess
 import uuid
 
-from .checkpoint_retention import canonical, digest, file_pin, safe, utc, valid_sha
+from .checkpoint_retention import canonical, check_pin, digest, file_pin, safe, utc, valid_sha, write_once
 
 
 class StorageError(ValueError):
@@ -72,12 +74,29 @@ def validate_config(config):
         prefix(value)
     require(all(not a.startswith(b) and not b.startswith(a)
                 for i, a in enumerate(prefixes) for b in prefixes[i + 1:]), 'OSS prefixes overlap')
-    for name in ('home_limit_bytes', 'oss_limit_bytes'):
-        require(type(config[name]) is int and 0 < config[name] <= 150_000_000_000,
-                'Each domain must stay within its independently authorized 150 GB ceiling')
+    require(type(config['home_limit_bytes']) is int and 0 < config['home_limit_bytes'] <= 150_000_000_000,
+            'Home must stay within its independently authorized 150 GB ceiling')
+    require(config['oss_limit_bytes'] is None or (type(config['oss_limit_bytes']) is int
+            and 0 < config['oss_limit_bytes'] <= 150_000_000_000),
+            'OSS quota must be null (explicitly unlimited) or a positive ceiling up to 150 GB')
     for name in ('home_safety_bytes', 'oss_safety_bytes', 'free_guard_bytes'):
         require(nonnegative(config[name]), 'Invalid storage safety reserve')
     return config
+
+
+def capacity_violations(snapshot, config, *, additional_home_bytes=0):
+    """Compare only capped domains; unmeasured unlimited OSS is never zero."""
+    require(nonnegative(additional_home_bytes), 'Invalid additional home reservation')
+    blocked = []
+    for domain in ('home', 'oss'):
+        limit = config[domain + '_limit_bytes']
+        if domain == 'oss' and limit is None:
+            continue
+        projected = snapshot['projected_bytes'][domain]
+        require(nonnegative(projected), 'Capped domain has no measured storage projection: ' + domain)
+        if projected + (additional_home_bytes if domain == 'home' else 0) >= limit:
+            blocked.append(domain)
+    return blocked
 
 
 def local_inventory(roots, *, detailed=False):
@@ -180,6 +199,156 @@ def _replace(path, value):
         os.close(fd)
 
 
+def _backup_bytes_once(path, data):
+    """Keep the exact previous ledger bytes durable before changing its policy."""
+    path = safe(path)
+    if path.exists():
+        require(path.read_bytes() == data, 'Existing policy backup bytes differ')
+        return file_pin(path)
+    with path.open('xb') as handle:
+        handle.write(data); handle.flush(); os.fsync(handle.fileno())
+    fd = os.open(path.parent, os.O_RDONLY)
+    try:
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+    return file_pin(path)
+
+
+def disable_oss_quota(old_config, new_config, *, quiescence, authorization, apply=False):
+    """Explicit, crash-resumable finite-to-null migration of an existing ledger.
+
+    ``quiescence(scope)`` runs under its lock and returns ``observed_utc``, empty
+    ``active_project_jobs/active_writers/active_uploads`` lists and nonempty
+    byte/SHA-pinned ``evidence``. The caller supplies the fresh workload audit;
+    this function never schedules, deletes, uploads, or silently rewrites policy.
+    Default mode validates and returns a proposal without filesystem changes.
+    """
+    validate_config(old_config); validate_config(new_config)
+    old_config, new_config = json.loads(canonical(old_config)), json.loads(canonical(new_config))
+    require(type(old_config['oss_limit_bytes']) is int and new_config['oss_limit_bytes'] is None
+            and {**old_config, 'oss_limit_bytes': None} == new_config,
+            'Only OSS finite-to-null migration is allowed; home, roots and all other policy fields must match')
+    require(isinstance(authorization, str) and authorization.strip() and len(authorization) <= 4096 and callable(quiescence),
+            'Explicit authorization statement and fresh workload audit required')
+    require(type(apply) is bool, 'Migration apply must be explicit boolean')
+    # Do not use the constructor: a migration must never create a replacement
+    # empty ledger if the original ledger/lock has gone missing.
+    budget = SharedBudget.__new__(SharedBudget)
+    budget.config = old_config
+    budget.root = safe(old_config['ledger_root'])
+    budget.path = safe(budget.root / 'LEDGER.json')
+    require(budget.path.is_file() and safe(budget.root / 'budget.lock').is_file(),
+            'Existing ledger and lock are required for policy migration')
+    old_sha, new_sha = digest(old_config), digest(new_config)
+    scope = {'from_config_sha256': old_sha, 'to_config_sha256': new_sha,
+             'ledger_root': str(budget.root)}
+    with budget.lock():
+        raw = budget.path.read_bytes()
+        ledger = json.loads(raw)
+        require(ledger.get('schema_version') == 2 and ledger.get('config_sha256') in (old_sha, new_sha),
+                'Existing ledger policy SHA differs from both reviewed policies')
+        if ledger['config_sha256'] == old_sha:
+            require(not any(row['state'] == 'ACTIVE' for row in ledger['reservations'].values()),
+                    'Policy migration requires no active or unreconciled reservations')
+            proof = quiescence(dict(scope))
+            require(isinstance(proof, dict) and all(proof.get(key) == [] for key in
+                    ('active_project_jobs', 'active_writers', 'active_uploads'))
+                    and isinstance(proof.get('evidence'), list) and proof['evidence'],
+                    'Policy migration requires fresh no-job/writer/upload evidence')
+            observed = datetime.fromisoformat(proof.get('observed_utc', '').replace('Z', '+00:00'))
+            require(observed.tzinfo is not None and -5 <= (datetime.now(timezone.utc) - observed).total_seconds() <= 300,
+                    'Policy migration workload evidence is stale or lacks a UTC offset')
+            for pin in proof['evidence']:
+                check_pin(pin)
+            # The migration itself writes a retained ledger backup, intent and
+            # atomic replacement. Even these CPU-only bytes obey the home cap.
+            home = local_inventory(old_config['roots'])
+            metadata_bytes = len(canonical({'old': old_config, 'new': new_config,
+                                           'proof': proof, 'authorization': authorization}))
+            migration_peak = 3 * len(raw) + 4 * metadata_bytes + 32_768
+            require(home['bytes'] + migration_peak + old_config['home_safety_bytes'] < old_config['home_limit_bytes'],
+                    'Home capacity cannot hold the durable policy migration backup and scratch')
+            require(all(shutil.disk_usage(p).free > migration_peak + old_config['free_guard_bytes']
+                        for p in old_config['roots']), 'Policy migration filesystem free-space guard failed')
+            before_sha = hashlib.sha256(raw).hexdigest()
+            # A restart before the atomic policy change gets a fresh intent
+            # bound to the new audit. Keep the abandoned intent/backup intact;
+            # never record a stale old guard as the proof used for a later apply.
+            migration_id = digest({**scope, 'before_ledger_sha256': before_sha,
+                                   'quiescence_sha256': digest(proof)})
+            transaction = safe(budget.root / 'policy-migrations' / migration_id)
+            proposal = {'status': 'OSS_QUOTA_POLICY_MIGRATION_READY', **scope,
+                        'migration_id': migration_id, 'before_ledger_sha256': before_sha,
+                        'quiescence': proof, 'authorization': authorization,
+                        'active_reservations': 0, 'remote_operations': False,
+                        'home_observed_bytes': home['bytes'], 'migration_home_peak_bytes': migration_peak}
+            if not apply:
+                return {**proposal, 'applied': False}
+            transaction.mkdir(parents=True, exist_ok=True)
+            backup = _backup_bytes_once(transaction / ('LEDGER.before.' + before_sha + '.json'), raw)
+            intent_path = transaction / 'INTENT.json'
+            if intent_path.exists():
+                intent = json.loads(intent_path.read_text())
+                require(intent['scope'] == scope and intent['ledger_backup'] == backup
+                        and intent['old_config'] == old_config and intent['new_config'] == new_config
+                        and intent['migration_id'] == migration_id
+                        and all(intent['event'].get(k) == v for k, v in scope.items())
+                        and intent['event'].get('migration_id') == migration_id
+                        and intent['event'].get('ledger_backup') == backup
+                        and intent['event'].get('kind') == 'OSS_QUOTA_DISABLED',
+                        'Prepared migration intent differs from reviewed policy or ledger')
+            else:
+                event = {'kind': 'OSS_QUOTA_DISABLED', 'utc': utc(), **scope,
+                         'migration_id': migration_id, 'ledger_backup': backup,
+                         'quiescence': proof, 'authorization': authorization}
+                intent = {'scope': scope, 'migration_id': migration_id, 'ledger_backup': backup,
+                          'old_config': old_config, 'new_config': new_config, 'event': event}
+                write_once(intent_path, intent)
+            migrated = json.loads(raw)
+            migrated['config_sha256'] = new_sha
+            migrated['events'].append(intent['event'])
+            # The backup and intent are durable first; consumers and all old
+            # reservations/events remain in the atomic replacement verbatim.
+            for pin in proof['evidence']:
+                check_pin(pin)
+            budget._write(migrated)
+        else:
+            events = [row for row in ledger['events'] if row.get('kind') == 'OSS_QUOTA_DISABLED'
+                      and row.get('from_config_sha256') == old_sha and row.get('to_config_sha256') == new_sha]
+            require(len(events) == 1, 'Target policy has no unique auditable migration event')
+            event = events[0]
+            transaction = safe(budget.root / 'policy-migrations' / event['migration_id'])
+            intent_path = transaction / 'INTENT.json'
+            intent = json.loads(intent_path.read_text())
+            require(intent['scope'] == scope and intent['event'] == event
+                    and intent['old_config'] == old_config and intent['new_config'] == new_config,
+                    'Applied migration intent does not match target ledger')
+            before = json.loads(check_pin(intent['ledger_backup']).read_text())
+            require(before['config_sha256'] == old_sha and ledger['events'][:len(before['events']) + 1]
+                    == before['events'] + [event], 'Migration lost or reordered historical events')
+            migrated = json.loads(canonical(before))
+            migrated['config_sha256'] = new_sha
+            migrated['events'].append(event)
+            if not apply:
+                return {'status': 'OSS_QUOTA_POLICY_ALREADY_MIGRATED', **scope,
+                        'migration_id': event['migration_id'], 'applied': True, 'writes': False}
+        backup = intent['ledger_backup']
+        check_pin(backup)
+        after_bytes = canonical(migrated)
+        result = {'status': 'OSS_QUOTA_POLICY_MIGRATED', **scope, 'applied': True,
+                  'migration_id': intent['migration_id'], 'ledger_backup': backup,
+                  'migration_intent': file_pin(intent_path),
+                  'ledger_after_migration': {'path': str(budget.path), 'bytes': len(after_bytes),
+                      'sha256': hashlib.sha256(after_bytes).hexdigest()},
+                  'preserved_artifact_count': len(migrated['artifacts']),
+                  'preserved_reservation_count': len(migrated['reservations']),
+                  'preserved_previous_event_count': len(migrated['events']) - 1,
+                  'remote_operations': False}
+        write_once(transaction / 'COMPLETED.json', result)
+        return {**result, 'receipt': file_pin(transaction / 'COMPLETED.json')}
+
+
 class SharedBudget:
     """Durable global reservations; all API mutations hold the same flock."""
     def __init__(self, config, remote_inventory, *, local_scanner=local_inventory):
@@ -219,20 +388,26 @@ class SharedBudget:
 
     def _snapshot(self, ledger):
         home = self.local_scanner(self.config['roots'])
-        oss = remote_usage(self.remote_inventory(), self.config['oss_prefixes'])
+        unlimited_oss = self.config['oss_limit_bytes'] is None
+        oss = ({'status': 'NOT_MEASURED_UNLIMITED_QUOTA', 'quota_limit_bytes': None,
+                'bytes': None, 'object_bytes': None, 'multipart_bytes': None,
+                'objects': None, 'parts': None, 'inventory_sha256': None,
+                'accounting_scope': 'not_measured', 'legacy_version_bytes_unknown': True,
+                'version_inventory_status': 'not_requested_unlimited_quota'} if unlimited_oss
+               else remote_usage(self.remote_inventory(), self.config['oss_prefixes']))
         require(nonnegative(home.get('bytes')), 'Home inventory unavailable')
         active = [r for r in ledger['reservations'].values() if r['state'] == 'ACTIVE']
         reserved = {domain: sum(r[domain + '_bytes'] for r in active) for domain in ('home', 'oss')}
         return {'utc': utc(), 'home': home, 'oss': oss, 'active_reservations': len(active),
                 'reserved_bytes': reserved, 'projected_bytes': {
-                    domain: observed['bytes'] + reserved[domain] + self.config[domain + '_safety_bytes']
+                    domain: (None if domain == 'oss' and unlimited_oss else
+                             observed['bytes'] + reserved[domain] + self.config[domain + '_safety_bytes'])
                     for domain, observed in (('home', home), ('oss', oss))}}
 
     def _admit(self, ledger):
         snapshot = self._snapshot(ledger)
-        for domain in ('home', 'oss'):
-            require(snapshot['projected_bytes'][domain] < self.config[domain + '_limit_bytes'],
-                    domain + ' capacity gated: actual usage + all reservations + safety reaches its limit')
+        blocked = capacity_violations(snapshot, self.config)
+        require(not blocked, ', '.join(blocked) + ' capacity gated: actual usage + all reservations + safety reaches its limit')
         future = snapshot['reserved_bytes']['home'] + self.config['free_guard_bytes']
         require(all(shutil.disk_usage(p).free > future for p in self.config['roots']),
                 'Filesystem free-space guard failed')

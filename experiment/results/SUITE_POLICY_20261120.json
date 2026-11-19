@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-20",
+  "timezone": "Asia/Shanghai",
+  "status": "OSS_QUOTA_REMOVED_CPU_PREPARATION_STARTED",
+  "storage_policy": {
+    "home_limit_bytes": 150000000000,
+    "home_safety_bytes": 2000000000,
+    "filesystem_free_guard_bytes": 1000000000,
+    "oss_limit_bytes": null,
+    "oss_weight_deletion_enabled": false,
+    "home_reservations_shared_across_workers": true,
+    "archive_full_readback_integrity_checks_retained": true
+  },
+  "policy_migration": {
+    "completed": true,
+    "old_ledger_preserved": true,
+    "new_policy_sha256": "13984027010389c7dab3ddccfe0533c5c5c1ccabd7aa9e029d6340812a0e16b8",
+    "receipt_sha256": "6e52607d15c0a79ee4732346a3c70f529f1730a7c8aa381c115ab1ff8995c1d2",
+    "independent_audit_sha256": "97445954d2d298eb1022f0789a22d36a54386502c73f2f98c12007fc20b54b85"
+  },
+  "source": {
+    "files": 181,
+    "manifest_sha256": "073eb1a243b8bbc14feedd7bfb7e69f3ebf824a149509396f5a055f2c3b9efd8",
+    "deployed_files_sha256_verified": true
+  },
+  "verification": {
+    "cpu_tests_passed": 240,
+    "test_modules": 21,
+    "pytest_output_sha256": "a0f928cc5a03a4c5238bdfb5a150d06b7a1cd0dccb05778e1f2e32a214ea3ae5",
+    "independent_control_audit_sha256": "395965c5b330ce93e3ac20cfe3d56a7aa4dc1eb7557da1bb9662ea6f0b0796f4"
+  },
+  "preparation": {
+    "started_utc": "2026-11-19T16:52:05.997812+00:00",
+    "automatic_gpu_submit": false,
+    "completed": false,
+    "cpu_admitted": false,
+    "capacity_gate_passed": true,
+    "capacity_gate_sha256": "112a3e220be578dae15e94e5bf7a6dff18aababbd521b2381cad2fe031e9f5d1",
+    "observed_home_bytes": 60510285511,
+    "projected_home_with_safety_bytes": 62510285511
+  },
+  "scheduler_snapshot": {
+    "observed_at_utc": "2026-11-19T16:52:57.730356+00:00",
+    "priority_authorized": "normal",
+    "matching_stream_b300_nodes": 56,
+    "unallocated_gpus_by_pod_requests": 0,
+    "active_project_gpu_jobs": 0,
+    "snapshot_sha256": "c9b0f5b8e533835bbf78a73f8ba863621099f15ae4d873eaecf9859b8bd84e4a"
+  },
+  "new_gpu_submission": false,
+  "new_training_or_evaluation_results": false,
+  "scientific_result_release_unchanged": "releases/2026-11-19"
+}

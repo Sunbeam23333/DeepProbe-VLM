@@ -259,6 +259,144 @@ class ActionRetentionTest(unittest.TestCase):
             self.assertTrue((final / 'deepprobe_config.json').is_file())
             self.assertEqual(actions.inventory(self.old), self.old_files)
 
+    @contextmanager
+    def unlimited_oss(self):
+        from deepprobe_vlm.suite_storage import SharedBudget
+        configuration = {'schema_version': 2, 'roots': [str(self.project), str(self.staging)],
+            'ledger_root': str(self.project / 'shared-storage'), 'home_limit_bytes': 150_000_000_000,
+            'oss_limit_bytes': None, 'home_safety_bytes': 1_000_000,
+            'oss_safety_bytes': 1_000_000, 'free_guard_bytes': 0,
+            'oss_prefixes': [self.environment['archive_root'] + '/']}
+        self.worker.env['storage'] = configuration
+        budget = SharedBudget(configuration, lambda: {'complete': True, 'multipart': [],
+                              'objects': self.store.list_prefix(configuration['oss_prefixes'][0])})
+        self.worker._shared_budget = budget
+        token = budget.reserve({'worker': 'synthetic-worker'}, 1_000_000, 1_000_000)
+        with patch.dict(os.environ, {'DP_SUITE_STORAGE_TOKEN': token,
+                                     'DP_SUITE_STORAGE_LEDGER': configuration['ledger_root']}), \
+             patch('deepprobe_vlm.checkpoint_backup.configured_api',
+                   side_effect=AssertionError('Unlimited OSS must not require ModelScope credentials')), \
+             patch('deepprobe_vlm.checkpoint_backup.ModelScopeCheckpointStore',
+                   side_effect=AssertionError('Unlimited OSS must not create a ModelScope store')), \
+             patch('deepprobe_vlm.checkpoint_backup.backup_final',
+                   side_effect=AssertionError('Unlimited OSS must not upload a ModelScope backup')), \
+             patch.object(self.store, 'delete_exact_verified',
+                          side_effect=PermissionError('AccessDenied (403): remote deletion forbidden')) as deletion:
+            yield budget
+            deletion.assert_not_called()
+
+    def assert_oss_retained(self, result):
+        rows = [runner.read(item['path']) for item in result['outputs']]
+        retained = [row for row in rows if row.get('status') == 'OSS_CHECKPOINT_WEIGHT_DELETION_DISABLED']
+        self.assertEqual(len(retained), 1)
+        self.assertIs(retained[0]['remote_deletion_performed'], False)
+        self.assertEqual(retained[0]['remote_deleted_objects'], 0)
+        self.assertEqual(retained[0]['confirmed_reclaimed_oss_bytes'], 0)
+        self.assertIs(retained[0]['modelscope_weight_backup_required'], False)
+        runner.verify_pin(retained[0]['local_cleanup_receipt'])
+        return retained[0]
+
+    def test_unlimited_oss_archives_intermediates_and_cleans_locally_without_remote_deletion(self):
+        with self.unlimited_oss():
+            trained = self.execute(self.stage)
+            final = Path(trained['checkpoint'])
+            intermediate = final.parent / 'checkpoint-718'
+            intermediate.mkdir()
+            for name, value in {'model.safetensors': b'intermediate', 'optimizer.pt': b'optimizer',
+                                'scheduler.pt': b'small-evidence'}.items():
+                (intermediate / name).write_bytes(value)
+            archived = self.execute(self.archive)
+            manifest = runner.read(archived['manifest']['path'])
+            self.assertEqual(set(self.store.objects), set(actions.retention._objects(manifest)))
+            for uri, row in actions.retention._objects(manifest).items():
+                self.assertEqual(len(self.store.objects[uri]), row['bytes'])
+                self.assertEqual(hashlib.sha256(self.store.objects[uri]).hexdigest(), row['sha256'])
+            self.assert_oss_retained(archived)
+            self.assertFalse((intermediate / 'model.safetensors').exists())
+            self.assertFalse((intermediate / 'optimizer.pt').exists())
+            self.assertEqual((intermediate / 'scheduler.pt').read_bytes(), b'small-evidence')
+            self.assertEqual(actions.inventory(final), self.old_files)
+            remote = dict(self.store.objects)
+            self.worker.resume = True
+            self.assert_oss_retained(self.worker.archive(self.tasks[self.archive]))
+            self.assertEqual(self.store.objects, remote)
+            self.accept_consumer()
+            self.accept_fixture_dependency('archive__ouro_r1_s17__results')
+            first = self.execute(self.cleanup)
+            self.assert_oss_retained(first)
+            for row in manifest['files']:
+                path = Path(trained['owner']['run_root']) / row['path']
+                if actions.retention.cleanable(row['path']):
+                    self.assertFalse(path.exists())
+                else:
+                    runner.verify_pin({**row, 'path': str(path)})
+            before_gets = len(self.store.gets)
+            again = self.worker.cleanup(self.tasks[self.cleanup])
+            self.assertEqual(again['outputs'], first['outputs'])
+            self.assertEqual(set(self.store.gets[before_gets:]), set(remote))
+            self.assertEqual(self.store.objects, remote)
+            self.assertEqual(actions.inventory(self.old), self.old_files)
+
+    def test_unlimited_oss_corrupt_remote_payload_still_preserves_local_checkpoint(self):
+        with self.unlimited_oss():
+            trained = self.execute(self.stage)
+            self.execute(self.archive)
+            self.accept_consumer()
+            uri = next(key for key in self.store.objects if key.endswith('/final/projector.safetensors'))
+            self.store.objects[uri] = b'x' * len(self.store.objects[uri])
+            remote = dict(self.store.objects)
+            before_gets = len(self.store.gets)
+            with self.assertRaisesRegex(ValueError, 'GET/SHA differs'):
+                self.worker.cleanup(self.tasks[self.cleanup])
+            self.assertIn(uri, self.store.gets[before_gets:])
+            self.assertEqual(self.store.objects, remote)
+            self.assertEqual(actions.inventory(Path(trained['checkpoint'])), self.old_files)
+            self.assertEqual(actions.inventory(self.old), self.old_files)
+
+    def test_unlimited_oss_missing_consumer_and_shared_recovery_hold_still_block_cleanup(self):
+        with self.unlimited_oss() as budget:
+            trained = self.execute(self.stage)
+            archived = self.execute(self.archive)
+            remote = dict(self.store.objects)
+            with self.assertRaises(FileNotFoundError):
+                self.worker.cleanup(self.tasks[self.cleanup])
+            self.accept_consumer()
+            manifest = runner.read(archived['manifest']['path'])
+            budget.add_reference(self.worker.checkpoint_artifact_id(manifest, 'training/final'),
+                                 'synthetic-recovery-hold')
+            with self.assertRaisesRegex(ValueError, 'references still need this checkpoint'):
+                self.worker.cleanup(self.tasks[self.cleanup])
+            self.assertEqual(self.store.objects, remote)
+            self.assertEqual(actions.inventory(Path(trained['checkpoint'])), self.old_files)
+            self.assertEqual(actions.inventory(self.old), self.old_files)
+
+    def test_unlimited_oss_local_unlink_interruption_resumes_with_fresh_archive_get(self):
+        with self.unlimited_oss():
+            trained = self.execute(self.stage)
+            self.execute(self.archive)
+            self.accept_consumer()
+            final = Path(trained['checkpoint'])
+            target = final / 'projector.safetensors'
+            remote = dict(self.store.objects)
+            original_unlink = Path.unlink
+            def unlink_then_interrupt(path, *args, **kwargs):
+                original_unlink(path, *args, **kwargs)
+                if path == target:
+                    raise RuntimeError('synthetic interruption after local unlink')
+            with patch.object(Path, 'unlink', unlink_then_interrupt):
+                with self.assertRaisesRegex(RuntimeError, 'interruption after local unlink'):
+                    self.worker.cleanup(self.tasks[self.cleanup])
+            self.assertFalse(target.exists())
+            self.worker.resume = True
+            before_gets = len(self.store.gets)
+            result = self.worker.cleanup(self.tasks[self.cleanup])
+            self.assert_oss_retained(result)
+            self.assertEqual(set(self.store.gets[before_gets:]), set(remote))
+            self.assertEqual(self.store.objects, remote)
+            self.assertFalse((final / 'language_model/model.safetensors').exists())
+            self.assertTrue((final / 'deepprobe_config.json').is_file())
+            self.assertEqual(actions.inventory(self.old), self.old_files)
+
     def test_torn_checkpoint_resident_bytes_do_not_reduce_future_training_reservation(self):
         task = self.tasks[self.stage]
         family = next(model['family'] for model in self.plan['models'] if model['id'] == task['model_id'])

@@ -64,7 +64,9 @@ class RecoveryTest(unittest.TestCase):
         prefix = "oss://ss-devbox-stream/project/runs/historical/checkpoint-" + str(step) + "/"
         for name in sorted(names):
             path = root / name; path.parent.mkdir(parents=True, exist_ok=True)
-            raw = json.dumps({"global_step": step, "max_steps": 718}).encode() if name == "trainer_state.json" else b"synthetic state bytes"
+            raw = (json.dumps({"global_step": step, "max_steps": 718}).encode() if name == "trainer_state.json"
+                   else b'{}' if name in {"deepprobe_config.json", "training_provenance.json"}
+                   else b"synthetic state bytes")
             path.write_bytes(raw); files.append({**suite_runner.artifact(path), "path": name}); objects[prefix + name] = raw
         checkpoint = self.root / "runs/.recovery-inputs/model" / root.name if restore else root
         entry = {"mode": "resume", "checkpoint_step": step, "source_root": str(self.source), "config": self.config,
@@ -138,6 +140,46 @@ class RecoveryTest(unittest.TestCase):
         self.assertTrue(archive['all_objects_full_get_sha256_verified'])
         self.assertEqual(len(archive['objects']), len(objects))
         self.assertEqual(self.budget.reservations[0][1]['oss_bytes'], 0)
+
+    def deferred_request(self):
+        request, objects, old = self.request(600, restore=True)
+        request['operation'] = 'verify_archived_resume'
+        review = suite_runner.read(request['review']['path'])
+        review['operation'] = request['operation']
+        request['review'] = self.pin('deferred-review.json', review)
+        return request, objects, old
+
+    def test_deferred_resume_verifies_every_byte_without_duplicate_home_checkpoint(self):
+        request, objects, old = self.deferred_request()
+        store = MemoryStore(objects); history = self.execute(request, store)
+        self.assertFalse(Path(history['checkpoint']['path']).exists())
+        self.assertEqual(store.uploaded, [])
+        self.assertEqual(set(history['checkpoint_metadata']),
+                         {'deepprobe_config.json', 'training_provenance.json', 'trainer_state.json'})
+        for name, pin in history['checkpoint_metadata'].items():
+            self.assertEqual(Path(pin['path']).read_bytes(), objects[history['checkpoint']['oss_prefix'] + name])
+        archive = suite_runner.read(history['archive_acceptance']['path'])
+        self.assertEqual(len(archive['objects']), len(objects))
+        self.assertTrue(archive['all_objects_full_get_sha256_verified'])
+        self.assertEqual(self.budget.reservations[0][1], {'home_bytes': 128 * 1024 * 1024, 'oss_bytes': 0})
+        self.assertTrue((old / 'optimizer.pt').exists())
+        self.assertEqual(self.execute(request, store, resume=True), history)
+
+    def test_deferred_resume_still_rejects_corrupted_optimizer_archive(self):
+        request, objects, _ = self.deferred_request()
+        uri = next(k for k in objects if k.endswith('optimizer.pt'))
+        objects[uri] = b'x' * len(objects[uri])
+        with self.assertRaisesRegex(ValueError, 'full GET/SHA differs'):
+            self.execute(request, MemoryStore(objects))
+        self.assertFalse((Path(request['output_dir']) / 'HISTORY_ACCEPTANCE.json').exists())
+        self.assertEqual(len(self.budget.releases), 1)
+
+    def test_deferred_resume_requires_matching_operation_review_before_any_transfer(self):
+        request, objects, _ = self.request(600, restore=True)
+        request['operation'] = 'verify_archived_resume'
+        with self.assertRaisesRegex(ValueError, 'Independent recovery source review'):
+            self.execute(request, MemoryStore(objects))
+        self.assertEqual(self.budget.reservations, [])
 
 
 if __name__ == "__main__": unittest.main()

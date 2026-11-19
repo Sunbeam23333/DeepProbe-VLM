@@ -4,11 +4,14 @@ Local checkpoints are archived before import. Archived checkpoints are restored
 only into a new suite-owned input directory. Both paths perform complete SHA
 readback and native metadata checks; numerical restoration remains the Trainer's
 responsibility. No historical payload is deleted or changed here.
+The verify_archived_resume path keeps only authenticated JSON metadata during
+preparation; the training action hydrates the payload once into its owned run.
 """
 from __future__ import annotations
 
 from copy import deepcopy
 import hashlib
+import json
 import os
 from pathlib import Path
 
@@ -28,7 +31,8 @@ def save(path, value):
 def recovery_request(plan, request):
     fields = {"task_id", "operation", "entry", "review", "output_dir"}
     runner.require(isinstance(request, dict) and set(request) == fields
-                   and request["operation"] in {"archive_local", "restore_archived", "verify_archived_accepted"}, "Invalid recovery preparation request")
+                   and request["operation"] in {"archive_local", "restore_archived", "verify_archived_accepted",
+                                                "verify_archived_resume"}, "Invalid recovery preparation request")
     tasks = {t["id"]: t for t in plan["tasks"]}
     runner.require(request["task_id"] in tasks, "Recovery task is outside the exact scientific plan")
     task = tasks[request["task_id"]]
@@ -84,13 +88,17 @@ def prepare_recovery(plan, environment, request, *, resume=False, store_factory=
                    "Recovery archive escapes accounted OSS project")
     restoring = request["operation"] == "restore_archived"
     verifying_only = request["operation"] == "verify_archived_accepted"
+    deferred_resume = request["operation"] == "verify_archived_resume"
     if restoring:
         owned = runner.safe(environment["run_root"]) / ".recovery-inputs"
         runner.require(checkpoint != owned and checkpoint.is_relative_to(owned),
                        "Archive restore must target a new suite-owned recovery input directory")
         runner.require(resume or not checkpoint.exists(), "Existing recovery input requires explicit asset resume")
-    elif not verifying_only:
+    elif not verifying_only and not deferred_resume:
         verify_inventory(checkpoint, files)
+    if deferred_resume:
+        from .suite_preflight import _checkpoint_rows
+        _checkpoint_rows(files, resume=True)
     source = verify_frozen_source_manifest(runner.safe(entry["source_root"]),
         Path(entry["frozen_source_manifest"]["path"]), entry["frozen_source_manifest"]["sha256"])
     total = sum(row["bytes"] for row in files)
@@ -100,7 +108,7 @@ def prepare_recovery(plan, environment, request, *, resume=False, store_factory=
     # Multipart transfer stages one bounded part; restored inputs are counted in
     # addition to original source files and all other workers' reservations.
     token = budget.reserve(owner, home_bytes=(total if restoring else 0) + 128 * 1024 * 1024,
-                           oss_bytes=0 if restoring or verifying_only else total)
+                           oss_bytes=0 if restoring or verifying_only or deferred_resume else total)
     try:
         output.mkdir(parents=True, exist_ok=True)
         save(output / "RECOVERY_REQUEST.json", request)
@@ -110,7 +118,7 @@ def prepare_recovery(plan, environment, request, *, resume=False, store_factory=
         before = store.list_prefix(prefix)
         runner.require(len({r["uri"] for r in before}) == len(before) and {r["uri"] for r in before} <= set(expected),
                        "Unexpected recovery archive objects; refusing to adopt a prefix")
-        if restoring or verifying_only:
+        if restoring or verifying_only or deferred_resume:
             runner.require({r["uri"] for r in before} == set(expected), "Recovery archive is incomplete")
         else:
             runner.require(resume or not before, "Existing recovery archive requires explicit asset resume")
@@ -118,11 +126,11 @@ def prepare_recovery(plan, environment, request, *, resume=False, store_factory=
         for uri, row in expected.items():
             if uri in observed:
                 runner.require(observed[uri]["bytes"] == row["bytes"], "Recovery archive byte count differs")
-            elif not restoring and not verifying_only:
+            elif not restoring and not verifying_only and not deferred_resume:
                 store.put_if_absent(uri, checkpoint / row["path"], row["sha256"])
         stable = store.list_prefix(prefix)
         runner.require({r["uri"] for r in stable} == set(expected), "Recovery archive inventory is incomplete after transfer")
-        readback = []
+        readback, metadata = [], {}
         for uri, row in expected.items():
             target = runner.safe(checkpoint / row["path"])
             temporary, handle = None, None
@@ -133,6 +141,11 @@ def prepare_recovery(plan, environment, request, *, resume=False, store_factory=
                     runner.require(resume, "Partial owned recovery file requires explicit asset resume")
                     temporary.unlink()
                 handle = temporary.open("xb")
+            metadata_name = row["path"] if deferred_resume and row["path"] in {
+                "deepprobe_config.json", "training_provenance.json", "trainer_state.json"} else None
+            if metadata_name:
+                runner.require(row["bytes"] <= 4 * 1024 * 1024, "Recovery metadata exceeds bounded preparation memory")
+            metadata_raw = bytearray() if metadata_name else None
             digest, size = hashlib.sha256(), 0
             try:
                 for block in store.iter_object(uri):
@@ -140,6 +153,7 @@ def prepare_recovery(plan, environment, request, *, resume=False, store_factory=
                     runner.require(size <= row["bytes"], "Recovery archive object exceeds its pinned size")
                     digest.update(block)
                     if handle is not None: handle.write(block)
+                    if metadata_raw is not None: metadata_raw.extend(block)
                 runner.require(size == row["bytes"] and digest.hexdigest() == row["sha256"],
                                "Recovery archive full GET/SHA differs")
                 if handle is not None:
@@ -147,11 +161,32 @@ def prepare_recovery(plan, environment, request, *, resume=False, store_factory=
                     os.link(temporary, target); temporary.unlink()
                 if restoring:
                     runner.verify_pin({**row, "path": str(target)})
+                if metadata_name:
+                    value = json.loads(metadata_raw)
+                    runner.require(isinstance(value, dict), "Recovery metadata must be a JSON object")
+                    metadata_path = runner.safe(output / "metadata" / metadata_name)
+                    metadata_path.parent.mkdir(parents=True, exist_ok=True)
+                    if metadata_path.exists():
+                        runner.require(metadata_path.read_bytes() == metadata_raw, "Retained recovery metadata changed")
+                    else:
+                        with metadata_path.open("xb") as stream:
+                            stream.write(metadata_raw); stream.flush(); os.fsync(stream.fileno())
+                    metadata[metadata_name] = runner.artifact(metadata_path)
                 readback.append({"uri": uri, "bytes": size, "sha256": digest.hexdigest()})
             finally:
                 if handle is not None: handle.close()
         runner.require(store.list_prefix(prefix) == stable, "Recovery archive changed during independent full readback")
-        if verifying_only:
+        if deferred_resume:
+            state = runner.read(metadata["trainer_state.json"]["path"])
+            runner.require(type(state.get("global_step")) is int and state["global_step"] == entry["checkpoint_step"]
+                           and type(state.get("max_steps")) is int and state["max_steps"] == task["expected_optimizer_steps"],
+                           "Recovery archived Trainer state differs from the explicit step/schedule")
+            entry["checkpoint_metadata"] = metadata
+            native = {"optimizer_step": state["global_step"], "max_steps": state["max_steps"], "world_size": 8,
+                      "validation_scope": "full_archive_get_sha256_and_trainer_state_structure",
+                      "checkpoint_inventory_sha256": identities["checkpoint_inventory_sha256"],
+                      "local_checkpoint_hydrated": False, "runtime_hydration_deferred": True}
+        elif verifying_only:
             native = {"optimizer_step": entry["checkpoint_step"], "formal_training_complete": True,
                       "validation_scope": "independently_reviewed_completion_and_fresh_archive_full_get_sha",
                       "completion_review": request["review"]}

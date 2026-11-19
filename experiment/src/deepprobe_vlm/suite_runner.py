@@ -342,11 +342,11 @@ def machine_environment(binding):
 def capacity(binding, reserve_bytes):
     policy = binding["storage"]
     if policy.get("schema_version") == 2:
-        from .suite_storage import budget_for
+        from .suite_storage import budget_for, capacity_violations
         environment = machine_environment(binding)
+        require(environment['storage'] == policy, 'Binding and machine storage policy differ')
         value = budget_for(environment).snapshot()
-        require(value["projected_bytes"]["home"] + reserve_bytes < policy["home_limit_bytes"]
-                and value["projected_bytes"]["oss"] < policy["oss_limit_bytes"],
+        require(not capacity_violations(value, policy, additional_home_bytes=reserve_bytes),
                 "shared home or OSS storage capacity exceeded")
         return value
     roots = [safe(p) for p in policy["roots"]]

@@ -3,17 +3,67 @@ import os
 import ctypes
 import platform
 from pathlib import Path
+import re
 import signal
 import subprocess
 import time
 import uuid
 
 MARKER = 'DEEPPROBE_SUITE_PROCESS_TOKEN'
+MARKER_CHAIN = MARKER + '_CHAIN'
+MAX_MARKER_DEPTH = 16
+TOKEN_PATTERN = re.compile(r'[0-9a-f]{32}')
 LINUX_PROC = Path('/proc/self/stat').is_file()
 
 
 class GroupCleanupError(RuntimeError):
     group_cleanup_verified = False
+
+
+def _marker_tokens(environment):
+    """Read bounded ancestry without dropping identities or exposing tokens."""
+    current, chain = environment.get(MARKER), environment.get(MARKER_CHAIN)
+    if current is None and chain is None:
+        return ()
+    if not isinstance(current, str) or TOKEN_PATTERN.fullmatch(current) is None:
+        raise GroupCleanupError('invalid suite process identity')
+    if chain is None:
+        # Preserve a parent launched by the original single-marker supervisor.
+        return (current,)
+    if not isinstance(chain, str) or len(chain) > MAX_MARKER_DEPTH * 33 - 1:
+        raise GroupCleanupError('suite process ancestry exceeds its bound')
+    tokens = tuple(chain.split(','))
+    if (not 1 <= len(tokens) <= MAX_MARKER_DEPTH
+            or any(TOKEN_PATTERN.fullmatch(token) is None for token in tokens)
+            or len(set(tokens)) != len(tokens) or tokens[-1] != current):
+        raise GroupCleanupError('invalid suite process ancestry')
+    return tokens
+
+
+def _child_environment(environment, token):
+    ancestors = _marker_tokens(environment)
+    if not isinstance(token, str) or TOKEN_PATTERN.fullmatch(token) is None or token in ancestors:
+        raise GroupCleanupError('invalid new suite process identity')
+    if len(ancestors) >= MAX_MARKER_DEPTH:
+        raise GroupCleanupError('suite process ancestry exceeds its bound; child not started')
+    return dict(environment, **{MARKER: token, MARKER_CHAIN: ','.join((*ancestors, token))})
+
+
+def _process_marker_tokens(raw):
+    environment = {}
+    names = {name.encode(): name for name in (MARKER, MARKER_CHAIN)}
+    for entry in raw.split(b'\0'):
+        key, separator, value = entry.partition(b'=')
+        if key not in names:
+            continue
+        name = names[key]
+        if not separator or name in environment:
+            raise GroupCleanupError('ambiguous suite process identity in process inventory')
+        try:
+            environment[name] = value.decode('ascii')
+        except UnicodeDecodeError:
+            raise GroupCleanupError('invalid suite process identity in process inventory') from None
+    return _marker_tokens(environment)
 
 
 class PidfdAPI:
@@ -110,7 +160,7 @@ class OwnedTree:
                         raise GroupCleanupError('same-user process environment exceeded read bound')
                 except (FileNotFoundError,ProcessLookupError):
                     continue
-                if self.marker in raw.split(b'\0'):
+                if self.token in _process_marker_tokens(raw):
                     owned.add(pid)
         while True:
             children = {pid for pid,row in rows.items() if row['ppid'] in owned}
@@ -182,11 +232,12 @@ class OwnedTree:
 def run_group(argv, *, stdout, stderr, env, cwd, timeout, on_started=None):
     if timeout <= 0:
         raise ValueError('no phase budget remains; command not started')
+    token = uuid.uuid4().hex
+    child_env = _child_environment(env, token)
     pidfds = PidfdAPI() if LINUX_PROC else None
     process = tree = None
     previous, pending = {}, []
     spawning = True
-    token = uuid.uuid4().hex
     deadline = time.monotonic()+timeout
 
     def interrupted(signum,frame):
@@ -198,7 +249,7 @@ def run_group(argv, *, stdout, stderr, env, cwd, timeout, on_started=None):
     try:
         for sig in (signal.SIGTERM,signal.SIGINT,signal.SIGALRM):
             previous[sig] = signal.signal(sig,interrupted)
-        process = subprocess.Popen(argv,stdout=stdout,stderr=stderr,env=dict(env,**{MARKER:token}),
+        process = subprocess.Popen(argv,stdout=stdout,stderr=stderr,env=child_env,
                                    cwd=cwd,start_new_session=True,stdin=subprocess.DEVNULL,close_fds=True)
         tree = OwnedTree(process,token,pidfds)
         if on_started is not None:

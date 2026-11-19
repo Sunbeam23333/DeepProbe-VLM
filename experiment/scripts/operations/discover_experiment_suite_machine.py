@@ -46,11 +46,13 @@ def clean_job_template(original):
                 'template': {'metadata': {}, 'spec': selected}}}}}
 
 
-def discover(base, source_root, suite_id, workers, priority):
+def discover(base, source_root, suite_id, workers, priority, *, unlimited_oss=False):
     base, source_root = Path(base).absolute(), Path(source_root).absolute()
     p1 = Path(str(base) + '-p1')
     if not 1 <= workers <= 4 or priority not in {'normal', 'low'} or not re.fullmatch('[a-z][a-z0-9-]*', suite_id):
         raise ValueError('Invalid suite identity, worker count or priority')
+    if not isinstance(unlimited_oss, bool):
+        raise ValueError('OSS quota opt-in must be an explicit boolean')
     control = p1 / ('suite-' + suite_id)
     home = base.parents[2]
     ready = p1 / 'formal-source-final-20261009-v1/FORMAL_READY.json'
@@ -90,14 +92,13 @@ def discover(base, source_root, suite_id, workers, priority):
     if (home / '.config/deepprobe-vlm').is_dir(): roots.append(str(home / '.config/deepprobe-vlm'))
     env = {'schema_version': 1, 'suite_id': suite_id, 'experiment_root': str(source_root), 'python': str(base / 'env/bin/python'),
         'machine_identity': {'uid': os.getuid(), 'gid': os.getgid()},
-        'modelscope_token_file': str(home / '.config/deepprobe-vlm/modelscope-token'),
         'run_root': str(base / 'runs' / suite_id), 'archive_root': 'oss://ss-devbox-stream/jinhaopeng/Paper/DeepProbe-VLM/' + suite_id,
         'execution_profile': profile, 'source_files': [], 'tools': tools,
         'allocation_identity': {'job_name': profile['workers'][0]['job_name'], 'namespace': 'default',
                                 'project_name_prefixes': ['jinhaopeng-dpvlm-', 'deepprobe-']},
         'runtime_environment': {'HF_HOME': str(base / 'hf'), 'HF_HUB_CACHE': str(base / 'hf/hub')},
         'storage': {'schema_version': 2, 'roots': roots, 'ledger_root': str(base / 'locks/suite-storage-ledger'),
-            'home_limit_bytes': 150000000000, 'oss_limit_bytes': 150000000000,
+            'home_limit_bytes': 150000000000, 'oss_limit_bytes': None if unlimited_oss else 150000000000,
             'oss_prefixes': ['oss://ss-devbox-stream/jinhaopeng/Paper/DeepProbe-VLM/'],
             'home_safety_bytes': 2000000000, 'oss_safety_bytes': 2000000000, 'free_guard_bytes': 1000000000},
         'task_reserve_bytes': {'startup': 1000000000, 'gate': 1000000000, 'train_alignment': 35000000000,
@@ -105,6 +106,8 @@ def discover(base, source_root, suite_id, workers, priority):
             'archive': 67108864, 'cleanup': 100000000, 'aggregate': 1000000000},
         'assets': {'training': training, 'backbones': backbones, 'benchmarks': {},
             'development': {'manifest': training['eval_manifest'], 'media_root': training['media_root']}}, 'history': {}}
+    if not unlimited_oss:
+        env['modelscope_token_file'] = str(home / '.config/deepprobe-vlm/modelscope-token')
     paths = {'videomme899': (p1 / 'videomme-reviewed-cpu-20261021-a1/manifest/videomme.jsonl',
                             p1 / 'benchmark-media-20261012/videomme/FRAME_CACHE_RECEIPT.json'),
              'tempcompass_mc': (p1 / 'benchmark-media-tempcompass-20261021-a1/manifest.jsonl',
@@ -141,6 +144,8 @@ def main():
     parser.add_argument('--suite-id', required=True)
     parser.add_argument('--workers', type=int, choices=range(1, 5), default=1)
     parser.add_argument('--priority', choices=('normal', 'low'), default='normal')
+    parser.add_argument('--unlimited-oss', action='store_true',
+                        help='Explicitly remove only the OSS capacity quota; retain home limits and exact archive integrity checks')
     parser.add_argument('--output', type=Path)
     parser.add_argument('--capacity-snapshot', type=Path, help='Pinned observed storage evidence; never replaces fresh admission')
     parser.add_argument('--capacity-recovery-plan', type=Path, help='Exact reviewable retirement/migration plan; no automatic deletion')
@@ -149,7 +154,8 @@ def main():
     parser.add_argument('--recovery-preparation-index', type=Path, help='Explicit reviewed archive/restore request list')
     parser.add_argument('--history-preparation-index', type=Path, help='Reviewed accepted checkpoint full-GET/import request list')
     args = parser.parse_args()
-    result = discover(args.base, args.source_root, args.suite_id, args.workers, args.priority)
+    result = discover(args.base, args.source_root, args.suite_id, args.workers, args.priority,
+                      unlimited_oss=args.unlimited_oss)
     for name in ('capacity_snapshot', 'capacity_recovery_plan'):
         if getattr(args, name): result[name] = pin(getattr(args, name))
     if args.runtime_python:

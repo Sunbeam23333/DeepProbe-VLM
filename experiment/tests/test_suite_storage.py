@@ -88,6 +88,146 @@ def test_home_and_oss_are_separate_not_combined(tmp_path):
         budget.reserve({'worker': 'three'}, 40, 1)
 
 
+def test_explicit_null_oss_quota_skips_inventory_but_keeps_home_and_reservations(tmp_path):
+    configuration = config(tmp_path)
+    configuration.update(oss_limit_bytes=None, home_safety_bytes=10)
+    def forbidden_inventory():
+        raise AssertionError('Unlimited OSS must not scan the project prefix for quota')
+    budget = storage.SharedBudget(configuration, forbidden_inventory, local_scanner=zero_local)
+    token = budget.reserve({'worker': 'one'}, 60, 10**15)
+    value = budget.snapshot()
+    assert value['oss']['status'] == 'NOT_MEASURED_UNLIMITED_QUOTA'
+    assert value['oss']['bytes'] is None and value['oss']['objects'] is None
+    assert value['oss']['inventory_sha256'] is None
+    assert value['projected_bytes'] == {'home': 70, 'oss': None}
+    assert value['reserved_bytes']['oss'] == 10**15
+    budget.extend(token, 75, 2 * 10**15)
+    with pytest.raises(storage.StorageError, match='home capacity'):
+        budget.reserve({'worker': 'two'}, 15, 1)
+    budget.release(token, lambda owner: {'owner': owner, 'active_writers': [], 'active_uploads': []})
+    assert budget.snapshot()['active_reservations'] == 0
+    for field, value in [('home_limit_bytes', None), ('home_limit_bytes', True),
+                         ('oss_limit_bytes', True), ('oss_limit_bytes', 10**15)]:
+        with pytest.raises(storage.StorageError):
+            storage.validate_config({**configuration, field: value})
+
+
+def test_four_processes_cannot_overbook_home_with_unlimited_oss(tmp_path):
+    configuration = config(tmp_path)
+    configuration['oss_limit_bytes'] = None
+    context = multiprocessing.get_context('spawn')
+    barrier, queue = context.Barrier(4), context.Queue()
+    processes = [context.Process(target=race_reserve, args=(configuration, barrier, queue, str(i))) for i in range(4)]
+    for process in processes:
+        process.start()
+    results = [queue.get(timeout=20) for _ in processes]
+    for process in processes:
+        process.join(timeout=10)
+        assert process.exitcode == 0
+    assert [status for status, _ in results].count('accepted') == 1
+
+
+def migration_fixture(tmp_path):
+    old = config(tmp_path)
+    old['home_limit_bytes'] = 10_000_000
+    budget = storage.SharedBudget(old, empty_remote, local_scanner=zero_local)
+    result = Path(old['roots'][0]) / 'kept-result.json'
+    result.write_text('{"real_fixture":true}')
+    budget.register_artifact('kept-result', kind='result', locations=[retention.file_pin(result)])
+    token = budget.reserve({'worker': 'completed'}, 10, 20)
+    budget.release(token, lambda owner: {'owner': owner, 'active_writers': [], 'active_uploads': []})
+    proof_file = tmp_path / 'quiescence.json'
+    proof_file.write_text(json.dumps({'active_project_jobs': [], 'active_writers': [], 'active_uploads': []}))
+    def proof(scope):
+        return {'observed_utc': storage.utc(), 'active_project_jobs': [], 'active_writers': [],
+                'active_uploads': [], 'evidence': [retention.file_pin(proof_file)]}
+    return budget, old, {**old, 'oss_limit_bytes': None}, proof
+
+
+def test_policy_migration_preserves_exact_ledger_and_is_explicit_idempotent(tmp_path):
+    budget, old, new, proof = migration_fixture(tmp_path)
+    original = budget.path.read_bytes()
+    before = json.loads(original)
+    files_before = sorted(str(p) for p in budget.root.rglob('*'))
+    proposal = storage.disable_oss_quota(old, new, quiescence=proof, authorization='User removed OSS quota')
+    assert proposal['applied'] is False and budget.path.read_bytes() == original
+    assert sorted(str(p) for p in budget.root.rglob('*')) == files_before
+    value = storage.disable_oss_quota(old, new, quiescence=proof, authorization='User removed OSS quota', apply=True)
+    assert Path(value['ledger_backup']['path']).read_bytes() == original
+    current = json.loads(budget.path.read_text())
+    assert current['config_sha256'] == retention.digest(new)
+    assert current['artifacts'] == before['artifacts'] and current['reservations'] == before['reservations']
+    assert current['events'][:-1] == before['events']
+    with pytest.raises(storage.StorageError, match='same shared storage'):
+        budget.snapshot()  # stale finite-policy workers cannot keep mutating
+    assert storage.disable_oss_quota(old, new, quiescence=proof,
+        authorization='User removed OSS quota', apply=True) == value
+    updated = storage.SharedBudget(new, lambda: pytest.fail('unlimited quota scan'), local_scanner=zero_local)
+    with pytest.raises(storage.StorageError, match='permanently'):
+        with updated.deletion_guard(['kept-result']):
+            pytest.fail('Policy migration must not lose permanent result protection')
+
+
+@pytest.mark.parametrize('phase', ['before_replace', 'after_replace'])
+def test_policy_migration_recovers_both_sides_of_atomic_replacement(tmp_path, monkeypatch, phase):
+    budget, old, new, proof = migration_fixture(tmp_path)
+    before = budget.path.read_bytes()
+    original_replace = storage._replace
+    def interrupted(path, value):
+        if value.get('config_sha256') == retention.digest(new):
+            if phase == 'after_replace':
+                original_replace(path, value)
+            raise RuntimeError('simulated process interruption')
+        return original_replace(path, value)
+    monkeypatch.setattr(storage, '_replace', interrupted)
+    with pytest.raises(RuntimeError, match='interruption'):
+        storage.disable_oss_quota(old, new, quiescence=proof, authorization='Explicit request', apply=True)
+    backups = list(budget.root.glob('policy-migrations/*/LEDGER.before.*.json'))
+    assert len(backups) == 1 and backups[0].read_bytes() == before
+    assert not list(budget.root.glob('policy-migrations/*/COMPLETED.json'))
+    monkeypatch.setattr(storage, '_replace', original_replace)
+    result = storage.disable_oss_quota(old, new, quiescence=proof, authorization='Explicit request', apply=True)
+    assert result['applied'] is True
+    current = json.loads(budget.path.read_text())
+    assert len([e for e in current['events'] if e['kind'] == 'OSS_QUOTA_DISABLED']) == 1
+    assert current['artifacts'] == json.loads(before)['artifacts']
+
+
+def test_policy_migration_rejects_active_stale_or_broader_changes(tmp_path):
+    budget, old, new, proof = migration_fixture(tmp_path)
+    before = budget.path.read_bytes()
+    for changed in ({**new, 'home_limit_bytes': 99}, {**new, 'home_safety_bytes': 1}):
+        with pytest.raises(storage.StorageError, match='Only OSS finite-to-null'):
+            storage.disable_oss_quota(old, changed, quiescence=proof, authorization='Explicit request', apply=True)
+    for changed_proof in (lambda scope: {**proof(scope), 'active_project_jobs': ['running']},
+                          lambda scope: {**proof(scope), 'observed_utc': '2000-01-01T00:00:00Z'}):
+        with pytest.raises(storage.StorageError, match='fresh|stale'):
+            storage.disable_oss_quota(old, new, quiescence=changed_proof, authorization='Explicit request', apply=True)
+    assert budget.path.read_bytes() == before and not (budget.root / 'policy-migrations').exists()
+    budget.reserve({'worker': 'unreconciled'}, 1, 1)
+    with pytest.raises(storage.StorageError, match='no active or unreconciled'):
+        storage.disable_oss_quota(old, new, quiescence=proof, authorization='Explicit request', apply=True)
+    assert not (budget.root / 'policy-migrations').exists()
+
+
+def test_policy_migration_rejects_wrong_old_policy_and_home_backup_overflow(tmp_path):
+    budget, old, new, proof = migration_fixture(tmp_path)
+    with pytest.raises(storage.StorageError, match='policy SHA differs'):
+        storage.disable_oss_quota({**old, 'oss_limit_bytes': 99}, new,
+            quiescence=proof, authorization='Explicit request', apply=True)
+    # The original file already exhausts this tiny synthetic home budget.
+    # Migration cannot create a retained copy by bypassing the local cap.
+    small = tmp_path / 'small'
+    small.mkdir()
+    policy = config(small)
+    tiny = storage.SharedBudget(policy, empty_remote, local_scanner=zero_local)
+    before = tiny.path.read_bytes()
+    with pytest.raises(storage.StorageError, match='Home capacity cannot hold'):
+        storage.disable_oss_quota(policy, {**policy, 'oss_limit_bytes': None},
+            quiescence=proof, authorization='Explicit request', apply=True)
+    assert tiny.path.read_bytes() == before and not (tiny.root / 'policy-migrations').exists()
+
+
 def test_old_versions_multipart_and_scratch_count_without_reclaim_credit(tmp_path):
     configuration = config(tmp_path)
     remote = empty_remote()

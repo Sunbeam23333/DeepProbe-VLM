@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 from deepprobe_vlm import suite_runner as runner
 
@@ -80,6 +81,27 @@ class SuiteRunnerTest(unittest.TestCase):
         return runner.run_bound_suite(self.plan, self.binding, plan_sha256=self.plan_sha,
                                       binding_sha256=runner.digest(self.binding), state_root=self.state,
                                       resume=resume)
+
+    def test_v2_capacity_runs_without_oss_quota_scan_and_still_checks_home_peak(self):
+        from deepprobe_vlm import suite_storage as storage
+        policy = {'schema_version': 2, 'roots': [str(self.a), str(self.b)],
+                  'ledger_root': str(self.a / 'ledger'), 'home_limit_bytes': 100_000_000,
+                  'oss_limit_bytes': None, 'home_safety_bytes': 1_000_000,
+                  'oss_safety_bytes': 1_000_000, 'free_guard_bytes': 0,
+                  'oss_prefixes': ['oss://ss-devbox-stream/fixture/project/']}
+        env_path = self.a / 'environment.json'
+        env_path.write_text(json.dumps({'storage': policy,
+            'tools': {'ossutil': '/bin/true', 'oss_config': str(self.worker)}}))
+        binding = {'storage': policy, 'startup': {'argv': ['--environment', str(env_path),
+                   '--environment-sha256', runner.sha(env_path)]}}
+        with mock.patch.object(storage.OssutilInventory, '__call__', side_effect=AssertionError('quota scan')):
+            value = runner.capacity(binding, 0)
+            self.assertIsNone(value['projected_bytes']['oss'])
+            with self.assertRaisesRegex(ValueError, 'capacity exceeded'):
+                runner.capacity(binding, policy['home_limit_bytes'])
+        binding['storage'] = {**policy, 'oss_limit_bytes': 150_000_000_000}
+        with self.assertRaisesRegex(ValueError, 'storage policy differ'):
+            runner.capacity(binding, 0)
 
     def test_real_serial_subprocesses_dependencies_and_retained_completion(self):
         result = self.execute()

@@ -169,6 +169,20 @@ class SuiteWorkflowTest(unittest.TestCase):
         self.assertEqual(runner.read(first['capacity_gate']['path'])['fresh_snapshot']['utc'], 'first')
         self.assertFalse((self.root / 'state').exists())
 
+    def test_preparation_capacity_accepts_unlimited_oss_with_real_shared_budget(self):
+        from deepprobe_vlm import suite_storage as storage
+        environment = {'storage': {'schema_version': 2, 'roots': [str(self.root)],
+            'ledger_root': str(self.root / 'ledger'), 'home_limit_bytes': 100_000_000,
+            'oss_limit_bytes': None, 'home_safety_bytes': 1_000_000, 'oss_safety_bytes': 1_000_000,
+            'free_guard_bytes': 0, 'oss_prefixes': ['oss://ss-devbox-stream/fixture/project/']},
+            'tools': {'ossutil': '/bin/true', 'oss_config': self.original['path']}}
+        with mock.patch.object(storage.OssutilInventory, '__call__', side_effect=AssertionError('quota scan')):
+            value = workflow.preparation_capacity(environment)
+        self.assertEqual(value['status'], 'SUITE_PREPARATION_CAPACITY_AVAILABLE')
+        self.assertEqual(value['blocked_domains'], [])
+        self.assertIsNone(value['fresh_snapshot']['oss']['bytes'])
+        self.assertFalse(value['gpu_submitted'])
+
     def test_history_import_creates_parent_and_reuses_exact_completed_import(self):
         entry = self.entry(); review = self.review(entry); target = self.root / 'new-parent/accepted.json'
         value = bindings.import_history_entry(self.plan, self.task['id'], entry, review, target)

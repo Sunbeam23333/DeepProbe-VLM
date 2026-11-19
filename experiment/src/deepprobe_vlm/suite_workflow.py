@@ -184,10 +184,9 @@ def workflow_report(plan, candidate):
 
 def preparation_capacity(environment, recovery_plan=None):
     """Produce an actionable fresh gate before any asset transfer starts."""
-    from .suite_storage import budget_for
+    from .suite_storage import budget_for, capacity_violations
     snapshot = budget_for(environment).snapshot()
-    blocked = [domain for domain in ("home", "oss")
-               if snapshot["projected_bytes"][domain] >= environment["storage"][domain + "_limit_bytes"]]
+    blocked = capacity_violations(snapshot, environment['storage'])
     return {"status": "SUITE_PREPARATION_CAPACITY_GATED" if blocked else "SUITE_PREPARATION_CAPACITY_AVAILABLE",
             "fresh_snapshot": snapshot, "blocked_domains": blocked,
             "recovery_plan": deepcopy(recovery_plan), "automatic_deletion": False,
