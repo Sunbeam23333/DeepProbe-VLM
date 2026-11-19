@@ -7,7 +7,7 @@ states. Only the real task's verified outputs advance its completion journal.
 
 ## Current admission status
 
-As of **2026-11-18**, the 185-task suite has **not been submitted**. Its declared
+As of **2026-11-19**, the 185-task suite has **not been submitted**. Its declared
 DAG and scientific scope are unchanged. The separately controlled Smol recovery
 below does not start the full suite or complete a suite-history binding.
 
@@ -77,8 +77,25 @@ below does not start the full suite or complete a suite-history binding.
   **01:19:36**. Independent submission review accepted the complete 45-file
   readback and READY/intent bindings. At **01:22:49 Beijing time**, the exact
   Pod was Pending/Unschedulable for CPU, memory and GPU resources; it was the
-  sole nonterminal project Job/Pod among eight Jobs and five Pods. No container,
-  real GPU handshake, native recovery or new optimizer step is observed.
+  sole nonterminal project Job/Pod among eight Jobs and five Pods. This remains
+  a dated Pending observation. The same Job became Running at **02:18:19**
+  and Failed at **02:37:32 Beijing time on November 18**. Its real GPU
+  submission handshake, eight-device hardware checks, eight-rank BF16/NCCL
+  checks and enclosing preflight command passed. Formal training continued
+  natively from checkpoint300 to logged **354/718**, adding 54 updates.
+  A separate native CPU verification at **18:34:11 on November 19** passed
+  checkpoint350's full 29-file / 8,642,274,062-byte SHA inventory and native
+  metadata/contract checks. It is a candidate for the remaining 368 updates;
+  optimizer/scheduler/RNG deserialization, exact archival and fresh independent
+  recovery admission remain open. The controller records SIGTERM with unknown
+  source; runner exit1 does not establish the missing original container's
+  exit code. The November 19 **18:29:22 Beijing time** exact readback has six
+  project Jobs and three Pods, all terminal, and the original a5 Pod is absent.
+  At **18:31:29**, exact Job/Pod UID event lists were empty and the exact a5
+  OSS run prefix had zero objects; automatic failure archival is incomplete.
+  No final model, training-completion receipt or new held-out result is
+  observed. Actual native continuation does not prove numerical resume
+  equivalence or complete the suite's independent recovery binding.
 - R4 seed17 SFT has a durable step600/718 checkpoint, but five model/optimizer
   payload files are missing locally. Recovery still needs their exact archived
   bytes restored and rehashed, followed by complete native-state and fresh

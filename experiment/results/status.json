@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
-  "observed_at_utc": "2026-11-17T17:22:49.591658+00:00",
+  "observed_at_utc": "2026-11-19T10:34:35.716149+00:00",
   "display_timezone": "Asia/Shanghai",
-  "observation_note": "Attempt5 was submitted once at 17:19:04 UTC after accepted fresh admission; root confirmed the actual Job/UID and published atomic READY at 17:19:36 UTC. Independent submission review passed. The 17:22:49 UTC exact readback verifies the Pending Pod; it is the sole nonterminal project Job/Pod. No real GPU startup handshake, native checkpoint recovery or new optimizer update is observed. Attempt3/4 failure archives and attempt2 checkpoint provenance remain separately accepted, without repeated archival or cleanup. R4 restoration and the full 185-task suite remain separately gated. No new model or held-out result is claimed.",
+  "observation_note": "Attempt5 actually passed its GPU submission handshake, eight-device identity, eight-rank BF16/NCCL and enclosing preflight, then natively continued from checkpoint300 to logged step354/718 before failing on November 17 at 18:37:32 UTC. SIGTERM source is unknown. The November 19 inventory contains six project Jobs and three Pods, all terminal. Checkpoint350 passed full 29-file SHA and native CPU metadata/contract checks; it is a candidate for the remaining 368 updates. Its exact OSS prefix has zero objects and no accepted failure archive. Optimizer/scheduler/RNG deserialization and fresh independent recovery/submission admission remain open. No next attempt has been created or named. Prior admission/submission acceptance and attempt2/3/4 archive provenance remain historical facts. R4 restoration and the full 185-task suite remain separately gated. No new completed model or held-out result is claimed.",
   "new_held_out_results": false,
   "runs": {
     "dp-p1-ouro-r4-f8-g4-s17-sft-a1": {
@@ -763,7 +763,7 @@
       "archive_full_prefix_listing": true,
       "retry_submitted_in_this_check": false,
       "latest_observation_readback_verified": true,
-      "recovery_gate": "The accepted attempt2 checkpoint300 remains the unchanged recovery source; attempt3 and attempt4 failure archives are separately accepted. Attempt5 was submitted once after accepted fresh admission and is Pending. Verify its actual atomic-publication GPU handshake and native optimizer/RNG recovery before claiming new training progress.",
+      "recovery_gate": "Attempt5 passed real GPU startup and natively continued from the unchanged accepted attempt2 checkpoint300 to logged step354, then Failed after SIGTERM of unknown origin. Checkpoint350 passed full SHA and native CPU metadata/contract checks and is a candidate for the remaining 368 updates. Complete and independently verify its failure archive, then pass fresh recovery/source/storage/scheduler admission before any separately identified continuation. No next attempt has been created or named. Prior attempt2/3/4 archives remain separately accepted and unchanged.",
       "latest_progress_observed_at_utc": "2026-11-17T03:15:23.427190+00:00",
       "current_job_status": "Failed",
       "current_job_uid_verified": true,
@@ -1223,7 +1223,7 @@
         "scope": "Current file count and sizes; earlier complete byte/provenance acceptance remains separately pinned."
       },
       "failure_archive_status": "independent_failure_archive_accepted",
-      "recovery_gate": "The accepted attempt2 checkpoint300 remains the unchanged recovery source; attempt3 and attempt4 failure archives are separately accepted. Attempt5 was submitted once after accepted fresh admission and is Pending. Verify its actual atomic-publication GPU handshake and native optimizer/RNG recovery before claiming new training progress.",
+      "recovery_gate": "Attempt5 passed real GPU startup and natively continued from the unchanged accepted attempt2 checkpoint300 to logged step354, then Failed after SIGTERM of unknown origin. Checkpoint350 passed full SHA and native CPU metadata/contract checks and is a candidate for the remaining 368 updates. Complete and independently verify its failure archive, then pass fresh recovery/source/storage/scheduler admission before any separately identified continuation. No next attempt has been created or named. Prior attempt2/3/4 archives remain separately accepted and unchanged.",
       "archive_accepted": true,
       "archive_object_count": 337,
       "archive_bytes": 940846953,
@@ -1541,7 +1541,7 @@
         "archive_accepted": true,
         "scope": "Independent complete GET/SHA verification of metadata/startup failure evidence; no training checkpoint was created. Original trees were preserved and external attempt2 checkpoint was not rearchived."
       },
-      "recovery_gate": "The accepted attempt2 checkpoint300 remains the unchanged recovery source; attempt3 and attempt4 failure archives are separately accepted. Attempt5 was submitted once after accepted fresh admission and is Pending. Verify its actual atomic-publication GPU handshake and native optimizer/RNG recovery before claiming new training progress."
+      "recovery_gate": "Attempt5 passed real GPU startup and natively continued from the unchanged accepted attempt2 checkpoint300 to logged step354, then Failed after SIGTERM of unknown origin. Checkpoint350 passed full SHA and native CPU metadata/contract checks and is a candidate for the remaining 368 updates. Complete and independently verify its failure archive, then pass fresh recovery/source/storage/scheduler admission before any separately identified continuation. No next attempt has been created or named. Prior attempt2/3/4 archives remain separately accepted and unchanged."
     },
     "dp-p1-smollm2-f8-g4-s29-alignment-a5": {
       "stage": "alignment",
@@ -1580,10 +1580,10 @@
       "source_checkpoint_bytes": 8642273132,
       "source_checkpoint_files_sha256": "ed67ca7e4538befb2ad0db7e85c8a2869f877d91cd1305bd45ce8632e4cab4c4",
       "source_failure_archive_independently_accepted": true,
-      "remaining_updates_from_checkpoint": 418,
+      "remaining_updates_from_checkpoint": 368,
       "runtime_config_sha256": "ba40e4a90c5ca3c58ff67c367c55948b8d2732087b468a98e0c66d02e318b7e0",
       "run_id": "dp-p1-smollm2-f8-g4-s29-alignment-a5",
-      "status": "Pending",
+      "status": "Failed",
       "submission_status": "submitted_exact_job_observed",
       "submission_outcome_confirmed": true,
       "gpu_submitted": true,
@@ -1593,12 +1593,12 @@
       "cpu_admission_passed": true,
       "cpu_admission_independently_accepted": true,
       "actual_resource_contract_passed": true,
-      "hardware_admission_passed": false,
-      "eight_rank_preflight_passed": false,
-      "training_started": false,
-      "native_checkpoint_recovery_observed": false,
-      "new_optimizer_updates_observed": false,
-      "last_observed_step": null,
+      "hardware_admission_passed": true,
+      "eight_rank_preflight_passed": true,
+      "training_started": true,
+      "native_checkpoint_recovery_observed": true,
+      "new_optimizer_updates_observed": true,
+      "last_observed_step": 354,
       "training_complete": false,
       "held_out_result": null,
       "automatic_retry": false,
@@ -1611,8 +1611,8 @@
       "publication_wait_timeout_seconds": 600,
       "handshake_local_tests_passed": true,
       "handshake_linux_shared_filesystem_synthetic_smoke_passed": true,
-      "handshake_actual_gpu_acceptance": false,
-      "observation_limit": "The exact attempt5 Job/UID and actual resource contract are verified. Its Pod is Pending/Unschedulable for CPU/memory/GPU resources. The complete submission and atomic READY receipt are present, but no container, GPU handshake/startup, native checkpoint recovery or new optimizer step is observed. Source checkpoint300 remains the accepted recovery origin; 418 alignment updates remain.",
+      "handshake_actual_gpu_acceptance": true,
+      "observation_limit": "The exact attempt5 Job Failed after its real GPU submission handshake, eight-device identity, all eight BF16/NCCL ranks and the enclosing preflight passed. The native initializer receipt and manifest bind checkpoint300; training reached logged step354/718, adding 54 updates. Checkpoint350 passed full 29-file SHA and native CPU metadata/contract checks and is a candidate for the remaining 368 updates. Its optimizer/scheduler/RNG deserialization, exact archive and fresh independent recovery/submission admission remain open. SIGTERM source is unknown; runner exit1 is distinct from the unavailable original container exit code. No final model, training completion, numerical resume-equivalence or held-out result is claimed.",
       "evidence": {
         "draft_preparation": {
           "source_path": "experiment/docs/operations/evidence/smollm2-resume-a5-20261118/A5_DRAFT_READY.json",
@@ -1717,28 +1717,82 @@
           "available_in_github": false
         },
         "latest_exact_job_and_pod_readback": {
-          "source_path": "experiment/docs/operations/evidence/smollm2-resume-a5-20261118/job-readback-v2/stdout.json",
-          "bytes": 2839920,
-          "sha256": "7eb281ce8bfc1422a30a33ffc82d7645099b30dd4f6579c99962ad4f7f4abf64",
-          "available_in_github": false
+          "source_path": "experiment/docs/operations/evidence/smollm2-resume-a5-20261118/job-readback-20261119-v1/stdout.json",
+          "available_in_github": false,
+          "sha256": "0e08059970a17d5b069ebaae1aecfc9f1a37c69c56dcb88d3c9c2b224a5b2164",
+          "bytes": 3437645
         },
         "latest_job_summary": {
-          "source_path": "experiment/docs/operations/evidence/smollm2-resume-a5-20261118/job-readback-v2/SUMMARY.json",
-          "bytes": 1491,
-          "sha256": "b4ad7fb8459ce02f3d1094a4cfc4bad2061ac0b15caeb46df161c5be2fb82e32",
-          "available_in_github": false
+          "source_path": "experiment/docs/operations/evidence/smollm2-resume-a5-20261118/job-readback-20261119-v1/SUMMARY.json",
+          "available_in_github": false,
+          "sha256": "ef704699f1bda0c4b27aeb607e7372b7a04a3adddd2a6043c888c6cb1f786eac",
+          "bytes": 2582
         },
         "latest_readback_client_result": {
-          "source_path": "experiment/docs/operations/evidence/smollm2-resume-a5-20261118/job-readback-v2/CLIENT_RESULT.json",
-          "bytes": 67,
-          "sha256": "c69fccad4263b1f9ddfe2f26ee3dfa26ea111f5b23e2e935ea074ad32cabc224",
-          "available_in_github": false
+          "source_path": "experiment/docs/operations/evidence/smollm2-resume-a5-20261118/job-readback-20261119-v1/CLIENT_RESULT.json",
+          "available_in_github": false,
+          "sha256": "33336e6dc6eae2730c36214729897acb3f52714a90bf56330d537c0af6510e4e",
+          "bytes": 67
         },
         "independent_submission_acceptance": {
           "source_path": "experiment/docs/operations/evidence/smollm2-resume-a5-20261118/independent-review-v1/INDEPENDENT_SUBMISSION_ACCEPTANCE.json",
           "bytes": 4250,
           "sha256": "f9d671418b638c7a52a90509b137c3eb11bdc4260a9eeb83bcaf2974ff8c456f",
           "available_in_github": false
+        },
+        "native_training_stage_readback": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-resume-a5-20261118/stage-readback-20261119-v1/stdout.json",
+          "available_in_github": false,
+          "sha256": "4bc6e5e9efd457326064084f479ed96034350af11df7dbbb17526cb5420acc4f",
+          "bytes": 937918
+        },
+        "native_training_stage_summary": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-resume-a5-20261118/stage-readback-20261119-v1/SUMMARY.json",
+          "available_in_github": false,
+          "sha256": "6c7813b3513ef614188fd1bb791776a2e086fc0e6d4a3fb0e97cda07fd3046f6",
+          "bytes": 17974
+        },
+        "native_training_stage_client_result": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-resume-a5-20261118/stage-readback-20261119-v1/CLIENT_RESULT.json",
+          "available_in_github": false,
+          "sha256": "4affd5d41d607659644e55353a547f72476c59f38d5c034c804134e0ad235d89",
+          "bytes": 67
+        },
+        "exact_terminal_events_and_oss": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-resume-a5-20261118/terminal-events-oss-20261119-v1/stdout.json",
+          "available_in_github": false,
+          "sha256": "29d84c8b6ea354e30ee2d7b6d2c02956a2bd5268d1d7b59fd058a3b162b41b1d",
+          "bytes": 6145
+        },
+        "exact_terminal_events_and_oss_client_result": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-resume-a5-20261118/terminal-events-oss-20261119-v1/CLIENT_RESULT.json",
+          "available_in_github": false,
+          "sha256": "32cbf4d66883b6892eda88f6d268b4e7b6c98176b2b01677e00bd6491aa5aebb",
+          "bytes": 67
+        },
+        "checkpoint350_native_full_sha_verification": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-resume-a5-20261118/checkpoint350-readonly-native-verify-20261119-v1/stdout.json",
+          "available_in_github": false,
+          "sha256": "e73d8c02a2c153f184b511b36fe802044a3ba8c55bbc3b2474ab01797a1188b9",
+          "bytes": 17713
+        },
+        "checkpoint350_native_verification_summary": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-resume-a5-20261118/checkpoint350-readonly-native-verify-20261119-v1/SUMMARY.json",
+          "available_in_github": false,
+          "sha256": "3ef2eab37c2fe4df02de888fb8cd9ebdc7a23598c60b72c47696cdfcf7dffa14",
+          "bytes": 1120
+        },
+        "checkpoint350_native_verification_client_result": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-resume-a5-20261118/checkpoint350-readonly-native-verify-20261119-v1/CLIENT_RESULT.json",
+          "available_in_github": false,
+          "sha256": "966c015d1849da7ab66f219b1858d6aea4d968129ec4bfdb6e29c139ddc212e7",
+          "bytes": 67
+        },
+        "independent_actual_training_outcome_review": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-resume-a5-20261118/independent-outcome-20261119-v1/INDEPENDENT_A5_OUTCOME_REVIEW.json",
+          "available_in_github": false,
+          "sha256": "5fd524cf097bb4f7811faf617131c0220fcfcb5ca337fb7e34141ea403c22b82",
+          "bytes": 7369
         }
       },
       "historical_observations": [
@@ -1783,11 +1837,53 @@
             "available_in_github": false
           },
           "note": "Initial exact Pending readback, retained alongside the independent actual-submission acceptance."
+        },
+        {
+          "status": "Pending",
+          "last_observed_at_utc": "2026-11-17T17:22:49.591658+00:00",
+          "job_condition": "Created",
+          "job_uid": "f9761d5d-7e4e-4e0b-8e45-78dd658f580a",
+          "pod_phase": "Pending",
+          "pending_reason": "Unschedulable: eligible nodes have insufficient CPU, memory and GPU resources for the one-node eight-GPU allocation.",
+          "hardware_admission_passed": false,
+          "eight_rank_preflight_passed": false,
+          "training_started": false,
+          "native_checkpoint_recovery_observed": false,
+          "new_optimizer_updates_observed": false,
+          "last_observed_step": null,
+          "handshake_actual_gpu_acceptance": false,
+          "observation_limit": "The exact attempt5 Job/UID and actual resource contract are verified. Its Pod is Pending/Unschedulable for CPU/memory/GPU resources. The complete submission and atomic READY receipt are present, but no container, GPU handshake/startup, native checkpoint recovery or new optimizer step is observed. Source checkpoint300 remains the accepted recovery origin; 418 alignment updates remain.",
+          "startup_admission_present": false,
+          "hardware_inventory_observed": false,
+          "allocated_node_observed": false,
+          "container_observed": false,
+          "optimizer_scheduler_rng_recovery_observed": false,
+          "evidence": {
+            "latest_exact_job_and_pod_readback": {
+              "source_path": "experiment/docs/operations/evidence/smollm2-resume-a5-20261118/job-readback-v2/stdout.json",
+              "bytes": 2839920,
+              "sha256": "7eb281ce8bfc1422a30a33ffc82d7645099b30dd4f6579c99962ad4f7f4abf64",
+              "available_in_github": false
+            },
+            "latest_job_summary": {
+              "source_path": "experiment/docs/operations/evidence/smollm2-resume-a5-20261118/job-readback-v2/SUMMARY.json",
+              "bytes": 1491,
+              "sha256": "b4ad7fb8459ce02f3d1094a4cfc4bad2061ac0b15caeb46df161c5be2fb82e32",
+              "available_in_github": false
+            },
+            "latest_readback_client_result": {
+              "source_path": "experiment/docs/operations/evidence/smollm2-resume-a5-20261118/job-readback-v2/CLIENT_RESULT.json",
+              "bytes": 67,
+              "sha256": "c69fccad4263b1f9ddfe2f26ee3dfa26ea111f5b23e2e935ea074ad32cabc224",
+              "available_in_github": false
+            }
+          },
+          "note": "Preserved latest November 18 Pending snapshot, superseded by the exact-UID failure and actual native training continuation evidence read on November 19."
         }
       ],
       "control_payload_files": 42,
       "control_payload_bytes": 1031271,
-      "last_observed_at_utc": "2026-11-17T17:22:49.591658+00:00",
+      "last_observed_at_utc": "2026-11-19T10:29:22.558113+00:00",
       "cpu_admission_completed_at_utc": "2026-11-17T17:14:19.186188+00:00",
       "independent_admission_review_completed_at_utc": "2026-11-17T17:14:54.360539+00:00",
       "cpu_admission_valid_for_submission_seconds": 1800,
@@ -1816,10 +1912,10 @@
       },
       "current_job_uid_verified": true,
       "job_created_at_utc": "2026-11-17T17:19:04Z",
-      "job_condition": "Created",
+      "job_condition": "Failed",
       "pod_uid": "61eebc37-16c8-49af-a4da-fdb006c031ad",
-      "pod_phase": "Pending",
-      "pending_reason": "Unschedulable: eligible nodes have insufficient CPU, memory and GPU resources for the one-node eight-GPU allocation.",
+      "pod_phase": null,
+      "pending_reason": null,
       "submission_client_exit_code": 0,
       "submission_client_error": null,
       "submission_outcome_recorded_at_utc": "2026-11-17T17:19:05.182960+00:00",
@@ -1834,24 +1930,167 @@
       "no_forced_node": true,
       "submission_ready_published": true,
       "submission_ready_sha256": "dd8af12db644c8117a51107ca94ab55581a0d118bbf8e1dc4642094bd099c4fd",
-      "startup_admission_present": false,
-      "hardware_inventory_observed": false,
+      "startup_admission_present": true,
+      "hardware_inventory_observed": true,
       "allocated_node_observed": false,
       "container_observed": false,
-      "optimizer_scheduler_rng_recovery_observed": false,
+      "optimizer_scheduler_rng_recovery_observed": null,
       "handshake_local_test_count": 90,
       "submission_independently_accepted": true,
       "submission_complete_readback_file_count": 45,
-      "submission_ready_published_at_utc": "2026-11-17T17:19:36.258194+00:00"
+      "submission_ready_published_at_utc": "2026-11-17T17:19:36.258194+00:00",
+      "running_at_utc": "2026-11-17T18:18:19Z",
+      "failure_at_utc": "2026-11-17T18:37:32Z",
+      "original_pod_present": false,
+      "current_pod_status": "NotFound",
+      "original_container_exit_code": null,
+      "runner_exit_code": 1,
+      "termination_signal": 15,
+      "termination_source": "unknown",
+      "external_preemption_confirmed": false,
+      "startup_failure_receipt": {
+        "automatic_retry": false,
+        "error": "QA controller interrupted by signal 15",
+        "status": "STARTUP_OR_TRAINING_FAILED_NO_RETRY",
+        "submission_handshake_details": null,
+        "type": "RuntimeError",
+        "utc": "2026-11-17T18:37:30.163377+00:00"
+      },
+      "actual_gpu_handshake_receipt": {
+        "automatic_retry": false,
+        "elapsed_seconds": 0.016577724367380142,
+        "intent_sha256": "7bde3f18e043a07b8f2b76f258bfe25bb29544e8f85170ad8bcf68ba7147b4ae",
+        "job": "jinhaopeng-dpvlm-p1-smollm2-s29-align-a5-n1-6e7fe",
+        "job_created_at_utc": "2026-11-17T17:19:04Z",
+        "package_sha256": "5dbb98c55a92edaf7b9188f368edae41181a84f93d33d16fdfc238c1fa92fab5",
+        "polls": 1,
+        "ready_sha256": "dd8af12db644c8117a51107ca94ab55581a0d118bbf8e1dc4642094bd099c4fd",
+        "root_published_at_utc": "2026-11-17T17:19:36.258194+00:00",
+        "shared_lock_held_while_waiting": false,
+        "status": "ROOT_SUBMISSION_HANDSHAKE_ACCEPTED",
+        "submission_sha256": "3f75fb93c68c8db15fb921f41daddcfdcf71ee937cba012570e9bf91bc64e282",
+        "uid": "f9761d5d-7e4e-4e0b-8e45-78dd658f580a",
+        "utc": "2026-11-17T18:18:20.581407+00:00"
+      },
+      "preflight_command_completed_successfully": true,
+      "preflight_process_elapsed_seconds": 53.839183542877436,
+      "preflight_command_exit_code": 0,
+      "preflight_report_utc": "2026-11-17T18:22:12.602658+00:00",
+      "preflight_report_status": "gpu_gate_passed",
+      "preflight_rank_count": 8,
+      "formal_training_started_at_utc": "2026-11-17T18:23:01.670595+00:00",
+      "new_optimizer_update_count": 54,
+      "latest_progress_observed_at_utc": "2026-11-19T10:29:32.534201+00:00",
+      "native_resume_numerical_equivalence_verified": false,
+      "optimizer_scheduler_rng_recovery_observation_scope": "Native training continuation from checkpoint300 is supported by the initializer receipt, manifest and steps after 300. Separate per-state restoration telemetry and numerical equivalence are not independently verified.",
+      "formal_training_completion_receipt_present": false,
+      "stage_completion_receipt_present": false,
+      "final_model_observed": false,
+      "checkpoint_step": 350,
+      "checkpoint_trainer_state_observed": true,
+      "checkpoint_payload_completeness_verified": true,
+      "checkpoint_recovery_independently_accepted": false,
+      "source_checkpoint_remaining_updates_at_submission": 418,
+      "failure_archive_status": "incomplete_exact_prefix_empty",
+      "archive_accepted": false,
+      "archive_object_count": 0,
+      "archive_bytes": 0,
+      "archive_observed_at_utc": "2026-11-19T10:31:29.973989+00:00",
+      "local_archive_receipt_present": false,
+      "archive_latest_observation": {
+        "observed_at_utc": "2026-11-19T10:31:29.973989+00:00",
+        "exact_prefix": "oss://ss-devbox-stream/jinhaopeng/Paper/DeepProbe-VLM/runs/dp-p1-smollm2-f8-g4-s29-alignment-a5/",
+        "object_count": 0,
+        "bytes": 0,
+        "archive_accepted": false,
+        "automatic_archive_completed": false,
+        "scope": "Exact run-prefix listing returned zero objects. No local ARCHIVED.json was observed. This is not an accepted failure archive."
+      },
+      "terminal_events_observation": {
+        "observed_at_utc": "2026-11-19T10:31:29.973989+00:00",
+        "exact_job_uid": "f9761d5d-7e4e-4e0b-8e45-78dd658f580a",
+        "exact_pod_uid": "61eebc37-16c8-49af-a4da-fdb006c031ad",
+        "job_event_count": 0,
+        "pod_event_count": 0,
+        "termination_source": "unknown",
+        "scope": "Empty exact-UID event lists do not establish the source of SIGTERM."
+      },
+      "native_training_observation": {
+        "source_checkpoint_step": 300,
+        "target_steps": 718,
+        "source_resume_verifier_receipt_step": 300,
+        "native_resume_manifest_matches_source": true,
+        "manifest_recipe_fields": {
+          "stage": "alignment",
+          "world_size": 8,
+          "num_loops": 1,
+          "num_frames": 8,
+          "pool_grid": 4,
+          "seed": 29
+        },
+        "selected_recipe_fields_match_expected": true,
+        "full_training_contract_revalidated": false,
+        "maximum_observed_step_after_300": 354,
+        "native_continuation_supported_by_receipt_and_progress": true,
+        "formal_completion_receipt_parsed": false,
+        "stage_completion_receipt_parsed": false,
+        "completion_independently_verified": false,
+        "limitations": [
+          "Manifest and initializer receipt precede trainer.train and alone do not prove optimizer restoration.",
+          "Bounded log text and checkpoint metadata do not establish numerical resume equivalence.",
+          "Completion and archive acceptance require their separate independent verification."
+        ],
+        "training_log_complete_bytes_observed": true,
+        "training_log_segment_sha256": "6ef308e78ea350db6cd80432017de590f81e6ce070d93e1e46469595455373d9",
+        "scope": "Earlier stage-file observation; metadata-only checkpoint350 limits here remain historical. The separately recorded later native full-payload verification advances checkpoint350 CPU validation."
+      },
+      "recovery_gate": "Attempt5 passed real GPU startup and natively continued from the unchanged accepted attempt2 checkpoint300 to logged step354, then Failed after SIGTERM of unknown origin. Checkpoint350 passed full SHA and native CPU metadata/contract checks and is a candidate for the remaining 368 updates. Complete and independently verify its failure archive, then pass fresh recovery/source/storage/scheduler admission before any separately identified continuation. No next attempt has been created or named. Prior attempt2/3/4 archives remain separately accepted and unchanged.",
+      "checkpoint_full_payload_sha256_verified": true,
+      "checkpoint_file_count": 29,
+      "checkpoint_bytes": 8642274062,
+      "checkpoint_files_sha256": "821ee7b3970ddb0b3c08718898b131382a53b7571db44592b51f7a1ce1a2bba9",
+      "checkpoint_native_cpu_metadata_and_contract_passed": true,
+      "checkpoint_recovery_candidate": true,
+      "checkpoint_optimizer_scheduler_rng_deserialized": false,
+      "checkpoint_archive_verified": false,
+      "checkpoint_latest_verification": {
+        "status": "FROZEN_NATIVE_CPU_RESUME_METADATA_AND_FULL_SHA_PASSED",
+        "started_utc": "2026-11-19T10:33:32.139248+00:00",
+        "finished_utc": "2026-11-19T10:34:11.386087+00:00",
+        "elapsed_seconds": 39.24687051214278,
+        "error": null,
+        "file_count": 29,
+        "total_bytes": 8642274062,
+        "checkpoint_files_sha256": "821ee7b3970ddb0b3c08718898b131382a53b7571db44592b51f7a1ce1a2bba9",
+        "optimizer_step": 350,
+        "remaining_optimizer_updates": 368,
+        "stable_before_after": true,
+        "native_verifier_calls": 1,
+        "cuda_initialized": false,
+        "optimizer_scheduler_rng_deserialized": false,
+        "remote_mutation": false,
+        "forbidden_events": [],
+        "archive_verified": false,
+        "full_training_or_submission_admission": false,
+        "training_contract_matches_a5_manifest_and_cp300_initializer": true,
+        "scope": "Complete checkpoint full SHA and native CPU metadata/contract validation; no optimizer/scheduler/RNG deserialization, CUDA initialization, archive acceptance, or full recovery/submission admission."
+      },
+      "independent_outcome_review": {
+        "status": "INDEPENDENT_A5_OBSERVED_TRAINING_PROGRESS_AND_FAILURE_REVIEWED",
+        "completed_utc": "2026-11-19T10:34:35.716149+00:00",
+        "progress_and_terminal_evidence_reviewed": true,
+        "scope": "Independent byte-bound handshake, native checkpoint300 continuation through logged step354, and failure review. Its checkpoint350 conclusion covers the earlier metadata-only readback; the separate native full-payload verification is recorded separately.",
+        "checkpoint350_complete_payload_acceptance_in_this_review": false
+      }
     }
   },
   "remaining_work": [
-    "Wait for the single Pending attempt5 Job, verify its real atomic-publication startup handshake and native checkpoint300 recovery, then finish the remaining 418 alignment updates, matched SFT and evaluations.",
+    "Complete and independently verify the failed attempt5 archive, then pass fresh recovery/source/storage/scheduler admission for a separately identified continuation from the checkpoint350 candidate. Finish its remaining 368 alignment updates, matched SFT and evaluations. No next attempt is yet created or named.",
     "Restore R4 checkpoint-600 missing model/optimizer payloads from its accepted archive, verify SHA256 and numerical recovery, then pass fresh capacity/source/scheduler admission before its remaining 118 updates.",
     "Additional seeds and declared ablations, controlled cost/latency measurements, and new-model evaluation."
   ],
-  "active_run_id": "dp-p1-smollm2-f8-g4-s29-alignment-a5",
-  "active_run_observation": "At 2026-11-17T17:22:49.591658+00:00, the exact attempt5 Job was Created and its Pod Pending/Unschedulable for CPU/memory/GPU resources. It was the sole nonterminal project Job/Pod; no allocated node, container, startup handshake or new optimizer update was observed.",
+  "active_run_id": null,
+  "active_run_observation": "At 2026-11-19T10:29:22.558113+00:00, the exact attempt5 Job was Failed; its original Pod was NotFound. The current six project Jobs and three Pods were all terminal, with no active or queued project workload. Persisted training receipts and logs support native checkpoint300 continuation to 354/718 before interruption.",
   "engineering_qa": {
     "run_id": "dp-cuda-pool-qa-20261114-a3",
     "scope": "synthetic CUDA weighted-pooling correctness and microbenchmark; no model training or quality evaluation",
@@ -2204,7 +2443,7 @@
     "files_deleted": false,
     "archive_scope": "Synthetic startup, numerical and operator-microbenchmark evidence; no model checkpoint or held-out quality result."
   },
-  "training_observed_at_utc": "2026-11-17T17:22:49.591658+00:00",
+  "training_observed_at_utc": "2026-11-19T10:34:11.386087+00:00",
   "serial_suite_preparation": {
     "status": "SCRIPTS_CPU_VALIDATED_NOT_GPU_SUBMITTED",
     "plan_path": "experiment/configs/experiment_suite.json",
@@ -2244,8 +2483,8 @@
       "actual_GPU_startup_and_CUDA_gate"
     ],
     "conditional_research_work_completed": false,
-    "latest_gate_observed_at_utc": "2026-11-17T17:22:49.591658+00:00",
-    "latest_gate_note": "The complete 185-task suite remains unsubmitted. Separate attempt5 recovery was submitted once after accepted admission and is Pending. Its real GPU startup handshake and native recovery remain unverified. Prior failure archives and checkpoint provenance are independently accepted. R4 restoration, actual F4/F16 caches and full-suite admission remain outstanding."
+    "latest_gate_observed_at_utc": "2026-11-19T10:34:35.716149+00:00",
+    "latest_gate_note": "The complete 185-task suite remains unsubmitted. Separate attempt5 recovery passed real GPU startup and preflight, then continued from 300 to logged 354 before SIGTERM and Job failure. Checkpoint350 full SHA and native CPU metadata/contract checks passed; failure archival and fresh recovery/submission admission remain open. The exact a5 OSS prefix is empty. All six project Jobs and three Pods are terminal; no next attempt has been created or named. R4 restoration, actual F4/F16 caches and full-suite admission remain outstanding."
   },
   "engineering_qa_history": [
     {
@@ -2777,6 +3016,31 @@
         }
       },
       "observation": "Initial exact attempt5 Pending inventory, superseded by the later unchanged readback."
+    },
+    {
+      "observed_at_utc": "2026-11-17T17:22:49.591658+00:00",
+      "active_run_id": "dp-p1-smollm2-f8-g4-s29-alignment-a5",
+      "observation": "At 2026-11-17T17:22:49.591658+00:00, the exact attempt5 Job was Created and its Pod Pending/Unschedulable for CPU/memory/GPU resources. It was the sole nonterminal project Job/Pod; no allocated node, container, startup handshake or new optimizer update was observed.",
+      "project_workload_observation": {
+        "job_count": 8,
+        "pod_count": 5,
+        "active_jobs_including_pending_or_unknown": 1,
+        "active_pods_including_pending_or_unknown": 1,
+        "framing_complete": true,
+        "continuation_empty": true,
+        "all_project_workloads_terminal": false,
+        "all_other_project_workloads_terminal": true,
+        "sole_nonterminal_job": "jinhaopeng-dpvlm-p1-smollm2-s29-align-a5-n1-6e7fe",
+        "sole_nonterminal_job_uid": "f9761d5d-7e4e-4e0b-8e45-78dd658f580a",
+        "observed_at_utc": "2026-11-17T17:22:49.591658+00:00",
+        "scope": "Complete project Job/Pod projections plus exact attempt5 Job/Pod; Pending counts as nonterminal. All other project workloads are terminal. Raw cluster outputs remain private.",
+        "evidence": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-resume-a5-20261118/job-readback-v2/stdout.json",
+          "bytes": 2839920,
+          "sha256": "7eb281ce8bfc1422a30a33ffc82d7645099b30dd4f6579c99962ad4f7f4abf64",
+          "available_in_github": false
+        }
+      }
     }
   ],
   "recovery_capacity_observations": [
@@ -2853,23 +3117,23 @@
     }
   ],
   "project_workload_observation": {
-    "job_count": 8,
-    "pod_count": 5,
-    "active_jobs_including_pending_or_unknown": 1,
-    "active_pods_including_pending_or_unknown": 1,
+    "job_count": 6,
+    "pod_count": 3,
+    "active_jobs_including_pending_or_unknown": 0,
+    "active_pods_including_pending_or_unknown": 0,
     "framing_complete": true,
     "continuation_empty": true,
-    "all_project_workloads_terminal": false,
+    "all_project_workloads_terminal": true,
     "all_other_project_workloads_terminal": true,
-    "sole_nonterminal_job": "jinhaopeng-dpvlm-p1-smollm2-s29-align-a5-n1-6e7fe",
-    "sole_nonterminal_job_uid": "f9761d5d-7e4e-4e0b-8e45-78dd658f580a",
-    "observed_at_utc": "2026-11-17T17:22:49.591658+00:00",
-    "scope": "Complete project Job/Pod projections plus exact attempt5 Job/Pod; Pending counts as nonterminal. All other project workloads are terminal. Raw cluster outputs remain private.",
+    "sole_nonterminal_job": null,
+    "sole_nonterminal_job_uid": null,
+    "observed_at_utc": "2026-11-19T10:29:22.558113+00:00",
+    "scope": "Fresh complete project Job/Pod projections plus exact attempt5 Job readback. All six project Jobs and three remaining Pods are terminal; original a5 Pod is NotFound. Earlier a1/a2 Jobs are no longer listed; historical outcomes remain unchanged. This is not capacity or submission admission. Raw cluster outputs remain private.",
     "evidence": {
-      "source_path": "experiment/docs/operations/evidence/smollm2-resume-a5-20261118/job-readback-v2/stdout.json",
-      "bytes": 2839920,
-      "sha256": "7eb281ce8bfc1422a30a33ffc82d7645099b30dd4f6579c99962ad4f7f4abf64",
-      "available_in_github": false
+      "source_path": "experiment/docs/operations/evidence/smollm2-resume-a5-20261118/job-readback-20261119-v1/stdout.json",
+      "available_in_github": false,
+      "sha256": "0e08059970a17d5b069ebaae1aecfc9f1a37c69c56dcb88d3c9c2b224a5b2164",
+      "bytes": 3437645
     }
   },
   "training_progress_observations": [
