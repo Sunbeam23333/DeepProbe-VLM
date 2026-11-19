@@ -1,9 +1,11 @@
 """Destructive retention is tested only against synthetic owned temporary runs."""
 from copy import deepcopy
+from contextlib import nullcontext
 import hashlib
 import json
 import os
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -39,6 +41,11 @@ class MemoryStore:
         assert hashlib.sha256(value).hexdigest() == sha
         self.puts.append(uri)
         self.objects[uri] = value
+
+    def delete_exact_verified(self, uri, expected):
+        value = self.objects[uri]
+        assert len(value) == expected['bytes'] and hashlib.sha256(value).hexdigest() == expected['sha256']
+        del self.objects[uri]
 
 
 class RetentionTest(unittest.TestCase):
@@ -128,6 +135,73 @@ class RetentionTest(unittest.TestCase):
             else:
                 r.check_pin({**row, "path": str(path)})
         self.assertEqual(r.cleanup(plan, self.store, guard=self.guard, execute=True)["receipt"], result["receipt"])
+
+    def test_retire_remote_intermediates_keeps_final_and_allows_later_final_local_cleanup(self):
+        self.archive()
+        plan = r.plan_cleanup(self.manifest, {}, checkpoints=['training/checkpoint-3'])
+        r.cleanup(plan, self.store, guard=self.guard, execute=True)
+        result = r.retire_intermediate_remote_weights(plan, self.store, guard=self.guard,
+                                                     reference_guard=nullcontext, execute=True)
+        self.assertTrue(result['final_recovery_copy_preserved'])
+        self.assertEqual(r.retire_intermediate_remote_weights(plan, self.store, guard=self.guard,
+            reference_guard=nullcontext, execute=True)['receipt'], result['receipt'])
+        self.assertEqual(r.verify_archive(self.manifest, self.store)['status'],
+                         'LIVE_ARCHIVE_GET_SHA256_VERIFIED_WITH_RETIRED_INTERMEDIATES')
+        for row in self.manifest['files']:
+            uri = self.manifest['archive_prefix'] + row['path']
+            retired = row['path'].startswith('training/checkpoint-3/') and r.cleanable(row['path'])
+            self.assertEqual(uri in self.store.objects, not retired)
+        completed = r.cleanup(self.plan(), self.store, guard=self.guard, execute=True)
+        self.assertEqual(completed['status'], 'OWNED_CHECKPOINT_WEIGHTS_REMOVED')
+
+    def test_remote_intermediate_retirement_rejects_corrupt_final_and_unknown_absence(self):
+        self.archive()
+        plan = r.plan_cleanup(self.manifest, {}, checkpoints=['training/checkpoint-3'])
+        uri = self.manifest['archive_prefix'] + 'training/final/projector.safetensors'
+        self.store.objects[uri] = b'corrupt'
+        before = dict(self.store.objects)
+        with self.assertRaisesRegex(ValueError, 'final recovery copy'):
+            r.retire_intermediate_remote_weights(plan, self.store, guard=self.guard,
+                                                reference_guard=nullcontext, execute=True)
+        self.assertEqual(before, self.store.objects)
+        self.store.objects[uri] = b'projector'
+        del self.store.objects[self.manifest['archive_prefix'] + plan['targets'][0]['path']]
+        with self.assertRaisesRegex(ValueError, 'no retirement intent'):
+            r.retire_intermediate_remote_weights(plan, self.store, guard=self.guard,
+                                                reference_guard=nullcontext, execute=True)
+
+    def test_final_remote_cleanup_requires_independent_full_backup_and_keeps_small_objects(self):
+        self.archive()
+        plan = r.plan_cleanup(self.manifest, self.receipts, checkpoints=['training/final'])
+        backup = {'prefix': 'oss://backup-fixture/other/exact/', 'files': plan['targets']}
+        independent = MemoryStore()
+        for row in plan['targets']:
+            independent.objects[backup['prefix'] + row['path']] = (self.root / row['path']).read_bytes()
+        copied = next(iter(independent.objects))
+        original = independent.objects[copied]
+        independent.objects[copied] = b'bad'
+        before = dict(self.store.objects)
+        with self.assertRaisesRegex(ValueError, 'External backup is missing or differs'):
+            r.cleanup_remote_weights(plan, self.store, backup=backup, backup_store=independent,
+                                     guard=self.guard, reference_guard=nullcontext, execute=True)
+        self.assertEqual(before, self.store.objects)
+        independent.objects[copied] = original
+        result = r.cleanup_remote_weights(plan, self.store, backup=backup, backup_store=independent,
+                                          guard=self.guard, reference_guard=nullcontext, execute=True)
+        self.assertTrue(result['results_and_non_weights_preserved'])
+        self.assertEqual(r.cleanup_remote_weights(plan, self.store, backup=backup, backup_store=independent,
+            guard=self.guard, reference_guard=nullcontext, execute=True)['receipt'], result['receipt'])
+        for row in self.manifest['files']:
+            if not r.cleanable(row['path']):
+                self.assertIn(self.manifest['archive_prefix'] + row['path'], self.store.objects)
+
+    def test_reference_guard_prevents_any_delete_even_after_archive_verification(self):
+        self.archive()
+        def referenced():
+            raise ValueError('recovery reference still active')
+        with self.assertRaisesRegex(ValueError, 'recovery reference'):
+            r.cleanup(self.plan(), self.store, guard=self.guard, execute=True, reference_guard=referenced)
+        self.assert_weights_present()
 
     def test_archive_resume_reuses_only_matching_partial_objects(self):
         first = self.manifest["files"][0]
@@ -349,6 +423,34 @@ class StoreContractTest(unittest.TestCase):
             with patch.object(store, "_json", return_value=page("a", "true", "same")):
                 with self.assertRaises(ValueError):
                     store.list_prefix(prefix)
+
+    def test_api_failure_retains_codes_without_signed_request_or_credentials(self):
+        with tempfile.TemporaryDirectory() as temp:
+            store = self.store(Path(temp).resolve())
+            failure = subprocess.CompletedProcess([], 2, b'',
+                b'Error 403 AccessDenied Authorization=secret-signature AccessKeyId=private-id')
+            with patch('deepprobe_vlm.checkpoint_store.subprocess.run', return_value=failure):
+                with self.assertRaisesRegex(ValueError, 'AccessDenied'):
+                    store._json(['delete-object', '--bucket', 'ss-devbox-stream', '--key', 'fixture'])
+            files = list((store.state_dir / 'requests').glob('*.json'))
+            self.assertEqual(len(files), 1)
+            value = json.loads(files[0].read_text())
+            self.assertEqual(value['error_diagnostic']['service_codes'], ['AccessDenied'])
+            self.assertEqual(value['error_diagnostic']['http_statuses'], ['403'])
+            self.assertNotIn('secret-signature', files[0].read_text())
+            self.assertNotIn('private-id', files[0].read_text())
+
+    def test_api_network_diagnostics_remain_useful_without_signed_urls(self):
+        with tempfile.TemporaryDirectory() as temp:
+            store = self.store(Path(temp).resolve())
+            failure = subprocess.CompletedProcess([], 2, b'',
+                b'dial tcp: lookup endpoint: no such host https://host/key?auth=private-value')
+            with patch('deepprobe_vlm.checkpoint_store.subprocess.run', return_value=failure):
+                with self.assertRaisesRegex(ValueError, 'no such host'):
+                    store._json(['delete-object', '--bucket', 'ss-devbox-stream', '--key', 'fixture'])
+            text = next((store.state_dir / 'requests').glob('*.json')).read_text()
+            self.assertNotIn('private-value', text)
+            self.assertIn('no such host', text)
 
     def test_small_and_multipart_uploads_use_atomic_overwrite_guards(self):
         with tempfile.TemporaryDirectory() as temp:

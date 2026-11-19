@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-19",
+  "status": "CODE_AND_CPU_VALIDATED_PRODUCTION_STORAGE_GATED",
+  "storage_policy": {
+    "home_limit_bytes": 150000000000,
+    "oss_limit_bytes": 150000000000,
+    "limits_are_separate": true,
+    "home_safety_bytes": 2000000000,
+    "oss_safety_bytes": 2000000000,
+    "filesystem_free_guard_bytes": 1000000000,
+    "reservations_shared_across_workers": true,
+    "implementation": "admission and conservative peak reservations; not an operating-system filesystem quota"
+  },
+  "observed_storage": {
+    "observed_at_utc": "2026-11-19T12:47:41Z",
+    "home_bytes": 60507240643,
+    "oss_live_object_bytes": 1023423448230,
+    "oss_objects": 17190,
+    "uploaded_multipart_bytes": 0,
+    "oss_scope": "current live objects and uploaded multipart parts in the project prefix",
+    "legacy_version_bytes_unknown": true,
+    "observation_source_sha256": "379f9397f18a56da3816456618125160080794e25de884ffa93e28673024bf14",
+    "active_reservations": 0,
+    "projected_home_with_safety_bytes": 62507240643,
+    "projected_oss_with_safety_bytes": 1025423448230
+  },
+  "p0_retirement": {
+    "planned_objects": 176,
+    "planned_bytes": 640178450792,
+    "preserved_accepted_final_files": 20,
+    "preserved_accepted_final_bytes": 7482707127,
+    "status": "BLOCKED_DELETE_OBJECT_ACCESS_DENIED",
+    "http_status": 403,
+    "confirmed_deleted_objects": 0,
+    "confirmed_reclaimed_bytes": 0,
+    "maintenance_processes_remaining": false,
+    "active_storage_lock_remaining": false,
+    "failure_evidence_sha256": "9afeb05914e088955e8ed68a96ca7cc4a9ae6bdbf50953eb9b2fee6f3e8177f0",
+    "remaining_oss_bytes_even_if_this_plan_completed": 383244997438
+  },
+  "additional_retirement_plan": {
+    "status": "NOT_EXECUTED",
+    "successful_stage_intermediate_bytes": 82275618579,
+    "superseded_failed_alignment_bytes": 37651559833,
+    "duplicate_weight_bytes": 30121247892,
+    "original_zip_bytes": 118322902217,
+    "source_zip_gate": "Requires appropriate backup or verified cache coverage and exact source retrieval strategy before any retirement.",
+    "protected": "All formal finals and checkpoint350/checkpoint600 recovery anchors; prior checkpoint300 until checkpoint350 has an accepted archive.",
+    "plan_sha256": "04c850760281c50fae952bc67abd471953d6b96fd7856a1b86e7d44dbe8ffdec"
+  },
+  "suite": {
+    "models": 18,
+    "training_stages": 34,
+    "benchmark_evaluations": 36,
+    "latency_runs": 15,
+    "latency_comparisons": 12,
+    "operational_tasks": 185,
+    "worker_choices": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "gpus_per_worker": 8,
+    "priority": "normal",
+    "scheduler_selector": {
+      "sslaunch-pool": "stream",
+      "aliyun.accelerator/nvidia_name": "NVIDIA-L20D"
+    },
+    "runtime_gpu_contract": "B300 / accepted L20D platform alias, compute capability 10.3, >=240 GiB/device",
+    "historical_evaluation_imports_verified": 4,
+    "historical_completed_train_source_reviews": 5,
+    "historical_recovery_source_reviews": 2,
+    "history_inputs_copied_files": 91,
+    "history_inputs_copied_bytes": 29177142,
+    "production_preflight_passed": false,
+    "server_dry_run_passed": false,
+    "gpu_submitted": false
+  },
+  "verification": {
+    "cpu_tests_passed": 207,
+    "pytest_output_sha256": "e54f0e781b17215efc5c8bb8a3e39305c24af1e43e1bdeee6f2bfc6532ced951",
+    "source_files": 181,
+    "source_manifest_sha256": "c64a45d40842950ad567b73bd6acbea536272f04d066df68a8f494bbd6f98e99",
+    "runtime": "isolated Python 3.11 overlay, torch2.10.0+cu130, modelscope-hub0.7.1, oss2 2.19.1",
+    "modelscope_authenticated_stream_readback_passed": true,
+    "real_plan_exit_codes": {"1_worker": 0, "4_workers": 0},
+    "real_prepare_exit_code": 2,
+    "real_prepare_blocked_domains": ["oss"],
+    "historical_asset_preparation_started": false,
+    "linux_four_job_template_validation_passed": true,
+    "old_frozen_sources_changed": false
+  },
+  "next_required_action": "Grant the configured OSS identity DeleteObject on the exact owned project prefix, execute the reviewed retirement/migration plans, then rerun fresh capacity/input/archive/scheduler admission. Existing results remain published; no new GPU result is claimed."
+}

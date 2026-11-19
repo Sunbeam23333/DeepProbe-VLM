@@ -264,3 +264,107 @@ def test_development_gate_requires_source_description_and_actual_selected_media(
     meta['source_description']='fixture';env['assets']['development']['source_metadata']=write(Path(source['path']),meta)
     (root/'one.png').unlink()
     with pytest.raises((ValueError,FileNotFoundError)):p._development_gate(env)
+
+
+def test_explicit_hub_alias_uses_existing_physical_snapshot_and_rejects_retarget(backbone, tmp_path):
+    from deepprobe_vlm.declared_training import tree_identity
+    assets, env, plan = backbone
+    old = Path(assets['language_root']); physical = tmp_path / 'pinned-language'
+    old.rename(physical); old.symlink_to(physical, target_is_directory=True)
+    assets['language_root'] = str(physical)
+    assets['files'] = [row for row in assets['files'] if not row['path'].startswith(str(old) + '/')]
+    assets['files'].extend(retain.file_pin(path) for path in physical.iterdir())
+    observed = p.snapshot_alias_chain(old)
+    assets['snapshot_aliases'] = {'language': {'hub_snapshot': str(old), **observed,
+        'inventory_sha256': tree_identity(physical)['files_sha256']}}
+    result = p._backbone_gate('ouro_r1', assets, env, plan)
+    assert result['all_file_sha256_verified']
+    assert result['snapshots']['language']['root'] == str(physical)
+    import shutil
+    replacement = tmp_path / 'replacement-language'; shutil.copytree(physical, replacement)
+    old.unlink(); old.symlink_to(replacement, target_is_directory=True)
+    with pytest.raises(ValueError, match='alias chain differs'):
+        p._backbone_gate('ouro_r1', assets, env, plan)
+
+
+def test_snapshot_alias_detects_changed_payload_and_cycle(backbone, tmp_path):
+    from deepprobe_vlm.declared_training import tree_identity
+    assets, env, plan = backbone
+    old = Path(assets['language_root']); physical = tmp_path / 'pinned-language'
+    old.rename(physical); old.symlink_to(physical, target_is_directory=True)
+    assets['language_root'] = str(physical)
+    assets['files'] = [row for row in assets['files'] if not row['path'].startswith(str(old) + '/')]
+    assets['files'].extend(retain.file_pin(path) for path in physical.iterdir())
+    assets['snapshot_aliases'] = {'language': {'hub_snapshot': str(old), **p.snapshot_alias_chain(old),
+        'inventory_sha256': tree_identity(physical)['files_sha256']}}
+    (physical / 'model.safetensors').write_bytes(b'wrong')
+    with pytest.raises(ValueError, match='changed during SHA'):
+        p._backbone_gate('ouro_r1', assets, env, plan)
+    a, b = tmp_path / 'cycle-a', tmp_path / 'cycle-b'
+    a.symlink_to(b); b.symlink_to(a)
+    with pytest.raises(ValueError, match='Cyclic'):
+        p.snapshot_alias_chain(a)
+
+
+def test_remote_cache_gate_verifies_pixels_without_local_hydration(tmp_path, monkeypatch):
+    import io
+    from PIL import Image
+    payload = io.BytesIO(); rgb = Image.new('RGB', (2, 2), (17, 23, 41)); rgb.save(payload, format='PNG')
+    raw_png = payload.getvalue()
+    row = {'path': 'tiny.png', 'key': 'project/cache/tiny.png', 'bytes': len(raw_png),
+           'sha256': media.digest(raw_png), 'rgb_sha256': media.digest(rgb.tobytes()), 'width': 2, 'height': 2}
+    receipt = write(tmp_path / 'accepted-cache.json', {'synthetic': True})
+    cache = {'kind': 'legacy', 'receipt': receipt}
+    monkeypatch.setattr(media, '_bound_cache_inventory', lambda _: ([{}], {'dataset': 'tempcompass', 'archives': []},
+        [row], 4, {'receipt': b'fixture'}, ['receipt']))
+    monkeypatch.setattr(media, '_read_pin', lambda _: b'fixture')
+    class Store:
+        value = raw_png
+        def get(self, key, maximum):
+            assert key == row['key'] and maximum == len(raw_png)
+            return self.value
+    store = Store(); root = tmp_path / 'not-materialized'
+    value = p._remote_benchmark_gate({'cache': cache, 'max_bytes': len(raw_png), 'media_root': str(root)},
+                                    'tempcompass_mc', 4, {}, store=store)
+    assert value['all_png_full_get_and_rgb_verified'] and value['local_hydration_still_required_before_evaluation']
+    assert not value['local_media_created'] and not root.exists()
+    store.value = b'changed'
+    with pytest.raises(ValueError, match='full-GET SHA'):
+        p._remote_benchmark_gate({'cache': cache, 'max_bytes': len(raw_png)}, 'tempcompass_mc', 4, {}, store=store)
+
+
+def test_modern_history_accepts_pinned_backbone_relocation_but_no_recipe_drift(history, tmp_path):
+    task, env, h, audit = history
+    task['kind'] = 'train'
+    checkpoint = Path(h['checkpoint']['path'])
+    write(checkpoint / 'training_args.bin', {'synthetic_native_arguments': True})
+    h['checkpoint']['files'] = sorted(p.inventory(checkpoint), key=lambda row: row['path'])
+    prefix = 'oss://ss-devbox-stream/project/runs/original/training/checkpoint-600/'
+    h['checkpoint']['oss_prefix'] = prefix
+    h['checkpoint_step'] = 600
+    archive = write(tmp_path / 'remote-full-get-proof.json', {'all_objects_full_get_sha256_verified': True,
+        'checkpoint_oss_prefix': prefix, 'checkpoint_inventory_sha256': runner.digest(h['checkpoint']['files'])})
+    h['archive_acceptance'] = archive
+    audit.pop('exact_resume_accepted')
+    audit.update(schema_version=1, production_evidence=True, task_sha256=runner.digest(task),
+        source_root=h['source_root'], archive_verified=True, resume_metadata_verified=True,
+        optimizer_scheduler_rng_deserialized=False, checkpoint_oss_prefix=prefix,
+        checkpoint_inventory_sha256=runner.digest(h['checkpoint']['files']), evidence=audit['evidence'] + [archive])
+    h['acceptance'] = write(Path(h['acceptance']['path']), audit)
+    declared_root = tmp_path / 'current-experiment'
+    historical = runner.read(h['config']['path'])
+    declared = deepcopy(historical)
+    declared['model']['language_model'] = '/owned/pinned-language/snapshots/' + '0' * 40
+    declared['model']['vision_model'] = '/owned/pinned-vision/snapshots/' + '0' * 40
+    declared['experiment_protocol'] = {'declaration_only': True}
+    target = declared_root / task['config']['path']
+    write(target, declared)
+    env.update(experiment_root=str(declared_root), execution_profile={'synthetic': True})
+    plan = {'tasks': [task]}
+    assert p._history_gate(task, env, plan)['mode'] == 'resume'
+    for category, key, value in [('training', 'max_steps', 2), ('model', 'num_loops', 2),
+                                  ('model', 'language_revision', '1' * 40)]:
+        changed = deepcopy(declared); changed[category][key] = value
+        write(target, changed)
+        with pytest.raises(ValueError, match='recipe differs|revision differs'):
+            p._history_gate(task, env, plan)

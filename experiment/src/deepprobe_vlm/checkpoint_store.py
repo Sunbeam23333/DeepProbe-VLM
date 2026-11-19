@@ -12,6 +12,7 @@ import json
 import math
 import os
 from pathlib import Path
+import re
 import selectors
 import subprocess
 import tempfile
@@ -83,14 +84,40 @@ class OssutilStore:
         # API output is small metadata; binary object bodies use iter_object.
         result = subprocess.run(self._argv(["api", *args, "--output-format", "json", "-q"]),
                                 capture_output=True, timeout=self.timeout)
+        # Error bodies can contain signed requests or access-key identifiers.
+        # Keep bounded diagnostic text only after removing sensitive lines and
+        # URLs; service codes remain useful even when a whole line is removed.
+        output = (result.stdout + result.stderr).decode('utf-8', errors='replace')
+        messages = []
+        for line in output.splitlines()[:16]:
+            if re.search(r'(?i)authorization|access.?key|secret|credential|signature|'
+                         r'security.?token|string.?to.?sign|canonical.?request|'
+                         r'\b(?:hf_|LTAI|sk-)[A-Za-z0-9_+-]+', line):
+                messages.append('[sensitive request detail redacted]')
+                continue
+            line = re.sub(r'https?://\S+', '[URL redacted]', line)
+            line = re.sub(r'(?i)\b(?:token|password)\s*[:=]\s*\S+', '[credential redacted]', line)
+            line = re.sub(r'[A-Za-z0-9_+/=-]{32,}', '[long token redacted]', line)
+            messages.append(line[:300])
+        diagnostic = {'service_codes': sorted({code for code in (
+            'AccessDenied', 'InvalidAccessKeyId', 'SignatureDoesNotMatch', 'RequestTimeTooSkewed',
+            'NoSuchKey', 'NoSuchBucket', 'ServiceUnavailable', 'InternalError', 'RequestTimeout',
+            'InvalidArgument', 'InvalidRequest', 'AuthorizationFailed', 'OperationNotSupported',
+            'NotImplemented', 'MethodNotAllowed') if re.search(r'\b' + code + r'\b', output)}),
+            'http_statuses': sorted(set(re.findall(r'\b[45][0-9]{2}\b', output))),
+            'message_redacted': '\n'.join(messages)[:1200]}
         write_once(operation.with_suffix(".json"), {
             "operation": args[0], "returncode": result.returncode,
             "stdout_sha256": hashlib.sha256(result.stdout).hexdigest(),
             "stderr_sha256": hashlib.sha256(result.stderr).hexdigest(),
+            "error_diagnostic": diagnostic if result.returncode else None,
             "automatic_retry": False})
-        require(result.returncode == 0, "ossutil API failed; retained request hashes; no automatic retry")
+        require(result.returncode == 0, "ossutil API failed; " + json.dumps(diagnostic)
+                + "; retained request hashes; no automatic retry")
         require(len(result.stdout) <= 16 * 1024 * 1024, "unexpectedly large API metadata response")
-        document = json.loads(result.stdout)
+        # DeleteObject may legitimately return HTTP 204 with no serialized
+        # metadata. Its caller still requires a fresh exact-key absence check.
+        document = {} if args[0] == 'delete-object' and not result.stdout.strip() else json.loads(result.stdout)
         require(isinstance(document, dict), "invalid ossutil API JSON")
         write_once(operation.with_suffix(".response.json"), document)
         return document
@@ -162,6 +189,34 @@ class OssutilStore:
                     process.wait()
                 if process.stdout is not None:
                     process.stdout.close()
+
+    def delete_exact_verified(self, uri, expected):
+        """Delete one immutable owned object, under the caller's shared lock.
+
+        OSS unversioned deletion has no cross-client compare-and-delete promise.
+        Safety here is the suite's shared reference lock, unique immutable keys,
+        forbid-overwrite writes, and fresh full-byte verification. The caller
+        also proves a remaining recovery copy and journals intent before this
+        request. No recursive or prefix deletion is used.
+        """
+        bucket, key = self._uri(uri)
+        require(isinstance(expected, dict) and expected.get('uri') == uri
+                and isinstance(expected.get('sha256'), str), 'Exact deletion SHA and identity required')
+        current = [r for r in self.list_prefix(uri) if r['uri'] == uri]
+        require(len(current) == 1 and all(current[0].get(k) == v for k, v in expected.items()
+                                        if k != 'sha256'), 'Remote object metadata changed before deletion')
+        h, size = hashlib.sha256(), 0
+        for block in self.iter_object(uri):
+            size += len(block); h.update(block)
+        require(size == expected['bytes'] and h.hexdigest() == expected['sha256'],
+                'Remote object bytes changed before deletion')
+        require([r for r in self.list_prefix(uri) if r['uri'] == uri] == current,
+                'Remote object metadata changed during SHA verification')
+        args = ['delete-object', '--bucket', bucket, '--key', key]
+        if expected.get('version_id') not in (None, '', 'null'):
+            args += ['--version-id', expected['version_id']]
+        self._json(args)
+        require(not any(r['uri'] == uri for r in self.list_prefix(uri)), 'Exact object remains after deletion')
 
     def put_if_absent(self, uri, source, expected_sha256):
         bucket, key = self._uri(uri)

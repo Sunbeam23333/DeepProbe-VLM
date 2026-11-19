@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import argparse
 from collections import defaultdict
+from contextlib import nullcontext
+from copy import deepcopy
 import importlib.util
 import json
 import math
@@ -69,6 +71,25 @@ def finite_metrics(value):
             finite_metrics(item)
     elif isinstance(value, float):
         require(math.isfinite(value), 'Nonfinite measured training/evaluation metric')
+
+
+def verify_historical_recipe(historical, declared):
+    """Compare effective recipe fields while allowing pinned asset relocation.
+
+    experiment_protocol is a declaration added around existing recipes, rather
+    than a Trainer/model input. Every numerical/model/training field remains
+    exact. A model path may differ only with the same explicit pinned revision.
+    """
+    left, right = deepcopy(historical), deepcopy(declared)
+    left.pop('experiment_protocol', None); right.pop('experiment_protocol', None)
+    for name, revision in (('language_model', 'language_revision'), ('vision_model', 'vision_revision')):
+        a, b = left.get('model', {}), right.get('model', {})
+        if a.get(name) != b.get(name):
+            require(isinstance(a.get(revision), str) and a[revision]
+                    and a[revision] == b.get(revision), 'Relocated historical backbone revision differs')
+            a[name] = b.get(name)
+    require(left == right, 'Historical effective model/training recipe differs from scientific declaration')
+    return True
 
 
 def load_operation(root, name):
@@ -237,8 +258,22 @@ class Actions:
             verify_pin(item)
         return value
 
-    def budget(self, extra):
-        return runner.capacity({'storage': self.env['storage']}, extra)
+    def shared_budget(self):
+        if self.env['storage'].get('schema_version') != 2:
+            return None
+        if not hasattr(self, '_shared_budget'):
+            from .suite_storage import budget_for
+            self._shared_budget = budget_for(self.env)
+        return self._shared_budget
+
+    def budget(self, extra, oss_extra=0):
+        budget = self.shared_budget()
+        if budget is None:
+            return runner.capacity({'storage': self.env['storage']}, extra)
+        token = os.environ.get('DP_SUITE_STORAGE_TOKEN')
+        require(token and os.environ.get('DP_SUITE_STORAGE_LEDGER') == self.env['storage']['ledger_root'],
+                'Parallel actions require the shared ledger reservation from their worker')
+        return budget.extend(token, home_bytes=extra, oss_bytes=oss_extra)
 
     def command(self, argv, directory, label, *, source_root=None, extra_env=None):
         directory = safe(directory)
@@ -255,7 +290,8 @@ class Actions:
             env = single_node_torchrun_environment(env)
         save(logs.with_suffix('.intent.json'), {'argv': list(map(str, argv)), 'source_root': str(source_root or self.root)})
         with logs.with_suffix('.stdout').open('xb') as out, logs.with_suffix('.stderr').open('xb') as err:
-            # Inherit runner process group so timeout/SIGTERM covers all ranks.
+            # The runner's inherited process token and pidfd supervisor cover
+            # descendants even when a rank creates a new session/process group.
             result = subprocess.run(list(map(str, argv)), cwd=source_root or self.root, env=env, stdout=out, stderr=err)
         save(logs.with_suffix('.exit.json'), {'returncode': result.returncode})
         require(result.returncode == 0, 'Task subprocess failed; retained logs at ' + str(logs))
@@ -266,8 +302,27 @@ class Actions:
                 'get', 'pytorchjobs,pods', '-A', '-o', 'json']
         result = subprocess.run(argv, capture_output=True, timeout=40)
         require(result.returncode == 0, 'Cannot verify exact allocation and project jobs')
-        items = json.loads(result.stdout)['items']
+        document = json.loads(result.stdout)
+        require(not document.get('metadata', {}).get('continue'), 'Complete Job/Pod listing required')
+        items = document['items']
         jobs = [x for x in items if x['kind'] == 'PyTorchJob']
+        profile = self.env.get('execution_profile')
+        if profile:
+            from .suite_fleet import audit_fleet_jobs
+            fleet_state = os.environ.get('DP_SUITE_FLEET_STATE')
+            worker_id = os.environ.get('DP_SUITE_WORKER_ID')
+            require(fleet_state and worker_id, 'Exact fleet state and worker identity required')
+            live = audit_fleet_jobs(profile, document, fleet_state, worker_id,
+                                   project_name_prefixes=identity['project_name_prefixes'])
+            if require_startup:
+                invocation = os.environ.get('DP_SUITE_INVOCATION_DIR')
+                require(invocation, 'Exact current worker invocation required')
+                started = read(safe(invocation) / 'STARTUP.json')
+                require(started.get('status') == 'SUITE_STARTUP_ACCEPTED'
+                        and started.get('source_identity_sha256') == self.source_sha
+                        and started.get('job_uid') == live['job_uid']
+                        and started.get('pod_uid') == live['pod_uid'], 'Fleet allocation changed since startup')
+            return live
         target = [x for x in jobs if x['metadata']['name'] == identity['job_name']
                   and x['metadata']['namespace'] == identity['namespace']]
         require(len(target) == 1 and not terminal_job(target[0]), 'Exact live suite job not found')
@@ -307,14 +362,22 @@ class Actions:
         require(gpu.returncode == 0 and len(uuids) == len(set(uuids)) == 8, 'Eight actual GPU UUIDs required')
         hardware = safe(output).parent / 'HARDWARE.json'
         self.command(single_node_torchrun(self.env['python']) +
-                     [self.root / 'scripts/preflight.py', '--output', hardware],
+                     [self.root / 'scripts/preflight.py', '--output', hardware] +
+                     (['--expected-gpu', 'B300'] if self.env.get('execution_profile') else []),
                      safe(output).parent, 'hardware')
         report = read(hardware)
         require(report.get('status') == 'gpu_gate_passed' and report.get('world_size') == 8
                 and report.get('distributed_all_reduce') == 'pass' and len(report.get('gpus', [])) == 8, 'Hardware gate failed')
-        save(output, {'status': 'SUITE_STARTUP_ACCEPTED', 'allocation': dict(runner.ALLOCATION),
+        allocation = dict(runner.ALLOCATION)
+        if self.env.get('execution_profile'):
+            from .suite_fleet import profile_allocation
+            allocation = profile_allocation(self.env['execution_profile'])
+            require(all(gpu.get('expected_gpu') == 'B300' and gpu.get('expected_gpu_matches') is True
+                        for gpu in report['gpus']), 'Each worker must pass the frozen B300 architecture/memory gate')
+        save(output, {'status': 'SUITE_STARTUP_ACCEPTED', 'allocation': allocation,
                       'source_identity_sha256': self.source_sha, **live, 'gpu_count': 8, 'gpu_uuids': uuids,
-                      'hardware_preflight_passed': True, 'hardware': pin(hardware)})
+                      'hardware_preflight_passed': True, 'hardware': pin(hardware),
+                      **({'gpu_product': 'NVIDIA-B300'} if self.env.get('execution_profile') else {})})
 
     def owner(self, task_id):
         run_id = self.env['suite_id'] + '--' + task_id
@@ -360,6 +423,10 @@ class Actions:
         """Copy only explicitly audited historical inputs; never adopt/delete old runs."""
         value = self.env['history'].get(task['id'])
         require(value and value['mode'] in {'accepted', 'resume'}, 'Historical candidate needs audited binding; no silent fresh restart')
+        modern = bool(self.env.get('execution_profile'))
+        if modern:
+            from .suite_bindings import verify_history_binding
+            verify_history_binding(self.plan, task, value, verify_files=True)
         evidence = read(verify_pin(value['acceptance'])['path'])
         for item in evidence.get('evidence', []):
             verify_pin(item)
@@ -370,13 +437,17 @@ class Actions:
         require(evidence.get('evidence') and all(evidence.get(k) == v for k, v in expected.items()), 'Historical audit binding incomplete')
         verify_pin(value['config']); verify_pin(value['frozen_source_manifest'])
         if value['mode'] == 'resume':
-            require(evidence.get('exact_resume_accepted') is True, 'Historical numerical resume audit not accepted')
-        require(read(value['config']['path']) == read(self.root / task['config']['path']), 'Historical recipe differs from scientific declaration')
+            require(evidence.get('resume_metadata_verified' if modern else 'exact_resume_accepted') is True,
+                    'Historical recovery metadata audit not accepted' if modern else 'Historical numerical resume audit not accepted')
+        if modern:
+            verify_historical_recipe(read(value['config']['path']), read(self.root / task['config']['path']))
+        else:
+            require(read(value['config']['path']) == read(self.root / task['config']['path']), 'Historical recipe differs from scientific declaration')
         src = safe(value['checkpoint']['path'])
         files = value['checkpoint']['files']
         if restore and not value['checkpoint'].get('oss_prefix'):
             verify_inventory(src, files)
-        step = task['historical_hint'].get('checkpoint_step')
+        step = value['checkpoint_step'] if modern else task['historical_hint'].get('checkpoint_step')
         if restore and value['mode'] == 'resume' and not value['checkpoint'].get('oss_prefix'):
             from .resume_checkpoint import verify_resume_checkpoint
             audit = verify_resume_checkpoint(src, world_size=8, expected_max_steps=task['expected_optimizer_steps'])
@@ -392,7 +463,7 @@ class Actions:
             self.copy_files(src, target, files)
         if value['mode'] == 'resume':
             from .resume_checkpoint import verify_resume_checkpoint
-            audit = verify_resume_checkpoint(target, world_size=8, expected_max_steps=718)
+            audit = verify_resume_checkpoint(target, world_size=8, expected_max_steps=task['expected_optimizer_steps'])
             require(audit['optimizer_step'] == step, 'Restored historical resume step differs')
         return value, target
 
@@ -489,7 +560,10 @@ class Actions:
         # Only the pure header estimator is called; its runner/cleanup is never invoked.
         estimate = estimator.estimate_stage_storage(config, task['stage'])
         resident = sum(r['bytes'] for r in inventory(output)) if output.is_dir() and any(output.iterdir()) else 0
-        additional = max(0, estimate['required_additional_bytes'] - resident)
+        # Resident bytes may include torn checkpoints or unrelated diagnostics.
+        # Their existence is not evidence of reusable rotation capacity. Reserve
+        # the whole future peak; never take credit for an unverified future GC.
+        additional = estimate['required_additional_bytes']
         observed = self.budget(additional)
         return {'estimate': estimate, 'owned_stage_resident_bytes': resident, 'capacity': observed}
 
@@ -556,11 +630,19 @@ class Actions:
         if 'cache' not in data:
             return data
         from .suite_media import hydrate_frame_cache, OSSStore, PROJECT_PREFIX, _bound_cache_inventory
-        _, _, items, _, _, _ = _bound_cache_inventory(data['cache'])
-        needed = sum(r['bytes'] for r in items if not (Path(data['media_root']) / r['path']).exists())
-        self.budget(needed)
-        return hydrate_frame_cache(data['cache'], media_root=data['media_root'], max_bytes=data['max_bytes'],
-            store=OSSStore(self.env['tools']['oss_config'], allowed_prefix=PROJECT_PREFIX + 'suite-media-readonly/'), resume=True)
+        budget = self.shared_budget()
+        with budget.asset_lock({'media_root': data['media_root']}) if budget else nullcontext():
+            # Another worker may have finished hydration while this one waited.
+            # Recompute missing bytes and verify ownership under the same lock.
+            _, _, items, _, _, _ = _bound_cache_inventory(data['cache'])
+            needed = sum(r['bytes'] for r in items if not (Path(data['media_root']) / r['path']).exists())
+            self.budget(needed + 32 * 1024 * 1024)
+            media_root = safe(data['media_root'])
+            require(any(media_root != safe(root) and media_root.is_relative_to(safe(root))
+                        for root in self.env['storage']['roots']), 'Hydrated media root escapes accounted project storage')
+            media_root.parent.mkdir(parents=True, exist_ok=True)
+            return hydrate_frame_cache(data['cache'], media_root=data['media_root'], max_bytes=data['max_bytes'],
+                store=OSSStore(self.env['tools']['oss_config'], allowed_prefix=PROJECT_PREFIX + 'suite-media-readonly/'), resume=True)
 
     def evaluate(self, task):
         data = self.benchmark_data(task)
@@ -670,12 +752,19 @@ class Actions:
             require(self.resume and all(not row['path'].startswith('training/final/') for row in missing),
                     'Missing archived weights require explicit intermediate-cleanup recovery')
         else:
+            self.budget(64 * 1024 * 1024, sum(r['bytes'] for r in retention._objects(manifest).values()))
             archived = retention.archive_and_verify(manifest, store, guard=guard)
             outputs.append(archived['receipt'])
+        self.register_checkpoints(manifest)
         if intermediate:
             cleanup = retention.plan_cleanup(manifest, {}, checkpoints=intermediate)
-            result = retention.cleanup(cleanup, store, guard=guard, execute=True)
+            result = retention.cleanup(cleanup, store, guard=guard, execute=True,
+                                       reference_guard=self.reference_guard(manifest, intermediate))
             outputs.append(save(self.task_dir(task['id']) / 'INTERMEDIATE_CLEANUP.json', result))
+            if self.shared_budget():
+                retired = retention.retire_intermediate_remote_weights(cleanup, store, guard=guard, execute=True,
+                    reference_guard=self.reference_guard(manifest, intermediate))
+                outputs.append(save(self.task_dir(task['id']) / 'INTERMEDIATE_REMOTE_RETIREMENT.json', retired))
         return {'outputs': outputs, 'manifest': pin(manifest_path), 'owner': owner}
 
     def archive_results(self, task):
@@ -691,6 +780,7 @@ class Actions:
         manifest = save(self.task_dir(task['id']) / 'RESULT_MANIFEST.json', {'schema_version': 1, 'files': rows})
         rows.append({**manifest, 'object': prefix + 'RESULT_MANIFEST.json'})
         expected = {r['object']: r for r in rows}
+        self.budget(64 * 1024 * 1024, sum(r['bytes'] for r in rows))
         existing = {r['uri']: r for r in store.list_prefix(prefix)}
         require(set(existing) <= set(expected), 'Unexpected result archive object')
         for uri, row in expected.items():
@@ -707,7 +797,40 @@ class Actions:
         require(before == retention._listing(store, prefix), 'Result archive inventory changed during full readback')
         receipt = save(self.task_dir(task['id']) / 'RESULT_ARCHIVE_VERIFIED.json',
                        {'status': 'SUITE_RESULTS_ARCHIVED_FULL_GET_VERIFIED', 'files': rows, 'manifest': manifest})
+        if self.shared_budget():
+            self.shared_budget().register_artifact(owner['run_id'], kind='result', locations=[
+                {'path': r['object'], 'bytes': r['bytes'], 'sha256': r['sha256']} for r in rows])
         return {'outputs': [receipt], 'result_tasks': task['result_task_ids']}
+
+    def checkpoint_artifact_id(self, manifest, checkpoint):
+        return digest({'owner': manifest['owner'], 'checkpoint': checkpoint,
+                       'checkpoint_inventory_sha256': manifest['checkpoints'][checkpoint]})
+
+    def register_checkpoints(self, manifest):
+        budget = self.shared_budget()
+        if budget is None:
+            return
+        for checkpoint in manifest['checkpoints']:
+            rows = [r for r in manifest['files'] if r['path'].startswith(checkpoint + '/')]
+            locations = [{**r, 'path': str(Path(manifest['owner']['run_root']) / r['path'])} for r in rows]
+            locations += [{**r, 'path': manifest['archive_prefix'] + r['path']} for r in rows]
+            budget.register_artifact(self.checkpoint_artifact_id(manifest, checkpoint), kind='checkpoint',
+                locations=locations, references=[r['id'] for r in manifest['required_consumers']
+                                                 if r['checkpoint'] == checkpoint])
+
+    def reference_guard(self, manifest, checkpoints, consumers=None):
+        budget = self.shared_budget()
+        if budget is None:
+            return None
+        self.register_checkpoints(manifest)
+        if consumers:
+            retention.verify_consumers(manifest, consumers, checkpoints)
+            for row in manifest['required_consumers']:
+                if row['checkpoint'] in checkpoints:
+                    budget.complete_reference(self.checkpoint_artifact_id(manifest, row['checkpoint']),
+                                              row['id'], consumers[row['id']])
+        identities = [self.checkpoint_artifact_id(manifest, cp) for cp in checkpoints]
+        return lambda: budget.deletion_guard(identities)
 
     def cleanup(self, task):
         stage = task['checkpoint_task_id']
@@ -721,9 +844,49 @@ class Actions:
             require(len(match) == 1, 'Consumer does not attest this exact checkpoint')
             consumers[cid] = match[0]
         store, _ = self.store(manifest['owner'])
-        result = retention.cleanup(retention.plan_cleanup(manifest, consumers), store,
-                                   guard=lambda: self.guard(manifest['owner']), execute=True)
-        return {'outputs': [save(self.task_dir(task['id']) / 'CLEANUP.json', result)]}
+        plan = retention.plan_cleanup(manifest, consumers)
+        guard = lambda: self.guard(manifest['owner'])
+        directory = self.task_dir(task['id'])
+        outputs = []
+        if self.shared_budget():
+            from .checkpoint_backup import ModelScopeCheckpointStore, backup_final, configured_api
+            final_plan = retention.plan_cleanup(manifest, consumers, checkpoints=['training/final'])
+            # SDK uses a bounded upload buffer; final readback is streamed and
+            # never creates a second checkpoint-sized file on the worker.
+            self.budget(128 * 1024 * 1024)
+            with configured_api(Path(manifest['owner']['run_root']) / '.retention' / 'modelscope-sdk') as api:
+                backup_store = ModelScopeCheckpointStore(api, run_id=manifest['owner']['run_id'],
+                    inventory_sha256=manifest['checkpoints']['training/final'])
+                with self.reference_guard(manifest, ['training/final'], consumers)():
+                    backed = backup_final(manifest, backup_store, state_dir=directory / 'modelscope-final', guard=guard)
+                outputs.append(backed['receipt'])
+                local_path = directory / 'CLEANUP.json'
+                if local_path.exists():
+                    # The previous task attempt may have reached OSS deletion.
+                    # A fresh ModelScope full-final readback above replaces the
+                    # now-retired stream payload as recovery evidence.
+                    result = read(local_path)
+                    require(self.resume and result.get('status') == 'OWNED_CHECKPOINT_WEIGHTS_REMOVED'
+                            and result.get('plan_sha256') == digest(plan)
+                            and all(not (Path(manifest['owner']['run_root']) / row['path']).exists()
+                                    for row in plan['targets']), 'Local cleanup recovery evidence differs')
+                    retention.check_pin(result['receipt'])
+                    for row in manifest['files']:
+                        if not retention.cleanable(row['path']):
+                            retention.check_pin({**row, 'path': str(Path(manifest['owner']['run_root']) / row['path'])})
+                else:
+                    result = retention.cleanup(plan, store, guard=guard, execute=True,
+                        reference_guard=self.reference_guard(manifest, plan['checkpoints'], consumers))
+                outputs.append(save(local_path, result))
+                external = {'prefix': backup_store.prefix, 'files': final_plan['targets']}
+                remote = retention.cleanup_remote_weights(final_plan, store, backup=external,
+                    backup_store=backup_store, guard=guard, execute=True,
+                    reference_guard=self.reference_guard(manifest, ['training/final'], consumers))
+                outputs.append(save(directory / 'FINAL_REMOTE_CLEANUP.json', remote))
+        else:
+            result = retention.cleanup(plan, store, guard=guard, execute=True)
+            outputs.append(save(directory / 'CLEANUP.json', result))
+        return {'outputs': outputs}
 
     def run(self, task_id, output):
         if task_id == 'startup':

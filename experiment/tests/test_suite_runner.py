@@ -22,6 +22,9 @@ with Path(a.trace).open('a') as f:f.write(a.task+'\\n')
 if a.mode=='fail':raise SystemExit(9)
 if a.mode=='sleep':time.sleep(10)
 if a.mode=='background':subprocess.Popen([sys.executable,'-c','import time; time.sleep(60)'])
+if a.mode=='detached':
+ subprocess.Popen([sys.executable,'-c','import time; time.sleep(60)'],start_new_session=True)
+ time.sleep(.2)
 r={'status':'ACCEPTED','task':a.task,'units':1,'offline':all(os.environ.get(k)=='1' for k in ['HF_HUB_OFFLINE','TRANSFORMERS_OFFLINE','HF_DATASETS_OFFLINE'])}
 if a.task=='startup':
  r={'status':'SUITE_STARTUP_ACCEPTED','source_identity_sha256':a.source,
@@ -188,6 +191,14 @@ class SuiteRunnerTest(unittest.TestCase):
         self.assertEqual(runner.read(attempt / "COMMAND_EXIT.json")["returncode"], 0)
         self.assertFalse((self.state / "tasks/first/COMPLETED.json").exists())
         self.assertFalse((self.state / "tasks/second").exists())
+
+    def test_detached_torchrun_style_descendants_are_stopped_before_next_task(self):
+        self.binding["tasks"]["first"]["argv"] += ["--mode", "detached"]
+        with self.assertRaisesRegex(ValueError, "live descendants"):
+            self.execute()
+        record = runner.read(self.state / "tasks/first/attempts/attempt-000001/COMMAND_EXIT.json")
+        self.assertTrue(record["group_cleanup_verified"])
+        self.assertFalse((self.state / "tasks/second/COMPLETED.json").exists())
 
     def test_binding_rejects_unsafe_or_incomplete_contracts(self):
         for change, error in [

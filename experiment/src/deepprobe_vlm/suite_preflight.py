@@ -89,6 +89,31 @@ def _bound_environment(binding, environment, environment_sha256):
     return {'concrete_actions_bound': True, 'installed_tools_present': True}
 
 
+def snapshot_alias_chain(path):
+    """Read every symlink traversed by a Hub snapshot without trusting its name."""
+    path = Path(path)
+    require(path.is_absolute() and '..' not in path.parts, 'Hub snapshot alias must be absolute')
+    links, seen = [], set()
+    current = path
+    for _ in range(40):
+        found = False
+        for index in range(1, len(current.parts) + 1):
+            component = Path(*current.parts[:index])
+            if component.is_symlink():
+                target = os.readlink(component)
+                key = (str(component), target)
+                require(key not in seen, 'Cyclic Hub snapshot alias')
+                seen.add(key); links.append({'path': str(component), 'target': target})
+                resolved_target = Path(target) if Path(target).is_absolute() else component.parent / target
+                current = Path(os.path.abspath(resolved_target.joinpath(*current.parts[index:])))
+                found = True
+                break
+        if not found:
+            require(current.is_dir(), 'Hub snapshot alias target is missing')
+            return {'physical_root': str(runner.safe(current)), 'links': links}
+    raise ValueError('Hub snapshot alias chain exceeds forty links')
+
+
 def _backbone_gate(family, assets, environment, plan):
     from .declared_training import tree_identity
     models = [m for m in plan['models'] if m['family'] == family]
@@ -115,8 +140,21 @@ def _backbone_gate(family, assets, environment, plan):
         identifier, revision = recipe[label + '_model'], recipe[label + '_revision']
         root = runner.safe(assets[label + '_root'])
         expected = hub / ('models--' + identifier.replace('/', '--')) / 'snapshots' / revision
-        require(root == expected, 'Audited backbone differs from the actual offline Hub revision: ' + label)
+        alias = assets.get('snapshot_aliases', {}).get(label)
+        if alias is None:
+            require(root == expected, 'Audited backbone differs from the actual offline Hub revision: ' + label)
+            alias_before = None
+        else:
+            require(isinstance(alias, dict) and set(alias) == {'hub_snapshot', 'physical_root', 'links', 'inventory_sha256'}
+                    and alias['hub_snapshot'] == str(expected) and alias['physical_root'] == str(root)
+                    and retention.valid_sha(alias['inventory_sha256']), 'Explicit Hub alias binding differs')
+            alias_before = snapshot_alias_chain(expected)
+            require(alias_before == {'physical_root': alias['physical_root'], 'links': alias['links']}
+                    and alias_before['links'], 'Current Hub alias chain differs from its frozen readlink identities')
         identity = tree_identity(root)
+        if alias_before is not None:
+            require(identity['files_sha256'] == alias['inventory_sha256']
+                    and snapshot_alias_chain(expected) == alias_before, 'Physical snapshot or Hub alias changed during SHA verification')
         names = set(identity['files'])
         if label == 'language':
             require(bool(names & {'tokenizer.json', 'tokenizer.model'}) or {'vocab.json', 'merges.txt'} <= names,
@@ -131,7 +169,8 @@ def _backbone_gate(family, assets, environment, plan):
                         'Model weight index references a missing shard')
         for name, value in identity['files'].items():
             actual[str(root / name)] = value
-        roots[label] = {'root': str(root), 'files': len(names), 'inventory_sha256': identity['files_sha256']}
+        roots[label] = {'root': str(root), 'files': len(names), 'inventory_sha256': identity['files_sha256'],
+                        **({'hub_alias': alias} if alias_before is not None else {})}
     require({p['path']: {'bytes': p['bytes'], 'sha256': p['sha256']} for p in pins} == actual,
             'Backbone pins do not cover the complete current snapshots')
     return {'family': family, 'snapshots': roots, 'all_file_sha256_verified': True}
@@ -158,9 +197,16 @@ def _checkpoint_rows(files, *, resume):
     return {row['path']: row for row in files}
 
 
-def _history_gate(task, environment):
+def _history_gate(task, environment, plan=None):
     require(task['id'] in environment['history'], 'Historical candidate is unbound; never restart from zero')
     h = environment['history'][task['id']]
+    modern = bool(environment.get('execution_profile'))
+    if modern:
+        from .suite_bindings import verify_history_binding
+        require(plan is not None, 'Scientific plan required for modern history acceptance')
+        verify_history_binding(plan, task, h, verify_files=True)
+        if task['kind'] == 'evaluate':
+            return {'mode': 'accepted', 'evaluation': runner.verify_pin(h['evaluation']), 'production_evidence': True}
     require(h.get('mode') in {'accepted', 'resume'}, 'Unsupported historical reuse mode')
     for name in ('acceptance', 'config', 'frozen_source_manifest'):
         runner.verify_pin(h[name])
@@ -172,8 +218,13 @@ def _history_gate(task, environment):
             'History audit does not bind exact recovery/accepted inputs')
     for item in audit['evidence']:
         runner.verify_pin(item)
-    require(runner.read(h['config']['path']) == runner.read(Path(environment['experiment_root']) / task['config']['path']),
-            'Historical recipe changed')
+    historical_recipe = runner.read(h['config']['path'])
+    declared_recipe = runner.read(Path(environment['experiment_root']) / task['config']['path'])
+    if modern:
+        from .suite_actions import verify_historical_recipe
+        verify_historical_recipe(historical_recipe, declared_recipe)
+    else:
+        require(historical_recipe == declared_recipe, 'Historical recipe changed')
     from .formal_integrity import verify_frozen_source_manifest
     source = verify_frozen_source_manifest(runner.safe(h['source_root']), Path(h['frozen_source_manifest']['path']),
                                            h['frozen_source_manifest']['sha256'])
@@ -224,13 +275,14 @@ def _history_gate(task, environment):
     require(all(type(contract.get(k)) is type(v) and contract.get(k) == v for k, v in expected_contract.items()),
             'Historical training provenance differs from source/data/config/DDP contract')
     if resume:
-        step = task['historical_hint']['checkpoint_step']
+        step = h['checkpoint_step'] if modern else task['historical_hint']['checkpoint_step']
         state = metadata['trainer_state.json']
         require(type(state.get('global_step')) is int and state['global_step'] == step
                 and type(state.get('max_steps')) is int and state['max_steps'] == task['expected_optimizer_steps'],
                 'Historical Trainer state differs from the exact recovery budget')
-        require(audit.get('optimizer_step') == step and audit.get('exact_resume_accepted') is True,
-                'Recovery audit incomplete')
+        require(audit.get('optimizer_step') == step and
+                (audit.get('resume_metadata_verified') is True and audit.get('optimizer_scheduler_rng_deserialized') is False
+                 if modern else audit.get('exact_resume_accepted') is True), 'Recovery metadata audit incomplete')
         if not remote:
             from .resume_checkpoint import verify_resume_checkpoint
             verify_resume_checkpoint(root, world_size=8, expected_max_steps=task['expected_optimizer_steps'])
@@ -276,7 +328,49 @@ def _cached_media(data):
     return result
 
 
+def _remote_benchmark_gate(data, benchmark, frames, environment, *, store=None):
+    """Verify complete bucket caches without keeping every frame shape in home."""
+    from . import suite_media as media
+    from PIL import Image
+    import io
+    rows, binding, inventory, actual_frames, raw, keys = media._bound_cache_inventory(data['cache'])
+    require(actual_frames == frames and binding['dataset'] == ('videomme' if benchmark == 'videomme899' else 'tempcompass'),
+            'Remote cache benchmark or frame count differs')
+    require(type(data['max_bytes']) is int and 0 < sum(item['bytes'] for item in inventory) <= data['max_bytes'],
+            'Remote cache exceeds its future home hydration reservation')
+    store = store or media.OSSStore(environment['tools']['oss_config'], allowed_prefix=media.PROJECT_PREFIX + 'suite-media-readonly/')
+    for archive in binding['archives']:
+        media.verify_archive(store, archive)
+    if data['cache']['kind'] == 'suite':
+        prefix = data['cache']['prefix']
+        metadata = (('plan', 'BUILD_PLAN.json'), ('manifest', 'manifest.jsonl'),
+                    ('receipt', 'FRAME_CACHE_RECEIPT.json'), ('complete', 'CACHE_COMPLETE.json'))
+        for key, filename in metadata:
+            require(store.get(prefix + filename, len(raw[key])) == raw[key], 'Remote cache metadata changed')
+        expected = {prefix + filename for _, filename in metadata} | {item['key'] for item in inventory}
+        expected |= {prefix + 'entries/' + media.digest(source['media_identity'].encode()) + '.json' for source in binding['sources']}
+        require(set(store.keys(prefix)) == expected, 'Exact remote cache object inventory changed')
+    for item in inventory:
+        payload = store.get(item['key'], item['bytes'])
+        require(payload is not None and len(payload) == item['bytes'] and media.digest(payload) == item['sha256'],
+                'Remote PNG full-GET SHA differs')
+        with Image.open(io.BytesIO(payload)) as image:
+            require(image.format == 'PNG' and image.mode == 'RGB' and image.size == (item['width'], item['height']),
+                    'Remote PNG shape or color mode differs')
+            image.load()
+            require(media.digest(image.tobytes()) == item['rgb_sha256'], 'Remote decoded RGB SHA differs')
+    for key in keys:
+        require(media._read_pin(data['cache'][key]) == raw[key], 'Cache metadata changed during remote readback')
+    return {'qa': len(rows), 'frames': frames, 'acceptance': data['cache'].get('complete', data['cache']['receipt']),
+        'cache_binding_sha256': runner.digest(data['cache']), 'frame_objects': len(inventory),
+        'frame_bytes': sum(item['bytes'] for item in inventory), 'all_png_full_get_and_rgb_verified': True,
+        'local_media_created': False, 'local_hydration_still_required_before_evaluation': True,
+        'formal_evaluation_completed': False, 'network_or_hydration_requested': True}
+
+
 def _benchmark_gate(data, benchmark, frames, environment, *, prepare_media=False):
+    if environment.get('execution_profile') and data.get('cache'):
+        return _remote_benchmark_gate(data, benchmark, frames, environment)
     if 'cache' in data:
         if prepare_media:
             from .suite_media import hydrate_frame_cache, OSSStore, PROJECT_PREFIX
@@ -317,7 +411,7 @@ def _initial_storage_gate(plan, binding, environment, estimates):
             continue
         history = environment['history'].get(task['id'], {})
         if history.get('checkpoint'):
-            checkpoint = 'final' if history['mode'] == 'accepted' else 'checkpoint-' + str(task['historical_hint']['checkpoint_step'])
+            checkpoint = 'final' if history['mode'] == 'accepted' else 'checkpoint-' + str(history.get('checkpoint_step', task['historical_hint'].get('checkpoint_step')))
             target = runner.safe(environment['run_root']) / (environment['suite_id'] + '--' + task['id']) / 'training' / checkpoint
             for row in history['checkpoint']['files']:
                 retention.relative(row['path'])
@@ -330,6 +424,8 @@ def _initial_storage_gate(plan, binding, environment, estimates):
             first_training_reserve = max(estimates[task['id']]['required_additional_bytes'],
                 binding['tasks'][task['id']]['reserve_bytes'], reserve_for(task, environment))
             break
+    if first_training_reserve is None and environment.get('execution_profile'):
+        first_training_reserve = max((command.get('reserve_bytes', 0) for command in binding['tasks'].values()), default=0)
     require(first_training_reserve is not None, 'No actual training task was costed')
     earliest = max(binding['startup']['reserve_bytes'], reserve_for(plan['tasks'][0], environment),
                    restored + first_training_reserve)
@@ -412,8 +508,11 @@ def inspect(plan, binding, environment, *, plan_sha256, binding_sha256, environm
                         'Bound training reserve understates the measured checkpoint peak')
             return value
         check('peak_capacity/' + task['id'], estimate)
-        if task['historical_hint']['status'] in {'resume_candidate', 'reuse_candidate'}:
-            check('historical_acceptance/' + task['id'], lambda t=task: _history_gate(t, environment))
+        if task['id'] in environment['history'] or task['historical_hint']['status'] in {'resume_candidate', 'reuse_candidate'}:
+            check('historical_acceptance/' + task['id'], lambda t=task: _history_gate(t, environment, plan))
+    for task in plan['tasks']:
+        if task['kind'] == 'evaluate' and task['id'] in environment['history']:
+            check('historical_acceptance/' + task['id'], lambda t=task: _history_gate(t, environment, plan))
     hydration_permitted = prepare_media and not failures
     for benchmark in ('videomme899', 'tempcompass_mc'):
         for frames in (4, 8, 16):

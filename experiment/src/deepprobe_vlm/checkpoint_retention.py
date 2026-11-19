@@ -341,16 +341,57 @@ def verify_archive(manifest, store):
     validate_manifest(manifest)
     expected = _objects(manifest)
     before = _listing(store, manifest["archive_prefix"])
+    retired = _retired_intermediate_objects(manifest, before)
+    expected = {uri: row for uri, row in expected.items() if uri not in retired}
     require(set(before) == set(expected), "archive object inventory is incomplete or has extras")
     for uri, row in expected.items():
         require(before[uri]["bytes"] == row["bytes"] and _object_digest(store, uri) == {
             "bytes": row["bytes"], "sha256": row["sha256"]}, "full object GET/SHA differs")
     after = _listing(store, manifest["archive_prefix"])
     require(before == after, "archive prefix changed during full verification")
-    return {"status": "FULL_ARCHIVE_GET_SHA256_VERIFIED", "utc": utc(),
+    return {"status": "FULL_ARCHIVE_GET_SHA256_VERIFIED" if not retired else
+            "LIVE_ARCHIVE_GET_SHA256_VERIFIED_WITH_RETIRED_INTERMEDIATES", "utc": utc(),
             "manifest_sha256": digest(manifest), "archive_prefix": manifest["archive_prefix"],
             "objects": len(expected), "bytes": sum(r["bytes"] for r in expected.values()),
-            "stable_listing_sha256": digest(before), "all_objects_full_get_sha256": True}
+            "stable_listing_sha256": digest(before), "all_objects_full_get_sha256": True,
+            **({'retired_intermediate_weight_objects': sorted(retired)} if retired else {})}
+
+
+def _retired_intermediate_objects(manifest, current):
+    """Only durable exact retirement intents may explain absent intermediate weights.
+
+    verify_archive still performs a fresh GET/SHA of every final checkpoint file.
+    A partial remote retirement is recoverable after its intent was persisted.
+    It does not excuse any absent final weight, result or other archive object.
+    """
+    directory = check_owner(manifest['owner']) / '.retention' / 'remote-retirement'
+    result = set()
+    if not directory.exists():
+        return result
+    for transaction in directory.iterdir():
+        safe(transaction)
+        if not transaction.is_dir() or not (transaction / 'PLAN.json').is_file():
+            continue
+        document = json.loads((transaction / 'PLAN.json').read_text())
+        if transaction.name != digest(document) or document.get('kind') != 'INTERMEDIATE_RETIREMENT':
+            continue
+        plan = document.get('plan', {})
+        if plan.get('manifest_sha256') != digest(manifest) or plan.get('manifest') != manifest:
+            continue
+        require(plan == plan_cleanup(manifest, {}, checkpoints=plan['checkpoints'])
+                and 'training/final' not in plan['checkpoints'], 'Invalid intermediate retirement plan')
+        proof = json.loads(safe(transaction / 'FINAL_BACKUP.json').read_text())
+        require(proof.get('status') == 'COMPLETED_FINAL_FULL_GET_SHA256_VERIFIED'
+                and proof.get('manifest_sha256') == digest(manifest)
+                and proof.get('checkpoint_inventory_sha256') == manifest['checkpoints']['training/final'],
+                'Intermediate retirement lacks its completed final recovery proof')
+        for row in plan['targets']:
+            intent = transaction / (digest(row) + '.intent.json')
+            uri = manifest['archive_prefix'] + row['path']
+            if uri not in current and intent.is_file():
+                require(json.loads(intent.read_text()) == row, 'Remote retirement intent differs')
+                result.add(uri)
+    return result
 
 
 def archive_and_verify(manifest, store, *, guard):
@@ -421,7 +462,20 @@ def plan_cleanup(manifest, consumer_receipts, *, checkpoints=None):
             "reclaim_bytes": sum(r["bytes"] for r in targets)}
 
 
-def cleanup(plan, store, *, guard, execute=False):
+def cleanup(plan, store, *, guard, execute=False, reference_guard=None):
+    """Keep the shared consumer/recovery registry locked throughout deletion.
+
+    Legacy serial callers rely on the manifest's full declared-consumer check.
+    Parallel suite callers additionally provide the shared registry guard. The
+    backup remains mandatory in both modes: _cleanup does a fresh full OSS GET.
+    """
+    if reference_guard is None:
+        return _cleanup(plan, store, guard=guard, execute=execute)
+    with reference_guard():
+        return _cleanup(plan, store, guard=guard, execute=execute)
+
+
+def _cleanup(plan, store, *, guard, execute=False):
     """Delete only named weights, after fresh archive/consumer checks; resumable per file.
 
     All local files are checked before the first unlink. A durable per-file intent
@@ -564,3 +618,152 @@ def restore_checkpoint(manifest, checkpoint, destination, store, *, execute=Fals
                "files": rows, "bytes": sum(r["bytes"] for r in rows)}
     write_once(destination / "RESTORED.json", receipt)
     return receipt
+
+
+def verify_external_weight_backup(plan, backup, store):
+    """Verify every weight at a different exact archive prefix by a full GET.
+
+    An upload receipt, ETag, HEAD response or an earlier successful verification
+    is insufficient. The proof is rebuilt immediately before remote deletion.
+    """
+    require(isinstance(backup, dict) and set(backup) == {'prefix', 'files'}, 'Exact external backup required')
+    prefix = backup['prefix']
+    require(isinstance(prefix, str) and prefix.startswith(('oss://', 'modelscope://datasets/')) and prefix.endswith('/')
+            and '..' not in prefix.split('/') and '\\' not in prefix
+            and not any(c.isspace() for c in prefix), 'Unsafe external backup prefix')
+    source = plan['manifest']['archive_prefix']
+    require(not prefix.startswith(source) and not source.startswith(prefix),
+            'Backup must lie outside the deletion prefix')
+    require(backup['files'] == plan['targets'], 'Backup does not cover the exact selected weight inventory')
+    before = _listing(store, prefix)
+    for row in plan['targets']:
+        uri = prefix + row['path']
+        require(uri in before and before[uri]['bytes'] == row['bytes']
+                and _object_digest(store, uri) == {'bytes': row['bytes'], 'sha256': row['sha256']},
+                'External backup is missing or differs by full GET/SHA')
+    require(before == _listing(store, prefix), 'External backup changed during verification')
+    return {'status': 'EXTERNAL_WEIGHT_BACKUP_FULL_GET_SHA256_VERIFIED', 'utc': utc(),
+            'backup_prefix': prefix, 'checkpoint_manifest_sha256': digest(plan['manifest']),
+            'files': plan['targets']}
+
+
+def cleanup_remote_weights(plan, store, *, backup, backup_store, guard,
+                           reference_guard, execute=False):
+    """Remove only exact consumed weight objects while retaining another copy.
+
+    This is intentionally unavailable to adapters without conditional exact
+    object deletion. It never deletes result/config/manifest objects, aborts
+    unknown multipart uploads, or performs a recursive prefix deletion.
+    """
+    manifest = validate_manifest(plan['manifest'])
+    require(plan == plan_cleanup(manifest, plan['consumer_receipts'], checkpoints=plan['checkpoints']),
+            'Remote cleanup plan changed')
+    require(callable(reference_guard), 'Shared consumer/recovery reference guard required')
+    if not execute:
+        return {'status': 'REMOTE_WEIGHT_CLEANUP_PLAN_ONLY', 'plan_sha256': digest(plan),
+                'files_deleted': False, 'requires_external_backup': True, 'objects': [
+                    manifest['archive_prefix'] + row['path'] for row in plan['targets']]}
+    require(callable(getattr(store, 'delete_exact_verified', None)),
+            'Verified exact-object deletion unsupported; retain the archive')
+    owner = manifest['owner']
+    with reference_guard(), run_lock(owner):
+        _quiescent(owner, guard)
+        verify_training_completion(manifest)
+        verify_consumers(manifest, plan['consumer_receipts'], plan['checkpoints'])
+        external = verify_external_weight_backup(plan, backup, backup_store)
+        root = check_owner(owner)
+        transaction = root / '.retention' / 'remote-cleanup' / digest({'plan': plan, 'backup': backup})
+        transaction.mkdir(parents=True, exist_ok=True)
+        write_once(transaction / 'PLAN.json', {'plan': plan, 'backup': backup})
+        write_once(transaction / ('backup-' + uuid.uuid4().hex + '.json'), external)
+        removed = []
+        for row in plan['targets']:
+            uri = manifest['archive_prefix'] + row['path']
+            intent = transaction / (digest(row) + '.intent.json')
+            existing = _listing(store, manifest['archive_prefix'])
+            if uri not in existing:
+                require(intent.is_file() and json.loads(intent.read_text()) == row,
+                        'Remote weight missing without durable deletion intent')
+                continue
+            require(_object_digest(store, uri) == {'bytes': row['bytes'], 'sha256': row['sha256']},
+                    'Remote weight differs before conditional deletion')
+            # Re-read the independent copy immediately before each destructive
+            # request, and keep the shared reference lock through the request.
+            require(_object_digest(backup_store, backup['prefix'] + row['path']) == {
+                'bytes': row['bytes'], 'sha256': row['sha256']}, 'Last recoverable backup changed')
+            _quiescent(owner, guard)
+            write_once(intent, row)
+            store.delete_exact_verified(uri, {**existing[uri], 'sha256': row['sha256']})
+            require(uri not in _listing(store, manifest['archive_prefix']), 'Deleted object remains present')
+            removed.append(uri)
+        result = {'status': 'CONSUMED_REMOTE_WEIGHTS_REMOVED_WITH_EXTERNAL_BACKUP',
+                  'plan_sha256': digest(plan), 'backup_verification': external,
+                  'removed_this_invocation': removed, 'results_and_non_weights_preserved': True}
+        if (transaction / 'DELETION.json').exists():
+            return {**json.loads((transaction / 'DELETION.json').read_text()),
+                    'receipt': file_pin(transaction / 'DELETION.json')}
+        write_once(transaction / 'DELETION.json', result)
+        return {**result, 'receipt': file_pin(transaction / 'DELETION.json')}
+
+
+def retire_intermediate_remote_weights(plan, store, *, guard, reference_guard, execute=False):
+    """Retire obsolete saves only after successful final recovery is verified.
+
+    A failed/incomplete stage never qualifies. Its latest resumable checkpoint
+    must remain. Successful stages can shed intermediate optimizer/weight saves
+    while the final checkpoint and all result/config/audit objects are retained.
+    """
+    manifest = validate_manifest(plan['manifest'])
+    require(plan == plan_cleanup(manifest, {}, checkpoints=plan['checkpoints'])
+            and 'training/final' not in plan['checkpoints'], 'Only completed-stage intermediates can retire')
+    require(callable(reference_guard), 'Shared consumer/recovery reference guard required')
+    if not execute:
+        return {'status': 'INTERMEDIATE_REMOTE_RETIREMENT_PLAN_ONLY', 'plan_sha256': digest(plan),
+                'files_deleted': False, 'reclaim_bytes': plan['reclaim_bytes']}
+    require(callable(getattr(store, 'delete_exact_verified', None)), 'Exact-object deletion adapter required')
+    owner = manifest['owner']
+    with reference_guard(), run_lock(owner):
+        _quiescent(owner, guard)
+        verify_training_completion(manifest)
+        verify_consumers(manifest, {}, plan['checkpoints'])
+        final_rows = [r for r in manifest['files'] if r['path'].startswith('training/final/')]
+        require(final_rows, 'A complete final checkpoint is required to retire intermediate saves')
+        final_before = _listing(store, manifest['archive_prefix'])
+        for row in final_rows:
+            uri = manifest['archive_prefix'] + row['path']
+            require(uri in final_before and _object_digest(store, uri) == {
+                'bytes': row['bytes'], 'sha256': row['sha256']}, 'Completed final recovery copy is missing or corrupt')
+        require(final_before == _listing(store, manifest['archive_prefix']), 'Archive changed during final verification')
+        document = {'kind': 'INTERMEDIATE_RETIREMENT', 'plan': plan}
+        transaction = check_owner(owner) / '.retention' / 'remote-retirement' / digest(document)
+        transaction.mkdir(parents=True, exist_ok=True)
+        write_once(transaction / 'PLAN.json', document)
+        write_once(transaction / 'FINAL_BACKUP.json', {'status': 'COMPLETED_FINAL_FULL_GET_SHA256_VERIFIED',
+            'manifest_sha256': digest(manifest),
+            'checkpoint_inventory_sha256': manifest['checkpoints']['training/final']})
+        final_path = transaction / 'DELETION.json'
+        removed = []
+        for row in plan['targets']:
+            uri = manifest['archive_prefix'] + row['path']
+            intent = transaction / (digest(row) + '.intent.json')
+            existing = _listing(store, manifest['archive_prefix'])
+            if uri not in existing:
+                require(intent.is_file() and json.loads(intent.read_text()) == row,
+                        'Missing remote intermediate has no retirement intent')
+                continue
+            require(_object_digest(store, uri) == {'bytes': row['bytes'], 'sha256': row['sha256']},
+                    'Intermediate archive bytes differ before retirement')
+            _quiescent(owner, guard)
+            write_once(intent, row)
+            store.delete_exact_verified(uri, {**existing[uri], 'sha256': row['sha256']})
+            require(uri not in _listing(store, manifest['archive_prefix']), 'Remote intermediate remains after deletion')
+            removed.append(uri)
+        live = verify_archive(manifest, store)
+        if final_path.exists():
+            return {**json.loads(final_path.read_text()), 'receipt': file_pin(final_path)}
+        result = {'status': 'OBSOLETE_INTERMEDIATE_REMOTE_WEIGHTS_RETIRED', 'plan_sha256': digest(plan),
+                  'removed_this_invocation': removed, 'reclaimed_target_bytes': plan['reclaim_bytes'],
+                  'remaining_archive_verification': live, 'final_recovery_copy_preserved': True,
+                  'results_and_non_weights_preserved': True}
+        write_once(final_path, result)
+        return {**result, 'receipt': file_pin(final_path)}

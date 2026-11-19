@@ -52,7 +52,9 @@ Smol a5 已从 checkpoint300 实际续训至日志 **354/718 步**，新增 54 �
 
 a3、a4 的失败归档均已独立验收；a5 的提交回执原子发布机制已通过实际 GPU 握手，八卡硬件检查、八 rank BF16/NCCL 与训练前预检也通过。实际续训已得到日志和恢复回执支持；完整训练、恢复数值等价性及新模型质量仍未验收。
 
-CUDA QA a3 已通过八卡启动自检、真实 BF16/FP32 池化数值与单算子计时检查，并完成独立归档验收。这些结果覆盖单卡合成输入的池化算子；完整模型、分布式训练及 H20/B300 对比的速度结论仍待测量。[完整串行矩阵](experiment/docs/EXPERIMENT_SUITE.md)包含 185 个计划任务，尚未提交；单独的 Smol 恢复不等于启动整套实验。
+CUDA QA a3 已通过八卡启动自检、真实 BF16/FP32 池化数值与单算子计时检查，并完成独立归档验收。这些结果覆盖单卡合成输入的池化算子；完整模型、分布式训练及 H20/B300 对比的速度结论仍待测量。[完整实验矩阵](experiment/docs/EXPERIMENT_SUITE.md)包含 185 个计划任务，尚未提交。新增的 [1–4 个 B300 节点运行入口](experiment/docs/operations/REMAINING_SUITE_WORKFLOW.md)支持 normal 优先级、历史结果复用、原生续训、评测和备份后清理；本课题 `/home` 与 OSS 分别使用 150 GB 共享预算。
+
+11 月 19 日 12:47:41 UTC 的存储盘点为 `/home` 约 60.51 GB、OSS 约 1.023 TB。旧 P0 权重的精确清理方案已准备，但实际删除返回 `403 AccessDenied`，确认回收 0 B；整套新实验仍受 OSS 容量门槛阻止。需要先开通该项目 OSS 前缀的 `DeleteObject` 权限并完成清理。代码与 CPU 测试通过不等于 GPU 准入或实验完成。
 
 训练恢复现在预检 optimizer/scheduler/RNG 等必需状态；推理新增显式启用的最后位置 logits 投影、Triton 融合空间池化和独立 profiler 诊断。默认训练及参考评测保持原路径。实现范围、已验收的 CUDA 证据与待补的模型测量见[优化记录](experiment/docs/OPTIMIZATION_STATUS.md)。选择性视觉刷新、token compaction、跨轮 KV 共享和 TTT 尚未实现；新增池化核不等于这些研究机制已经完成。
 

@@ -3,12 +3,16 @@
 These tests do not attest real models, metrics, a scheduler, or a remote archive.
 """
 from copy import deepcopy
+from contextlib import contextmanager
 import hashlib
 import json
+import os
 from pathlib import Path
+from types import SimpleNamespace
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from deepprobe_vlm import experiment_suite
 from deepprobe_vlm import suite_actions as actions
@@ -38,6 +42,11 @@ class MemoryStore:
         assert hashlib.sha256(value).hexdigest() == sha256
         self.objects[uri] = value
         self.puts.append(uri)
+
+    def delete_exact_verified(self, uri, expected):
+        value = self.objects[uri]
+        assert len(value) == expected['bytes'] and hashlib.sha256(value).hexdigest() == expected['sha256']
+        del self.objects[uri]
 
 
 class ActionRetentionTest(unittest.TestCase):
@@ -202,6 +211,125 @@ class ActionRetentionTest(unittest.TestCase):
         with self.assertRaisesRegex((ValueError, FileNotFoundError), "recorded deletion intent|No such file"):
             self.worker.archive(self.tasks[self.archive])
         self.assertEqual(actions.inventory(Path(trained["checkpoint"])), self.old_files)
+
+    def test_v2_consumed_final_backs_up_then_cleans_both_domains_and_resumes(self):
+        from deepprobe_vlm.suite_storage import SharedBudget
+        from test_checkpoint_backup import FakeHub
+        configuration = {'schema_version': 2, 'roots': [str(self.project), str(self.staging)],
+            'ledger_root': str(self.project / 'shared-storage'), 'home_limit_bytes': 150_000_000_000,
+            'oss_limit_bytes': 150_000_000_000, 'home_safety_bytes': 1_000_000,
+            'oss_safety_bytes': 1_000_000, 'free_guard_bytes': 0,
+            'oss_prefixes': [self.environment['archive_root'] + '/']}
+        self.worker.env['storage'] = configuration
+        budget = SharedBudget(configuration, lambda: {'complete': True, 'multipart': [],
+                              'objects': self.store.list_prefix(configuration['oss_prefixes'][0])})
+        self.worker._shared_budget = budget
+        token = budget.reserve({'worker': 'synthetic-worker'}, 1_000_000, 1_000_000)
+        api = FakeHub()
+        @contextmanager
+        def configured(state):
+            yield api
+        with patch.dict(os.environ, {'DP_SUITE_STORAGE_TOKEN': token,
+                                     'DP_SUITE_STORAGE_LEDGER': configuration['ledger_root']}), \
+             patch('deepprobe_vlm.checkpoint_backup.configured_api', configured):
+            trained = self.execute(self.stage)
+            self.execute(self.archive)
+            self.accept_consumer()
+            self.accept_fixture_dependency('archive__ouro_r1_s17__results')
+            original_delete = self.store.delete_exact_verified
+            interrupted = []
+            def delete_then_interrupt(uri, expected):
+                original_delete(uri, expected)
+                if not interrupted:
+                    interrupted.append(uri)
+                    raise RuntimeError('synthetic interruption after exact remote deletion')
+            self.store.delete_exact_verified = delete_then_interrupt
+            with self.assertRaisesRegex(RuntimeError, 'synthetic interruption'):
+                self.worker.cleanup(self.tasks[self.cleanup])
+            final = Path(trained['checkpoint'])
+            self.assertFalse((final / 'projector.safetensors').exists())
+            self.assertTrue(any(name.endswith('projector.safetensors') for name in api.objects))
+            self.store.delete_exact_verified = original_delete
+            self.worker.resume = True
+            result = self.worker.cleanup(self.tasks[self.cleanup])
+            statuses = [runner.read(item['path'])['status'] for item in result['outputs']]
+            self.assertIn('MODELSCOPE_COMPLETE_FINAL_FULL_GET_SHA256_VERIFIED', statuses)
+            self.assertIn('CONSUMED_REMOTE_WEIGHTS_REMOVED_WITH_EXTERNAL_BACKUP', statuses)
+            self.assertTrue(all(not uri.endswith('.safetensors') for uri in self.store.objects))
+            self.assertTrue((final / 'deepprobe_config.json').is_file())
+            self.assertEqual(actions.inventory(self.old), self.old_files)
+
+    def test_torn_checkpoint_resident_bytes_do_not_reduce_future_training_reservation(self):
+        task = self.tasks[self.stage]
+        family = next(model['family'] for model in self.plan['models'] if model['id'] == task['model_id'])
+        source_pin = self.environment['source_files'][0]
+        self.worker.env['assets']['backbones'] = {family: {'files': [source_pin],
+            'language_root': '/synthetic/language', 'vision_root': '/synthetic/vision'}}
+        output = self.project / 'torn-stage'
+        (output / 'checkpoint-3').mkdir(parents=True)
+        (output / 'checkpoint-3' / 'optimizer.pt').write_bytes(b'x' * 900)
+        reserved = []
+        self.worker.budget = lambda count: reserved.append(count) or {'synthetic': True}
+        estimator = SimpleNamespace(estimate_stage_storage=lambda *args: {'required_additional_bytes': 1000})
+        with patch.object(actions, 'load_operation', return_value=estimator):
+            result = self.worker.training_storage(task, output)
+        self.assertEqual(result['owned_stage_resident_bytes'], 900)
+        self.assertEqual(reserved, [1000])
+
+    def test_modern_history_restores_reviewed_cp350_not_stale_cp300_without_numerical_claim(self):
+        task = next(t for t in self.plan['tasks'] if t['id'] == 'train__smollm2_s29__alignment')
+        self.assertEqual(task['historical_hint']['checkpoint_step'], 300)
+        declared = runner.read(self.experiment / task['config']['path'])
+        historical = deepcopy(declared)
+        historical.pop('experiment_protocol', None)
+        historical['model']['language_model'] = '/synthetic/relocated/smollm2'
+        config = self.write('pins/smol-history.json', json.dumps(historical))
+        old = self.project / 'historical-smol' / 'checkpoint-350'
+        names = {'deepprobe_config.json', 'training_provenance.json', 'projector.safetensors',
+                 'language_model/config.json', 'vision_model/config.json', 'language_model/model.safetensors',
+                 'vision_model/model.safetensors', 'tokenizer/tokenizer_config.json',
+                 'image_processor/preprocessor_config.json', 'training_args.bin', 'trainer_state.json',
+                 'optimizer.pt', 'scheduler.pt'} | {f'rng_state_{i}.pth' for i in range(8)}
+        for name in names:
+            path = old / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(json.dumps({'global_step': 350, 'max_steps': 718}).encode()
+                             if name == 'trainer_state.json' else b'synthetic-state')
+        files = actions.inventory(old)
+        prefix = 'oss://ss-devbox-stream/tiny-suite-fixture/runs/smol-a3/training/checkpoint-350/'
+        for row in files:
+            self.store.objects[prefix + row['path']] = (old / row['path']).read_bytes()
+        source = self.environment['source_files'][0]
+        frozen = self.environment['assets']['training']['frozen_source_manifest']
+        value = {'mode': 'resume', 'checkpoint_step': 350, 'source_root': str(self.experiment), 'config': config,
+                 'frozen_source_manifest': frozen, 'checkpoint': {'path': str(old), 'files': files, 'oss_prefix': prefix}}
+        acceptance = {'schema_version': 1, 'status': 'SUITE_HISTORY_ACCEPTED', 'production_evidence': True,
+            'task_id': task['id'], 'task_sha256': runner.digest(task), 'mode': 'resume', 'evidence': [source],
+            'config_sha256': config['sha256'], 'frozen_source_manifest_sha256': frozen['sha256'],
+            'checkpoint_inventory_sha256': runner.digest(files), 'checkpoint_oss_prefix': prefix,
+            'optimizer_step': 350, 'source_root': str(self.experiment), 'archive_verified': True,
+            'resume_metadata_verified': True, 'optimizer_scheduler_rng_deserialized': False}
+        value['acceptance'] = self.write('pins/smol-history-acceptance.json', json.dumps(acceptance))
+        self.worker.env['history'][task['id']] = value
+        self.worker.env['execution_profile'] = {'schema_version': 2, 'fleet_id': 'tiny-suite', 'priority': 'normal',
+            'gpu_product': 'NVIDIA-B300', 'node_selector': {'sslaunch-pool': 'stream',
+                'aliyun.accelerator/nvidia_name': 'NVIDIA-L20D'}, 'workers': [{'worker_id': 'worker-01',
+                'job_name': 'jinhaopeng-dpvlm-fixture', 'namespace': 'default'}]}
+        self.worker.env['tools'] = {'ossutil': '/bin/true', 'oss_config': str(self.project / 'fixture-config')}
+        owner = self.worker.owner(task['id'])
+        with patch('deepprobe_vlm.checkpoint_store.OssutilStore', return_value=self.store):
+            _, target = self.worker.history(task, owner)
+        self.assertEqual(target.name, 'checkpoint-350')
+        self.assertEqual(actions.inventory(target), files)
+        self.assertNotIn('exact_resume_accepted', acceptance)
+        from deepprobe_vlm.resume_checkpoint import verify_resume_checkpoint
+        observed = verify_resume_checkpoint(target, world_size=8, expected_max_steps=718)
+        self.assertEqual(observed['optimizer_step'], 350)
+        self.assertEqual(observed['validation_scope'], 'file_presence_and_trainer_state_structure_only')
+        changed = deepcopy(historical)
+        changed['training']['learning_rate'] *= 2
+        with self.assertRaisesRegex(ValueError, 'effective model/training recipe'):
+            actions.verify_historical_recipe(changed, declared)
 
 
 class TerminalJobTest(unittest.TestCase):

@@ -40,11 +40,16 @@ def load_yaml(path):
     return documents[0]
 
 
-def runner_argv(environment, plan_pin, binding_pin, state_root, *, resume=False, relocation_pin=None):
+def runner_argv(environment, plan_pin, binding_pin, state_root, *, resume=False, relocation_pin=None, worker_id=None):
     argv = [environment['python'], '-B', '-m', 'deepprobe_vlm.suite_runner',
             '--plan', plan_pin['path'], '--plan-sha256', plan_pin['sha256'],
             '--binding', binding_pin['path'], '--binding-sha256', binding_pin['sha256'],
             '--state-root', str(safe(state_root)), '--execute']
+    if environment.get('execution_profile'):
+        from .suite_fleet import worker_identity
+        worker_identity(environment['execution_profile'], worker_id)
+        require(not resume and not relocation_pin, 'Fleet claims require explicit recovery; automatic relocation is disabled')
+        argv += ['--worker-id', worker_id]
     require(not relocation_pin or resume, 'Relocation requires explicit resume')
     argv += ['--resume'] if resume else []
     if relocation_pin:
@@ -52,16 +57,26 @@ def runner_argv(environment, plan_pin, binding_pin, state_root, *, resume=False,
     return argv
 
 
-def validate_job(job, environment, argv):
+def validate_job(job, environment, argv, *, worker_id=None, binding_sha256=None):
     require(job.get('apiVersion') == 'kubeflow.org/v1' and job.get('kind') == 'PyTorchJob',
             'Reviewed YAML must be one PyTorchJob')
     metadata = job.get('metadata', {})
     identity = environment['allocation_identity']
+    if environment.get('execution_profile'):
+        from .suite_fleet import worker_identity, verify_job_identity
+        identity = worker_identity(environment['execution_profile'], worker_id)
+        verify_job_identity(job, environment['execution_profile'], worker_id, binding_sha256)
+        pod_labels = job['spec']['pytorchReplicaSpecs']['Master']['template'].get('metadata', {}).get('labels', {})
+        require(pod_labels.get('pod-group.scheduling.sigs.k8s.io/name') == identity['job_name']
+                and pod_labels.get('pod-group.scheduling.sigs.k8s.io/min-available') == '1', 'Worker gang identity must be its exact single-node Job')
+        require(all(pod_labels.get(key, identity['job_name']) == identity['job_name'] for key in
+                    ('training.kubeflow.org/job-name', 'pytorch-job-name', 'job-name')), 'Stale Pod Job identity label')
     require(metadata.get('name') == identity['job_name'] and metadata.get('namespace') == identity['namespace']
             and not metadata.get('generateName') and not metadata.get('uid')
             and not metadata.get('resourceVersion') and 'status' not in job,
             'Reviewed YAML needs the exact fresh name/namespace and no server state')
-    allocation_contract(job)
+    if not environment.get('execution_profile'):
+        allocation_contract(job)
     replica = job['spec']['pytorchReplicaSpecs']['Master']
     spec = replica['template']['spec']
     container = spec['containers'][0]
@@ -80,6 +95,14 @@ def validate_job(job, environment, argv):
     expected = {**environment['runtime_environment'], **runner.OFFLINE,
                 'PYTHONPATH': str(safe(environment['experiment_root']) / 'src')}
     require(all(env.get(key) == value for key, value in expected.items()), 'Offline/import runtime environment differs')
+    if environment.get('execution_profile'):
+        machine = environment.get('machine_identity', {})
+        require(set(machine) == {'uid', 'gid'} and all(type(machine[k]) is int and machine[k] > 0 for k in machine),
+                'A frozen non-root machine identity is required')
+        require(env == expected, 'Fleet container environment has unreviewed additional values')
+        security = {**spec.get('securityContext', {}), **container.get('securityContext', {})}
+        require(security.get('runAsUser') == machine['uid'] and security.get('runAsGroup') == machine['gid']
+                and security.get('runAsNonRoot') is True, 'Worker must run as the exact project UID/GID')
     require(spec.get('restartPolicy', 'Never') == 'Never', 'Pod must not restart automatically')
     return job
 
@@ -183,9 +206,19 @@ class SuiteLauncher:
                 require(completed.get('plan_sha256') == self.pins['plan']['sha256']
                         and completed.get('binding_sha256') in accepted, 'Resume task journal differs')
         else:
-            require(not self.state.exists(), 'Existing suite state requires explicit resume')
+            if getattr(self, 'allow_existing_fleet_state', False) and self.state.exists():
+                from .suite_fleet import FleetState
+                expected_state = FleetState(self.plan, self.binding, self.state, plan_sha256=self.pins['plan']['sha256'],
+                    binding_sha256=self.pins['binding']['sha256']).identity
+                require(read(self.state / 'SUITE_IDENTITY.json') == expected_state, 'Existing fleet state identity differs')
+                require(not list((self.state / 'tasks').glob('*/CLAIM.json'))
+                        and not list((self.state / 'invocations').glob('*/STOPPED.json')),
+                        'Partial fleet continuation requires waiting workers with no started tasks or failures')
+            else:
+                require(not self.state.exists(), 'Existing suite state requires explicit resume')
         validate_job(self.job, self.env, runner_argv(self.env, self.pins['plan'], self.pins['binding'], self.state,
-                                                    resume=self.resume, relocation_pin=self.relocation_pin))
+                                                    resume=self.resume, relocation_pin=self.relocation_pin, worker_id=getattr(self, "worker_id", None)),
+                     worker_id=getattr(self, "worker_id", None), binding_sha256=self.pins["binding"]["sha256"])
         preflight = read(self.pins['preflight']['path'])
         require(preflight.get('status') == 'SUITE_CPU_ADMITTED' and preflight.get('failures') == []
                 and preflight.get('source_identity_sha256') == source

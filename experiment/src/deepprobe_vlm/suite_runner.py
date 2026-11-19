@@ -1,4 +1,4 @@
-"""Durable serial execution on one already allocated eight-GPU node.
+"""Durable dependency execution on already allocated eight-GPU worker nodes.
 
 The scientific plan and the machine binding are separate, byte-pinned inputs.
 This module never submits a scheduler job, downloads assets or removes weights.
@@ -189,7 +189,7 @@ def _validate_receipt(spec, *, reuse=False):
 
 def _validate_command(command, *, startup=False):
     require(isinstance(command, dict), "command binding must be an object")
-    allowed = {"argv", "cwd", "inputs", "receipts", "timeout_seconds", "reserve_bytes", "mode", "resume"}
+    allowed = {"argv", "cwd", "inputs", "receipts", "timeout_seconds", "reserve_bytes", "oss_reserve_bytes", "mode", "resume"}
     require(set(command) <= allowed, "unknown command binding field")
     mode = "execute" if startup else command.get("mode")
     require(mode in {"execute", "reuse"}, "command mode must be execute or reuse")
@@ -210,6 +210,7 @@ def _validate_command(command, *, startup=False):
         _raw_path(command.get("cwd"))
     reserve = command.get("reserve_bytes", 0)
     require(type(reserve) is int and reserve >= 0, "nonnegative task storage reserve required")
+    require(type(command.get("oss_reserve_bytes", 0)) is int and command.get("oss_reserve_bytes", 0) >= 0, "invalid OSS reserve")
     timeout = command.get("timeout_seconds")
     require(timeout is None or type(timeout) is int and timeout > 0, "invalid task timeout")
     if "resume" in command:
@@ -227,12 +228,17 @@ def _validate_command(command, *, startup=False):
 def validate_binding(plan, binding, *, plan_sha256):
     require(isinstance(binding, dict) and set(binding) == {
         "schema_version", "suite_id", "plan_sha256", "allocation", "source_files", "storage",
-        "environment", "startup", "tasks"}, "invalid execution binding fields")
-    require(binding["schema_version"] == 1 and type(binding["schema_version"]) is int,
+        "environment", "startup", "tasks"} | ({"execution_profile"} if binding.get("schema_version") == 2 else set()), "invalid execution binding fields")
+    require(binding["schema_version"] in {1, 2} and type(binding["schema_version"]) is int,
             "unsupported suite execution binding")
     require(isinstance(binding["suite_id"], str) and ID.fullmatch(binding["suite_id"]), "invalid suite id")
     require(binding["plan_sha256"] == plan_sha256 and SHA.fullmatch(plan_sha256), "binding refers to another plan")
-    require(canonical(binding["allocation"]) == canonical(ALLOCATION), "only stream/low/one-node/eight-GPU/Never is allowed")
+    expected_allocation = ALLOCATION
+    if binding["schema_version"] == 2:
+        from .suite_fleet import validate_execution_profile, profile_allocation
+        validate_execution_profile(binding["execution_profile"], binding["suite_id"])
+        expected_allocation = profile_allocation(binding["execution_profile"])
+    require(canonical(binding["allocation"]) == canonical(expected_allocation), ("allocation differs from frozen execution policy" if binding["schema_version"] == 2 else "only stream/low/one-node/eight-GPU/Never is allowed"))
     sources = binding["source_files"]
     require(isinstance(sources, list) and sources, "complete source file pins required")
     require(len({item.get("path") for item in sources}) == len(sources), "duplicate source pin")
@@ -242,18 +248,22 @@ def validate_binding(plan, binding, *, plan_sha256):
         require(type(item["bytes"]) is int and item["bytes"] > 0
                 and isinstance(item["sha256"], str) and SHA.fullmatch(item["sha256"]), "invalid source pin")
     storage = binding["storage"]
-    require(isinstance(storage, dict) and set(storage) == {
-        "roots", "limit_bytes", "other_reserve_bytes", "free_guard_bytes"}, "invalid storage policy")
-    roots = storage["roots"]
-    require(isinstance(roots, list) and len(roots) == 2, "two accounted storage roots required")
-    roots = [safe(p) for p in roots]
-    require(roots[0] != roots[1] and not roots[0].is_relative_to(roots[1])
-            and not roots[1].is_relative_to(roots[0]), "storage roots must be disjoint")
-    require(type(storage["limit_bytes"]) is int and storage["limit_bytes"] == 99_000_000_000,
-            "the 99 GB storage limit cannot be relaxed")
-    require(type(storage["other_reserve_bytes"]) is int and storage["other_reserve_bytes"] >= 0
-            and type(storage["free_guard_bytes"]) is int and storage["free_guard_bytes"] >= 1_000_000_000,
-            "invalid additional storage reserve/free guard")
+    if binding["schema_version"] == 2:
+        from .suite_storage import validate_config
+        validate_config(storage)
+    else:
+        require(isinstance(storage, dict) and set(storage) == {
+            "roots", "limit_bytes", "other_reserve_bytes", "free_guard_bytes"}, "invalid storage policy")
+        roots = storage["roots"]
+        require(isinstance(roots, list) and len(roots) == 2, "two accounted storage roots required")
+        roots = [safe(p) for p in roots]
+        require(roots[0] != roots[1] and not roots[0].is_relative_to(roots[1])
+                and not roots[1].is_relative_to(roots[0]), "storage roots must be disjoint")
+        require(type(storage["limit_bytes"]) is int and storage["limit_bytes"] == 99_000_000_000,
+                "the 99 GB storage limit cannot be relaxed")
+        require(type(storage["other_reserve_bytes"]) is int and storage["other_reserve_bytes"] >= 0
+                and type(storage["free_guard_bytes"]) is int and storage["free_guard_bytes"] >= 1_000_000_000,
+                "invalid additional storage reserve/free guard")
     env = binding["environment"]
     require(isinstance(env, dict) and set(env) <= ENVIRONMENT_KEYS
             and all(isinstance(v, str) and "\x00" not in v for v in env.values()), "unreviewed runtime environment")
@@ -319,8 +329,26 @@ def verify_receipts(specs, context):
     return pins
 
 
+def machine_environment(binding):
+    argv = binding["startup"]["argv"]
+    require(argv.count("--environment") == 1 and argv.count("--environment-sha256") == 1,
+            "Parallel binding requires one pinned machine environment")
+    item = {"path": argv[argv.index("--environment") + 1],
+            "sha256": argv[argv.index("--environment-sha256") + 1]}
+    verify_pin(item)
+    return read(item["path"])
+
+
 def capacity(binding, reserve_bytes):
     policy = binding["storage"]
+    if policy.get("schema_version") == 2:
+        from .suite_storage import budget_for
+        environment = machine_environment(binding)
+        value = budget_for(environment).snapshot()
+        require(value["projected_bytes"]["home"] + reserve_bytes < policy["home_limit_bytes"]
+                and value["projected_bytes"]["oss"] < policy["oss_limit_bytes"],
+                "shared home or OSS storage capacity exceeded")
+        return value
     roots = [safe(p) for p in policy["roots"]]
     require(all(p.is_dir() for p in roots), "storage roots do not exist")
     require(roots[0].stat().st_dev == roots[1].stat().st_dev, "storage roots must share the budgeted filesystem")
@@ -411,7 +439,7 @@ def _await_group_exit(group):
     return not _group_exists(group)
 
 
-def run_command(command, binding, context, attempt_dir, *, argv=None, extra_inputs=()):
+def run_command(command, binding, context, attempt_dir, *, argv=None, extra_inputs=(), extra_environment=None, storage_snapshot=None):
     attempt_dir = safe(attempt_dir)
     expanded_argv = [expand(x, context) for x in (argv or command["argv"])]
     validate_argv(expanded_argv)
@@ -422,53 +450,39 @@ def run_command(command, binding, context, attempt_dir, *, argv=None, extra_inpu
     source_pins = verify_sources(binding)
     inputs = [verify_pin({**item, "path": expand(item["path"], context)})
               for item in [*command.get("inputs", []), *extra_inputs]]
-    storage = capacity(binding, command.get("reserve_bytes", 0))
+    storage = storage_snapshot if storage_snapshot is not None else capacity(binding, command.get("reserve_bytes", 0))
     intent = {"schema_version": 1, "status": "COMMAND_INTENT", "utc": utc(),
               "argv": expanded_argv, "cwd": str(cwd), "inputs": inputs,
               "source_identity_sha256": digest(source_pins), "storage": storage,
               "automatic_retry": False}
     write_once(attempt_dir / "COMMAND_INTENT.json", intent)
     stdout_path, stderr_path = attempt_dir / "stdout.log", attempt_dir / "stderr.log"
-    process = None
-    returncode = None
-    error = None
+    returncode, error, cleanup_verified = None, None, False
     started = time.monotonic()
-    previous_handlers = {}
-
-    def interrupted(number, _frame):
-        raise Interrupted(number)
-
+    from .suite_process import run_group
+    def child_started(process):
+        write_once(attempt_dir / "CHILD_STARTED.json", {"utc": utc(), "pid": process.pid,
+            "process_group": process.pid, "hostname": socket.gethostname(),
+            "linux_process_start": _process_start(process.pid), "argv_sha256": digest(expanded_argv)})
     try:
-        for number in (signal.SIGTERM, signal.SIGINT):
-            previous_handlers[number] = signal.signal(number, interrupted)
         with stdout_path.open("xb") as stdout, stderr_path.open("xb") as stderr:
-            process = subprocess.Popen(expanded_argv, cwd=cwd, env=runtime_environment(binding, context),
-                                       stdin=subprocess.DEVNULL, stdout=stdout, stderr=stderr,
-                                       start_new_session=True, close_fds=True)
-            write_once(attempt_dir / "CHILD_STARTED.json", {"utc": utc(), "pid": process.pid,
-                "process_group": process.pid, "hostname": socket.gethostname(),
-                "linux_process_start": _process_start(process.pid), "argv_sha256": digest(expanded_argv)})
-            try:
-                returncode = process.wait(timeout=command.get("timeout_seconds"))
-                require(_await_group_exit(process.pid), "task left live descendants after its command exited")
-            except BaseException:
-                _stop_group(process)
-                returncode = process.returncode
-                raise
+            result = run_group(expanded_argv, cwd=cwd, env={**runtime_environment(binding, context),
+                **(extra_environment or {})}, stdout=stdout, stderr=stderr,
+                timeout=command.get("timeout_seconds", 30 * 24 * 3600), on_started=child_started)
+            returncode = result.returncode
+            cleanup_verified = result.group_cleanup_verified
     except BaseException as exc:
+        cleanup_verified = getattr(exc, "group_cleanup_verified", False)
+        returncode = getattr(exc, "group_returncode", None)
         error = {"type": type(exc).__name__, "message": str(exc)}
-        if isinstance(exc, Interrupted):
-            error["signal"] = exc.signal_number
+        if "command leader exited while owned descendants remained" in str(exc):
+            raise ValueError("task left live descendants after its command exited") from exc
         raise
     finally:
-        for number, handler in previous_handlers.items():
-            signal.signal(number, handler)
-        if process is not None and (process.poll() is None or _group_exists(process.pid)):
-            _stop_group(process)
-            returncode = process.returncode
         if stdout_path.exists() and stderr_path.exists():
             write_once(attempt_dir / "COMMAND_EXIT.json", {"schema_version": 1, "utc": utc(),
                 "returncode": returncode, "elapsed_seconds": time.monotonic() - started, "error": error,
+                "group_cleanup_verified": cleanup_verified,
                 "stdout": {"path": str(stdout_path), "bytes": stdout_path.stat().st_size, "sha256": sha(stdout_path)},
                 "stderr": {"path": str(stderr_path), "bytes": stderr_path.stat().st_size, "sha256": sha(stderr_path)},
                 "automatic_retry": False})
@@ -480,7 +494,7 @@ def run_command(command, binding, context, attempt_dir, *, argv=None, extra_inpu
 def validate_startup_receipt(path, binding):
     value = read(path)
     require(value.get("status") == "SUITE_STARTUP_ACCEPTED", "current GPU allocation startup did not pass")
-    require(canonical(value.get("allocation")) == canonical(ALLOCATION), "actual allocation differs from suite policy")
+    require(canonical(value.get("allocation")) == canonical(binding["allocation"]), "actual allocation differs from suite policy")
     require(value.get("source_identity_sha256") == source_identity(binding), "startup source identity differs")
     require(value.get("other_active_project_jobs") == [] and value.get("gpu_count") == 8,
             "startup has another project job or wrong GPU count")
@@ -489,6 +503,9 @@ def validate_startup_receipt(path, binding):
             and all(isinstance(x, str) and x for x in uuids), "startup requires eight actual distinct GPU UUIDs")
     require(isinstance(value.get("job_uid"), str) and value["job_uid"]
             and value.get("hardware_preflight_passed") is True, "current job identity/hardware preflight missing")
+    if binding.get("execution_profile"):
+        require(value.get("gpu_product") == binding["execution_profile"]["gpu_product"],
+                "Actual GPU hardware does not match the B300 execution profile")
     return value
 
 
@@ -548,6 +565,7 @@ def _previous_child_quiet(task_root):
 def run_bound_suite(plan, binding, *, plan_sha256, binding_sha256, state_root, resume=False, relocation_pin=None):
     """Run ready DAG tasks serially; only explicitly declared recovery may retry."""
     validate_binding(plan, binding, plan_sha256=plan_sha256)
+    require(binding["schema_version"] == 1, "Use a named fleet worker for binding v2")
     require(not relocation_pin or resume, "allocation relocation requires explicit resume")
     require(SHA.fullmatch(binding_sha256), "invalid binding SHA256")
     state_root = safe(state_root)
@@ -663,6 +681,146 @@ def run_bound_suite(plan, binding, *, plan_sha256, binding_sha256, state_root, r
             raise
 
 
+def _fleet_live(environment, binding, state_root, worker_id):
+    from .suite_fleet import audit_fleet_jobs
+    tools = environment['tools']
+    result = subprocess.run([tools['kubectl'], '--kubeconfig', tools['kubeconfig'],
+        '--request-timeout=30s', 'get', 'pytorchjobs,pods', '-A', '-o', 'json'],
+        capture_output=True, text=True, timeout=40)
+    require(result.returncode == 0, 'Cannot freshly verify fleet jobs and task owners')
+    document = json.loads(result.stdout)
+    audit_fleet_jobs(binding['execution_profile'], document, state_root, worker_id,
+        project_name_prefixes=environment['allocation_identity']['project_name_prefixes'])
+    from .suite_actions import terminal_job
+    jobs = {item['metadata']['uid']: item for item in document['items'] if item.get('kind') == 'PyTorchJob'}
+    if not (safe(state_root) / 'COMPLETE.json').exists():
+        exact_names = {w['job_name'] for w in binding['execution_profile']['workers']}
+        require(not any(job['metadata']['name'] in exact_names and terminal_job(job) for job in jobs.values()),
+                'A fleet worker exited before suite completion; recovery is required')
+    for path in (safe(state_root) / 'tasks').glob('*/CLAIM.json'):
+        if (path.parent / 'COMPLETED.json').exists():
+            continue
+        owner = read(path)['owner']
+        require(owner['job_uid'] in jobs and not terminal_job(jobs[owner['job_uid']]),
+                'An unfinished task owner exited; frozen claim requires explicit recovery')
+
+
+def run_fleet_worker(plan, binding, *, plan_sha256, binding_sha256, state_root, worker_id,
+                     poll_seconds=15, budget=None, live_check=None):
+    """Join one frozen fleet and drain only dependency-ready, budget-admitted work.
+
+    Completed acceptance receipts are the sole skip authority. A failed or lost
+    claim stops new work without stealing another worker's allocation or files.
+    """
+    from .suite_fleet import FleetState, worker_identity, project_transaction
+    from .suite_storage import budget_for
+    validate_binding(plan, binding, plan_sha256=plan_sha256)
+    require(binding.get('schema_version') == 2 and SHA.fullmatch(binding_sha256), 'A fleet binding is required')
+    worker_identity(binding['execution_profile'], worker_id)
+    state_root = safe(state_root)
+    require(any(state_root != safe(root) and state_root.is_relative_to(safe(root))
+                for root in binding['storage']['roots']), 'Fleet state escapes accounted home roots')
+    environment = machine_environment(binding)
+    if environment.get('modelscope_token_file'):
+        from .suite_bindings import load_modelscope_token_file
+        load_modelscope_token_file(environment['modelscope_token_file'])
+    require(environment['storage'] == binding['storage'] and environment['execution_profile'] == binding['execution_profile'],
+            'Pinned machine environment differs from execution/storage binding')
+    budget = budget or budget_for(environment)
+    live_check = live_check or (lambda: _fleet_live(environment, binding, state_root, worker_id))
+    fleet = FleetState(plan, binding, state_root, plan_sha256=plan_sha256, binding_sha256=binding_sha256)
+    fleet.initialize()
+    worker_claim, invocation = fleet.join(worker_id)
+    context = {'state_root': str(state_root), 'invocation_dir': str(invocation)}
+    worker_environment = {'DP_SUITE_WORKER_ID': worker_id, 'DP_SUITE_FLEET_STATE': str(state_root),
+        'DP_SUITE_INVOCATION_DIR': str(invocation), 'DP_SUITE_STORAGE_LEDGER': binding['storage']['ledger_root']}
+    def execute(command, task_context, attempt, token):
+        return run_command(command, binding, task_context, attempt,
+            extra_environment={**worker_environment, 'DP_SUITE_STORAGE_TOKEN': token},
+            storage_snapshot=budget.snapshot())
+    released_tokens = set()
+    def release_if_quiet(token, attempt):
+        if token in released_tokens:
+            return True
+        path = attempt / 'COMMAND_EXIT.json'
+        if path.is_file() and read(path).get('group_cleanup_verified') is True:
+            budget.release(token, quiescent=lambda owner: {'owner': owner, 'active_writers': [],
+                'active_uploads': [], 'command_exit': artifact(path)})
+            released_tokens.add(token)
+            return True
+        return False
+    try:
+        verify_sources(binding)
+        startup = invocation / 'startup'
+        startup.mkdir()
+        startup_owner = {'fleet_id': binding['suite_id'], 'worker_id': worker_id, 'task_id': 'startup',
+                         'claim_id': worker_claim['claim_id'], 'job_name': worker_identity(binding['execution_profile'], worker_id)['job_name']}
+        token = budget.reserve(startup_owner, binding['startup'].get('reserve_bytes', 0),
+                               binding['startup'].get('oss_reserve_bytes', 0))
+        try:
+            pins = execute(binding['startup'], context, startup, token)
+            startup_value = validate_startup_receipt(pins[0]['path'], binding)
+            require(startup_value.get('worker_id') == worker_id, 'Startup belongs to another fleet worker')
+            fleet.register(worker_id, startup_value)
+            write_once(invocation / 'STARTUP_VERIFIED.json', {'receipt': pins[0], 'job_uid': startup_value['job_uid'],
+                                                            'worker_id': worker_id})
+        finally:
+            release_if_quiet(token, startup)
+        while not fleet.workers_ready():
+            live_check()
+            time.sleep(poll_seconds)
+        while True:
+            live_check()
+            def reserve(task, owner):
+                command = binding['tasks'][task['id']]
+                return budget.reserve(owner, command.get('reserve_bytes', 0), command.get('oss_reserve_bytes', 0))
+            selected = fleet.claim(worker_id, startup_value['job_uid'], reserve)
+            if selected['status'] == 'complete':
+                result = fleet.complete(worker_id)
+                write_once(invocation / 'COMPLETE.json', result)
+                return result
+            if selected['status'] == 'wait':
+                time.sleep(poll_seconds)
+                continue
+            task, claim = selected['task'], selected['claim']
+            attempt = safe(claim['attempt'])
+            task_id, command = task['id'], binding['tasks'][task['id']]
+            task_context = {**context, 'task_id': task_id, 'task_attempt_dir': str(attempt)}
+            dependency_pins = [artifact(state_root / 'tasks' / item / 'COMPLETED.json') for item in task['dependencies']]
+            write_once(attempt / 'TASK_INTENT.json', {'schema_version': 2, 'utc': utc(), 'task_id': task_id,
+                'kind': task['kind'], 'plan_sha256': plan_sha256, 'binding_sha256': binding_sha256,
+                'dependencies': dependency_pins, 'mode': command['mode'], 'context': task_context,
+                'claim': claim, 'is_explicit_recovery': False})
+            try:
+                if command['mode'] == 'reuse':
+                    verify_sources(binding)
+                    for item in command.get('inputs', []):
+                        verify_pin({**item, 'path': expand(item['path'], task_context)})
+                    pins = verify_receipts(command['receipts'], task_context)
+                    budget.release(claim['storage_token'], quiescent=lambda owner: {
+                        'owner': owner, 'active_writers': [], 'active_uploads': [], 'receipt_only_reuse': True})
+                else:
+                    pins = execute(command, task_context, attempt, claim['storage_token'])
+                    require(release_if_quiet(claim['storage_token'], attempt), 'Task processes were not verified quiescent')
+                completion = {'schema_version': 2, 'status': 'TASK_ACCEPTED', 'utc': utc(), 'task_id': task_id,
+                    'kind': task['kind'], 'plan_sha256': plan_sha256, 'binding_sha256': binding_sha256,
+                    'attempt': str(attempt), 'mode': command['mode'], 'receipts': pins, 'dependencies': dependency_pins,
+                    'task_intent_sha256': sha(attempt / 'TASK_INTENT.json'), 'claim_id': claim['owner']['claim_id']}
+                fleet.finish(task, claim, completion)
+            except BaseException as exc:
+                fleet.fail(task, claim, exc)
+                # An uncertain process cleanup deliberately leaves its durable reservation occupied.
+                if command['mode'] != 'reuse':
+                    release_if_quiet(claim['storage_token'], attempt)
+                raise
+    except BaseException as exc:
+        with project_transaction(binding['storage']):
+            write_once(invocation / 'STOPPED.json', {'status': 'EXPERIMENT_SUITE_STOPPED', 'worker_id': worker_id,
+                'error_type': type(exc).__name__, 'error': str(exc), 'utc': utc(), 'automatic_retry': False,
+                'automatic_requeue': False, 'claims_and_uncertain_reservations_preserved': True})
+        raise
+
+
 def build_training_argv(python, *, config, train_manifest, eval_manifest, media_root, output_dir,
                         formal_ready, formal_training_data_dir, frozen_source_manifest,
                         frozen_source_manifest_sha256, declared=False, init_checkpoint=None,
@@ -703,6 +861,7 @@ def main(argv=None):
     parser.add_argument("--state-root", type=Path, required=True)
     parser.add_argument("--config-root", type=Path)
     parser.add_argument("--execute", action="store_true")
+    parser.add_argument("--worker-id")
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--relocation", type=Path)
     parser.add_argument("--relocation-sha256")
@@ -723,6 +882,14 @@ def main(argv=None):
             "scheduler_submission_performed": False, "input_media_or_weights_verified": False}))
         return 0
     relocation_pin = {"path": str(args.relocation), "sha256": args.relocation_sha256} if args.relocation else None
+    if binding.get("execution_profile"):
+        require(args.worker_id and not args.resume and not args.relocation,
+                "Parallel execution requires --worker-id; claims never automatically retry or relocate")
+        result = run_fleet_worker(plan, binding, plan_sha256=args.plan_sha256,
+            binding_sha256=args.binding_sha256, state_root=args.state_root, worker_id=args.worker_id)
+        print(json.dumps(result, indent=2, sort_keys=True))
+        return 0
+    require(not args.worker_id, "--worker-id requires a fleet execution profile")
     result = run_bound_suite(plan, binding, plan_sha256=args.plan_sha256,
                             binding_sha256=args.binding_sha256, state_root=args.state_root, resume=args.resume,
                             relocation_pin=relocation_pin)

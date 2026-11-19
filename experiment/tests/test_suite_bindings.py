@@ -78,12 +78,22 @@ class SuiteBindingsTest(unittest.TestCase):
 
     def test_accepted_history_has_no_training_reserve_and_override_is_explicit(self):
         task = next(x for x in self.plan["tasks"] if x["kind"] == "train")
-        self.environment["history"][task["id"]] = {"mode": "accepted"}
+        names = {"deepprobe_config.json", "training_provenance.json", "projector.safetensors", "language_model/config.json",
+                 "vision_model/config.json", "language_model/model.safetensors", "vision_model/model.safetensors",
+                 "tokenizer/tokenizer_config.json", "image_processor/preprocessor_config.json", "training_args.bin",
+                 "trainer_state.json", "optimizer.pt", "scheduler.pt"} | {f"rng_state_{i}.pth" for i in range(8)}
+        history = {"mode": "accepted", "acceptance": runner.artifact(self.source),
+                   "config": runner.artifact(self.source), "frozen_source_manifest": runner.artifact(self.source),
+                   "source_root": str(self.a), "checkpoint_step": 718,
+                   "checkpoint": {"path": str(self.a / "historical-checkpoint"),
+                       "oss_prefix": "oss://ss-devbox-stream/project/runs/old/training/final/",
+                       "files": [{"path": name, "bytes": 1, "sha256": "1" * 64} for name in sorted(names)]}}
+        self.environment["history"][task["id"]] = history
         result = self.build()
         self.assertEqual(result["tasks"][task["id"]]["reserve_bytes"], 0)
         self.environment["task_reserve_by_id"] = {task["id"]: 12345}
         self.assertEqual(self.build()["tasks"][task["id"]]["reserve_bytes"], 12345)
-        self.environment["history"][task["id"]] = {"mode": "resume"}
+        self.environment["history"][task["id"]] = {**history, "mode": "resume", "checkpoint_step": 600}
         self.environment.pop("task_reserve_by_id")
         self.assertEqual(self.build()["tasks"][task["id"]]["reserve_bytes"],
                          self.environment["task_reserve_bytes"]["train_" + task["stage"]])
@@ -128,6 +138,7 @@ class SuiteBindingsTest(unittest.TestCase):
             lambda e: e["runtime_environment"].update(HF_HUB_OFFLINE="0"),
             lambda e: e.update(history={"invented-task": {"mode": "accepted"}}),
             lambda e: e.update(history={"gpu_gate": {"mode": "accepted"}}),
+            lambda e: e.update(history={"train__ouro_r4_s17__alignment": {"mode": "accepted"}}),
             lambda e: e.update(run_root="/outside-accounted-budget/runs"),
             lambda e: e.pop("archive_root"),
             lambda e: e.update(archive_root="oss://ss-devbox/DeepProbe-VLM"),
