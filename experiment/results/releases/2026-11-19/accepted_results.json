@@ -1,0 +1,207 @@
+{
+  "benchmark_results": {
+    "tempcompass": {
+      "archive": {
+        "access": "Access-controlled OSS; this publication did not recontact OSS.",
+        "bytes": 11353379,
+        "content_readback": "All archive objects full-GET SHA256 verified by the original acceptance record.",
+        "manifest_sha256": "8c120febb9268249e15bd6733f8a23b4d03cbea7c8c112f1e7d3b09bb1eb8c38",
+        "objects": 119,
+        "uri": "oss://ss-devbox-stream/jinhaopeng/Paper/DeepProbe-VLM/evaluations/dp-benchmark-tempcompass-r1-r2-s17-a3/"
+      },
+      "bootstrap": {
+        "interval_scope": "Test-source sampling uncertainty; not training-seed variability.",
+        "point_estimate_unit": "question",
+        "resamples": 2000,
+        "seed": 17,
+        "source_clusters": 188
+      },
+      "coverage": {
+        "clips": 410,
+        "qa_per_model": 1580,
+        "source_association_groups": 188,
+        "underlying_sources": 207
+      },
+      "metric": "tempcompass_official_disable_llm_mcq_accuracy",
+      "models": {
+        "r1": {
+          "accuracy": 0.4253164556962025,
+          "accuracy_ci95": [
+            0.3894332637598395,
+            0.460419512463357
+          ],
+          "checkpoint_archive_manifest_sha256": "3f5bdb5d011576164dd6bee85f1589c5ecddec948c5dc5af8555b1d30b739dfa",
+          "num_correct": 672,
+          "num_examples": 1580,
+          "raw_predictions_sha256": "cc628ad2d7dd160a0debdab25f6f4d98236f6e4f5816ca22e0d225bcf9d0dd92",
+          "rule_match_count": 1421,
+          "rule_match_rate": 0.899367088607595,
+          "scored_predictions_sha256": "890571be68d523858d6c31e4e2b114b0358c6968d8dc8235804a1b8f2aeb3c67",
+          "summary_sha256": "7b9abba50506a15dce23aca693bca86d15a94a8975f586be83aa9735867d72dc"
+        },
+        "r2": {
+          "accuracy": 0.5044303797468355,
+          "accuracy_ci95": [
+            0.475754699972957,
+            0.5356413733403352
+          ],
+          "checkpoint_archive_manifest_sha256": "e99959054a1b8d5fdb9f604a95a8cd87f78fc242e8c22dd8155f3514dbc4d502",
+          "num_correct": 797,
+          "num_examples": 1580,
+          "raw_predictions_sha256": "4dc96e83d432fb69080ca3186a708fd9a76c1319d2362ea8148a9dbe13d5f1c9",
+          "rule_match_count": 1575,
+          "rule_match_rate": 0.9968354430379747,
+          "scored_predictions_sha256": "5d7c525601d8d744b8cdb21723a10a5016e9a0d71e3bb05a55e5d8e548a3d43c",
+          "summary_sha256": "780d04a4332f1ee66d912272393fe1a5e4dc6becc44b9e33bd6eadba30a385b4"
+        }
+      },
+      "official_scorer_sha256": "ccffa4f717a3e2a29435b2bbe440109bf2def589cea73fde9fd44fd262fb379a",
+      "official_summary_sha256": "514f728e6a4e273db7db2c3feab316c129ebcc08901e62352d5af71efb4e964c",
+      "paired_r2_minus_r1": {
+        "ci95": [
+          0.05187593582622126,
+          0.10678484927856786
+        ],
+        "estimate": 0.07911392405063292,
+        "num_examples": 1580,
+        "numerator_difference": 125,
+        "unit": "accuracy_fraction"
+      },
+      "protocol": {
+        "audio": false,
+        "decoding": "greedy",
+        "frames": 8,
+        "max_new_tokens": 16,
+        "pool_grid": 4,
+        "subtitles": false,
+        "training_seed": 17
+      },
+      "reference_scorer_sha256": "f35b543e76400236110964fbe6bb4c2f70d485fb501f7751b5e6ce7544d3f290",
+      "scoring": "Frozen official disable_llm multiple-choice rules, with original official source parity independently checked. Unmatched examples are retained.",
+      "source_evidence_ids": [
+        "tempcompass_result_audit",
+        "tempcompass_archive_acceptance",
+        "paired_statistics_audit",
+        "tempcompass_paired_statistics"
+      ],
+      "status": "accepted"
+    },
+    "videomme899": {
+      "archive": {
+        "access": "Access-controlled OSS; this publication did not recontact OSS.",
+        "bytes": 12961861,
+        "content_readback": "All archive objects full-GET SHA256 verified by the original acceptance record.",
+        "manifest_sha256": "eb62f0d507ce3df1355cd6a0d048933a4413fc1bc3c001d433804fd205602d85",
+        "objects": 75,
+        "uri": "oss://ss-devbox-stream/jinhaopeng/Paper/DeepProbe-VLM/evaluations/dp-benchmark-videomme-r1-r2-s17-a3/"
+      },
+      "bootstrap": {
+        "interval_scope": "Test-source sampling uncertainty; not training-seed variability.",
+        "point_estimate_unit": "question",
+        "resamples": 2000,
+        "seed": 17,
+        "source_clusters": 899
+      },
+      "coverage": {
+        "excluded_video_groups": [
+          490
+        ],
+        "qa_per_model": 2697,
+        "scope": "Declared 899-video subset, excluding all three questions of video 490. Not the official full 900-video result.",
+        "video_sources": 899
+      },
+      "metric": "strict_mcq_accuracy",
+      "models": {
+        "r1": {
+          "accuracy": 0.06340378197997776,
+          "accuracy_ci95": [
+            0.054505005561735265,
+            0.07304412309974045
+          ],
+          "invalid_rate": 0.8212829069336299,
+          "num_correct": 171,
+          "num_examples": 2697,
+          "num_invalid": 2215,
+          "predictions_sha256": "55a8d76f2d3296dffd203c43da3385dfb5496b75473a92c2433763597696d9e9",
+          "summary_sha256": "f04d2f2269037ae7f4bdc7f51c1e823a7d1c7eb27221cd5ed889ec5898f55f08"
+        },
+        "r2": {
+          "accuracy": 0.1846496106785317,
+          "accuracy_ci95": [
+            0.16981831664812755,
+            0.19985168705969597
+          ],
+          "invalid_rate": 0.5224323322209863,
+          "num_correct": 498,
+          "num_examples": 2697,
+          "num_invalid": 1409,
+          "predictions_sha256": "0e8db5e2a80a6db0fe6e09c97d750f20be8baf622cef7359d0cc8093a8c2a580",
+          "summary_sha256": "f4a013b55eb73e4564b013356f84f5758c295739993fbbe28857a396eb8f68c8"
+        }
+      },
+      "paired_r2_minus_r1": {
+        "ci95": [
+          0.10604375231738969,
+          0.13571560993696696
+        ],
+        "estimate": 0.12124582869855395,
+        "num_examples": 2697,
+        "numerator_difference": 327,
+        "unit": "accuracy_fraction"
+      },
+      "protocol": {
+        "audio": false,
+        "decoding": "greedy",
+        "frames": 8,
+        "max_new_tokens": 16,
+        "pool_grid": 4,
+        "subtitles": false,
+        "training_seed": 17
+      },
+      "reference_scorer_sha256": "088406935e540172c209d41749afe447843812ef56ad05a79dc3d651ff6f553d",
+      "scoring": "Frozen strict reference MC scorer. Invalid outputs are included in the denominator and counted wrong.",
+      "source_evidence_ids": [
+        "videomme_result_audit",
+        "videomme_archive_acceptance",
+        "paired_statistics_audit",
+        "videomme_paired_statistics"
+      ],
+      "status": "accepted"
+    }
+  },
+  "curated_at_utc": "2026-11-09T11:13:25.265303+00:00",
+  "evidence_index": "RESULTS_SOURCE_MAP.json",
+  "limitations": [
+    "Only training seed 17 is represented in these R1/R2 benchmark results.",
+    "Benchmark protocols differ; do not average their accuracies into a single overall score.",
+    "Video-MME reports the declared 899-video subset, not the official full 900-video benchmark.",
+    "High Video-MME invalid-answer rates are retained; no parser repair or post-hoc answer reinterpretation was applied.",
+    "Bootstrap intervals quantify test-source sampling uncertainty and do not establish multi-seed robustness.",
+    "R4 alignment success is training and archive engineering acceptance, not R4 benchmark quality.",
+    "R4 SFT progress must come from a separate fresh exact-job observation; this static result summary makes no current SFT-status claim.",
+    "Evaluation retry identifiers are not independent training seeds.",
+    "Timing records are cold-or-mixed descriptive measurements, not warmed latency results."
+  ],
+  "publication_kind": "Curated factual projection from accepted operational evidence",
+  "schema_version": 1,
+  "training_engineering_results": {
+    "r4_alignment_seed17": {
+      "archive": {
+        "bytes": 15934454991,
+        "manifest_sha256": "0cacda97823a8f11e01fae2388362c9be8a024868292e1b6024e4052377a40c0",
+        "objects": 143,
+        "uri": "oss://ss-devbox-stream/jinhaopeng/Paper/DeepProbe-VLM/runs/dp-p1-ouro-r4-f8-g4-s17-alignment-a5/"
+      },
+      "final_bytes": 7482814704,
+      "final_files": 20,
+      "held_out_benchmark_result": false,
+      "optimizer_steps": 718,
+      "process_exit_code": 0,
+      "run_id": "dp-p1-ouro-r4-f8-g4-s17-alignment-a5",
+      "source_evidence_ids": [
+        "r4_alignment_acceptance"
+      ],
+      "status": "ACCEPTED_TERMINAL_TRAINING_AND_COMPLETE_ARCHIVE"
+    }
+  }
+}

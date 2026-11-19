@@ -1,0 +1,143 @@
+{
+  "schema_version": 1,
+  "results": {
+    "status": "MODELSCOPE_RESULTS_FULL_READBACK_VERIFIED",
+    "utc": "2026-11-19T12:08:22.951013+00:00",
+    "repo_id": "JasonJin/DeepProbe-VLM",
+    "prefix": "releases/2026-11-19",
+    "revision": "master",
+    "manifest_sha256": "938fa6a12f954eee61cbeb517363806c25cf7a288a9144b2d0fb9d2fc42c1082",
+    "files": [
+      {
+        "path": "releases/2026-11-19/README.md",
+        "bytes": 3006,
+        "sha256": "87d0ddd5e2dcfb53017971ef9d3a6dd94a00348d42c1fb418c69f428e358817d"
+      },
+      {
+        "path": "releases/2026-11-19/RESULTS.md",
+        "bytes": 4130,
+        "sha256": "877b2254183062fe261194f94f2c7bfe140918a3d41a8b6c6e83c54580b01ddc"
+      },
+      {
+        "path": "releases/2026-11-19/RESULTS_SOURCE_MAP.original.json",
+        "bytes": 4849,
+        "sha256": "b47f9327622b80bdaba3936218e293675e617233b2baaf950a4db2f7163df9ef"
+      },
+      {
+        "path": "releases/2026-11-19/SOURCE_MAP.json",
+        "bytes": 13595,
+        "sha256": "592983afbe469065f16c82fbb36701e6eb473cd34e329e7fec256269a4d220f2"
+      },
+      {
+        "path": "releases/2026-11-19/VALIDATION.json",
+        "bytes": 1696,
+        "sha256": "e12c3b52fdc2633f0f66204cc924e700935a7cabd58c91dd1ea1c7d2b007a213"
+      },
+      {
+        "path": "releases/2026-11-19/accepted_results.json",
+        "bytes": 8623,
+        "sha256": "3607850d36c92f1e45fa316f38c92ac1ee12a352942ee58304b65ce3c1955383"
+      },
+      {
+        "path": "releases/2026-11-19/cuda_pool/bf16/NUMERICAL.json",
+        "bytes": 302,
+        "sha256": "3fce371f56315acdca8cd18958455f943827e4e81faf663e84e5b2020f573b57"
+      },
+      {
+        "path": "releases/2026-11-19/cuda_pool/bf16/RUNTIME.json",
+        "bytes": 433,
+        "sha256": "428581d4ad6913ac8bdf04e733ffe3179abc8a2aa2969589fc5957e32135c76e"
+      },
+      {
+        "path": "releases/2026-11-19/cuda_pool/bf16/SUMMARY.json",
+        "bytes": 3768,
+        "sha256": "fb492c7fe0e8d9e099b71a84e18b52ed4a54bbf69382c0193a511746265f7357"
+      },
+      {
+        "path": "releases/2026-11-19/cuda_pool/bf16/measurements.jsonl",
+        "bytes": 57915,
+        "sha256": "020cdeaf7cef966a6cd9a1c9714a884e1a36b73b4ec55452123de31111a868b5"
+      },
+      {
+        "path": "releases/2026-11-19/cuda_pool/fp32/NUMERICAL.json",
+        "bytes": 302,
+        "sha256": "d509fc5e4c7e3ce3c8bb4179003a3a0df7f1e888e0fde07ebbdb4b31af0cb133"
+      },
+      {
+        "path": "releases/2026-11-19/cuda_pool/fp32/RUNTIME.json",
+        "bytes": 433,
+        "sha256": "428581d4ad6913ac8bdf04e733ffe3179abc8a2aa2969589fc5957e32135c76e"
+      },
+      {
+        "path": "releases/2026-11-19/cuda_pool/fp32/SUMMARY.json",
+        "bytes": 3769,
+        "sha256": "2cd685a17e9cbb388fd4cd38392f7880833ba95c6a0d65ebb06421aa244303bf"
+      },
+      {
+        "path": "releases/2026-11-19/cuda_pool/fp32/measurements.jsonl",
+        "bytes": 57935,
+        "sha256": "fc916aa00801c8b9f6dc81eed2a6bab8185d54a5ddbbea1a8416fc96d3537adf"
+      },
+      {
+        "path": "releases/2026-11-19/predictions/tempcompass/r1.jsonl",
+        "bytes": 794988,
+        "sha256": "890571be68d523858d6c31e4e2b114b0358c6968d8dc8235804a1b8f2aeb3c67"
+      },
+      {
+        "path": "releases/2026-11-19/predictions/tempcompass/r2.jsonl",
+        "bytes": 788223,
+        "sha256": "5d7c525601d8d744b8cdb21723a10a5016e9a0d71e3bb05a55e5d8e548a3d43c"
+      },
+      {
+        "path": "releases/2026-11-19/predictions/videomme899/r1.jsonl",
+        "bytes": 2869562,
+        "sha256": "3da9cc835c45dc71f600892613f919c7cfa139ff6d026f63c26bd51a1c126875"
+      },
+      {
+        "path": "releases/2026-11-19/predictions/videomme899/r2.jsonl",
+        "bytes": 2844133,
+        "sha256": "1bff900a9569098b0a6c3988b47f5d9337bcbe9f8bfe7e8b5043dda4cbc7e370"
+      },
+      {
+        "path": "releases/2026-11-19/statistics/tempcompass/r2_vs_r1.json",
+        "bytes": 1007,
+        "sha256": "bcfe8b7ace661a63bfeda868ac1257180d29338a174e09dd06eb0ad673d85dd3"
+      },
+      {
+        "path": "releases/2026-11-19/statistics/videomme899/r2_vs_r1.json",
+        "bytes": 4464,
+        "sha256": "5c2c9818ebc81ab0cf0c41e1bd4cf4b65f9ad35dca602609b573e93ad1520941"
+      },
+      {
+        "path": "releases/2026-11-19/status.json",
+        "bytes": 6904,
+        "sha256": "7b36c42cefbbc469ad1a9e84c3948d3f5ed2bd58094e0b9d305413febab4060b"
+      },
+      {
+        "path": "releases/2026-11-19/PUBLICATION_MANIFEST.json",
+        "bytes": 3999,
+        "sha256": "938fa6a12f954eee61cbeb517363806c25cf7a288a9144b2d0fb9d2fc42c1082"
+      }
+    ],
+    "file_count": 22,
+    "total_bytes": 7474036,
+    "remote_files_deleted": false,
+    "visibility_changed": false,
+    "already_present": false
+  },
+  "dataset_card": {
+    "status": "MODELSCOPE_DATASET_CARD_FULL_READBACK_VERIFIED",
+    "repo": "JasonJin/DeepProbe-VLM",
+    "path": "README.md",
+    "sha256": "39c84593bea27c0c87fbcc0eb3071b79aba6cc3bc4b467ba19e1203e3b4b59dc",
+    "bytes": 2405,
+    "visibility_private": true,
+    "visibility_changed": false,
+    "previous_sha256": "dc6e38557d840e4f857f39b01b45dfd4514b3e155ff4759ba5bcb297377ccfbf"
+  },
+  "release_manifest": "releases/2026-11-19/PUBLICATION_MANIFEST.json",
+  "github_repository": "https://github.com/Sunbeam23333/DeepProbe-VLM",
+  "modelscope_dataset": "https://modelscope.ai/datasets/JasonJin/DeepProbe-VLM",
+  "model_weight_backup": false,
+  "contains_credentials": false
+}

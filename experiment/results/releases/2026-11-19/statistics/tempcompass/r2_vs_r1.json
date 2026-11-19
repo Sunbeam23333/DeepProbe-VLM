@@ -1,0 +1,37 @@
+{
+  "status": "MEASURED_INPUTS_ONLY",
+  "bootstrap_unit": "source_video_id",
+  "bootstrap_resamples": 2000,
+  "seed": 17,
+  "by_metric": {
+    "tempcompass_official_disable_llm_mcq_accuracy": {
+      "estimate": 0.5044303797468355,
+      "ci95": [
+        0.475754699972957,
+        0.5356413733403352
+      ],
+      "sources": 188,
+      "questions": 1580,
+      "paired_accuracy_delta": {
+        "estimate": 0.07911392405063292,
+        "ci95": [
+          0.05187593582622126,
+          0.10678484927856786
+        ],
+        "sources": 188,
+        "questions": 1580
+      },
+      "by_task": {},
+      "by_duration": {}
+    }
+  },
+  "notes": [
+    "No official judge score is inferred from normalized exact match.",
+    "Confidence intervals do not remove cross-model pretraining confounds."
+  ],
+  "timing_examples": 0,
+  "profiled_timing_examples_excluded": 0,
+  "timing_status": "COLD_OR_MIXED_DESCRIPTIVE_ONLY_NOT_A_WARMED_BENCHMARK",
+  "model_seconds_median": null,
+  "model_seconds_p95": null
+}

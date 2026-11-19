@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "release_id": "2026-11-19",
+  "kind": "CURATED_EXPERIMENT_RESULTS",
+  "created_utc": "2026-11-19T12:06:38.248818+00:00",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 3006,
+      "sha256": "87d0ddd5e2dcfb53017971ef9d3a6dd94a00348d42c1fb418c69f428e358817d"
+    },
+    {
+      "path": "RESULTS.md",
+      "bytes": 4130,
+      "sha256": "877b2254183062fe261194f94f2c7bfe140918a3d41a8b6c6e83c54580b01ddc"
+    },
+    {
+      "path": "RESULTS_SOURCE_MAP.original.json",
+      "bytes": 4849,
+      "sha256": "b47f9327622b80bdaba3936218e293675e617233b2baaf950a4db2f7163df9ef"
+    },
+    {
+      "path": "SOURCE_MAP.json",
+      "bytes": 13595,
+      "sha256": "592983afbe469065f16c82fbb36701e6eb473cd34e329e7fec256269a4d220f2"
+    },
+    {
+      "path": "VALIDATION.json",
+      "bytes": 1696,
+      "sha256": "e12c3b52fdc2633f0f66204cc924e700935a7cabd58c91dd1ea1c7d2b007a213"
+    },
+    {
+      "path": "accepted_results.json",
+      "bytes": 8623,
+      "sha256": "3607850d36c92f1e45fa316f38c92ac1ee12a352942ee58304b65ce3c1955383"
+    },
+    {
+      "path": "cuda_pool/bf16/NUMERICAL.json",
+      "bytes": 302,
+      "sha256": "3fce371f56315acdca8cd18958455f943827e4e81faf663e84e5b2020f573b57"
+    },
+    {
+      "path": "cuda_pool/bf16/RUNTIME.json",
+      "bytes": 433,
+      "sha256": "428581d4ad6913ac8bdf04e733ffe3179abc8a2aa2969589fc5957e32135c76e"
+    },
+    {
+      "path": "cuda_pool/bf16/SUMMARY.json",
+      "bytes": 3768,
+      "sha256": "fb492c7fe0e8d9e099b71a84e18b52ed4a54bbf69382c0193a511746265f7357"
+    },
+    {
+      "path": "cuda_pool/bf16/measurements.jsonl",
+      "bytes": 57915,
+      "sha256": "020cdeaf7cef966a6cd9a1c9714a884e1a36b73b4ec55452123de31111a868b5"
+    },
+    {
+      "path": "cuda_pool/fp32/NUMERICAL.json",
+      "bytes": 302,
+      "sha256": "d509fc5e4c7e3ce3c8bb4179003a3a0df7f1e888e0fde07ebbdb4b31af0cb133"
+    },
+    {
+      "path": "cuda_pool/fp32/RUNTIME.json",
+      "bytes": 433,
+      "sha256": "428581d4ad6913ac8bdf04e733ffe3179abc8a2aa2969589fc5957e32135c76e"
+    },
+    {
+      "path": "cuda_pool/fp32/SUMMARY.json",
+      "bytes": 3769,
+      "sha256": "2cd685a17e9cbb388fd4cd38392f7880833ba95c6a0d65ebb06421aa244303bf"
+    },
+    {
+      "path": "cuda_pool/fp32/measurements.jsonl",
+      "bytes": 57935,
+      "sha256": "fc916aa00801c8b9f6dc81eed2a6bab8185d54a5ddbbea1a8416fc96d3537adf"
+    },
+    {
+      "path": "predictions/tempcompass/r1.jsonl",
+      "bytes": 794988,
+      "sha256": "890571be68d523858d6c31e4e2b114b0358c6968d8dc8235804a1b8f2aeb3c67"
+    },
+    {
+      "path": "predictions/tempcompass/r2.jsonl",
+      "bytes": 788223,
+      "sha256": "5d7c525601d8d744b8cdb21723a10a5016e9a0d71e3bb05a55e5d8e548a3d43c"
+    },
+    {
+      "path": "predictions/videomme899/r1.jsonl",
+      "bytes": 2869562,
+      "sha256": "3da9cc835c45dc71f600892613f919c7cfa139ff6d026f63c26bd51a1c126875"
+    },
+    {
+      "path": "predictions/videomme899/r2.jsonl",
+      "bytes": 2844133,
+      "sha256": "1bff900a9569098b0a6c3988b47f5d9337bcbe9f8bfe7e8b5043dda4cbc7e370"
+    },
+    {
+      "path": "statistics/tempcompass/r2_vs_r1.json",
+      "bytes": 1007,
+      "sha256": "bcfe8b7ace661a63bfeda868ac1257180d29338a174e09dd06eb0ad673d85dd3"
+    },
+    {
+      "path": "statistics/videomme899/r2_vs_r1.json",
+      "bytes": 4464,
+      "sha256": "5c2c9818ebc81ab0cf0c41e1bd4cf4b65f9ad35dca602609b573e93ad1520941"
+    },
+    {
+      "path": "status.json",
+      "bytes": 6904,
+      "sha256": "7b36c42cefbbc469ad1a9e84c3948d3f5ed2bd58094e0b9d305413febab4060b"
+    }
+  ],
+  "file_count": 21,
+  "payload_bytes": 7470037,
+  "provenance": {
+    "source_commit_before_suite_changes": "679e97ce5fcf9c87453de3be670ed9683b1632d1",
+    "accepted_results_sha256": "3607850d36c92f1e45fa316f38c92ac1ee12a352942ee58304b65ce3c1955383",
+    "prediction_rows": 8554,
+    "operator_measurement_rows": 400,
+    "new_gpu_execution": false
+  },
+  "scope": "Results and documents only; no media, weights or private cluster snapshots."
+}

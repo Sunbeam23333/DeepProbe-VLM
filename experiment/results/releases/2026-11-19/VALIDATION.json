@@ -1,0 +1,63 @@
+{
+  "prediction_sets": {
+    "predictions/videomme899/r1.jsonl": {
+      "rows": 2697,
+      "unique_samples": 2697,
+      "correct": 171,
+      "accuracy": 0.06340378197997776,
+      "invalid": 2215
+    },
+    "predictions/videomme899/r2.jsonl": {
+      "rows": 2697,
+      "unique_samples": 2697,
+      "correct": 498,
+      "accuracy": 0.1846496106785317,
+      "invalid": 1409
+    },
+    "predictions/tempcompass/r1.jsonl": {
+      "rows": 1580,
+      "unique_samples": 1580,
+      "correct": 672,
+      "accuracy": 0.4253164556962025,
+      "rule_matches": 1421
+    },
+    "predictions/tempcompass/r2.jsonl": {
+      "rows": 1580,
+      "unique_samples": 1580,
+      "correct": 797,
+      "accuracy": 0.5044303797468355,
+      "rule_matches": 1575
+    }
+  },
+  "cuda": {
+    "bf16": {
+      "backends": {
+        "reference": {
+          "samples": 100,
+          "median_ms": 0.270224004983902
+        },
+        "triton": {
+          "samples": 100,
+          "median_ms": 0.11214400082826614
+        }
+      },
+      "ratio_of_medians": 2.409616234378107,
+      "full_model_speedup": false
+    },
+    "fp32": {
+      "backends": {
+        "reference": {
+          "samples": 100,
+          "median_ms": 0.2101920023560524
+        },
+        "triton": {
+          "samples": 100,
+          "median_ms": 0.09204800054430962
+        }
+      },
+      "ratio_of_medians": 2.283504270740473,
+      "full_model_speedup": false
+    }
+  },
+  "interval_validation": "Preserved exact original paired-statistics bytes; original acceptance independently recomputed overall intervals only, not subgroup intervals. This publication recalculates row counts, correctness and operator timing summaries."
+}

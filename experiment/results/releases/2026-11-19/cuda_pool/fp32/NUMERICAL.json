@@ -1,0 +1,15 @@
+{
+  "atol": 3e-05,
+  "finite": true,
+  "max_abs_error": 1.4901161193847656e-07,
+  "max_relative_error_with_1e_minus8_floor": 0.0015435159439221025,
+  "output_dtype": "torch.float32",
+  "output_shape": [
+    8,
+    16,
+    1152
+  ],
+  "passed": true,
+  "rmse": 1.8268554669020887e-08,
+  "rtol": 3e-05
+}

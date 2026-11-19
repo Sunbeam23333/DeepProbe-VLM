@@ -1,0 +1,18 @@
+{
+  "allocation_and_hardware_isolation_verified_by_runner": false,
+  "compute_capability": [
+    10,
+    3
+  ],
+  "cuda_runtime": "13.0",
+  "device": "cuda:0",
+  "gpu_name": "NVIDIA L20D",
+  "gpu_uuid": "8730e001-bfd3-d60e-16b9-90a31a819361",
+  "profiler_enabled_during_timing": false,
+  "tf32": false,
+  "torch": "2.10.0+cu130",
+  "total_memory_bytes": 287428771840,
+  "triton": "3.6.0",
+  "visible_devices": 8,
+  "world_size": 1
+}

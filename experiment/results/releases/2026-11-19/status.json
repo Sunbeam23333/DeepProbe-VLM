@@ -1,0 +1,176 @@
+{
+  "schema_version": 1,
+  "observed_at_utc": "2026-11-19T10:34:35.716149+00:00",
+  "new_held_out_results": false,
+  "active_project_job_or_pod_at_observation": false,
+  "smollm2_seed29_alignment": {
+    "run_id": "dp-p1-smollm2-f8-g4-s29-alignment-a5",
+    "running_utc": "2026-11-17T18:18:19Z",
+    "failed_utc": "2026-11-17T18:37:32Z",
+    "native_resume_source_step": 300,
+    "maximum_logged_step": 354,
+    "checkpoint_step": 350,
+    "target_steps": 718,
+    "remaining_updates_from_verified_candidate": 368,
+    "checkpoint_file_count": 29,
+    "checkpoint_bytes": 8642274062,
+    "checkpoint_files_sha256": "821ee7b3970ddb0b3c08718898b131382a53b7571db44592b51f7a1ce1a2bba9",
+    "checkpoint_cpu_metadata_and_full_sha_passed": true,
+    "checkpoint_optimizer_rng_restore_executed": false,
+    "signal_observed": "SIGTERM",
+    "signal_source_established": false,
+    "archive_accepted": false,
+    "exact_oss_object_count_observed": 0
+  },
+  "r4_seed17_sft": {
+    "run_id": "dp-p1-ouro-r4-f8-g4-s17-sft-a1",
+    "status": "Failed",
+    "last_observed_step": 602,
+    "target_steps": 718,
+    "checkpoint_step": 600,
+    "checkpoint_locally_complete": false,
+    "checkpoint_restore_required": true,
+    "missing_checkpoint_bytes": 22312029341,
+    "remaining_updates_from_checkpoint": 118,
+    "archive_accepted": true,
+    "recovery_gate": "Restore missing model/optimizer payloads from the accepted exact archive and verify original SHA256, then validate complete optimizer/RNG recovery and fresh source/storage/scheduler admission before the remaining 118 updates."
+  },
+  "engineering_qa": {
+    "status": "SYNTHETIC_WEIGHTED_POOL_OPERATOR_MEASUREMENTS_ACCEPTED",
+    "protocol": "deepprobe-cuda-weighted-pool-micro-v1",
+    "measurement_scope": "Single-device synthetic weighted pooling including output allocation; no full model, gate or projector. Eight ranks were used for startup preflight only.",
+    "settings": {
+      "shape": [
+        8,
+        729,
+        1152
+      ],
+      "patch_grid": 27,
+      "pool_grid": 4,
+      "seed": 17,
+      "warmup_per_backend": 25,
+      "calls_per_backend": 100,
+      "order": "alternating reference/Triton pairs",
+      "timing": "synchronized CUDA events; profiler excluded"
+    },
+    "runtime": {
+      "reported_gpu_model": "NVIDIA L20D",
+      "compute_capability": [
+        10,
+        3
+      ],
+      "torch": "2.10.0+cu130",
+      "cuda_runtime": "13.0",
+      "triton": "3.6.0"
+    },
+    "metrics": {
+      "bf16": {
+        "input_dtype": "bfloat16",
+        "input_shape": [
+          8,
+          729,
+          1152
+        ],
+        "output_shape": [
+          8,
+          16,
+          1152
+        ],
+        "reference_median_ms": 0.270224004983902,
+        "triton_median_ms": 0.11214400082826614,
+        "ratio_of_backend_medians": 2.409616234378107,
+        "median_time_reduction_percent": 58.49961559301629,
+        "reference_mean_ms": 0.27358687922358516,
+        "triton_mean_ms": 0.10892096005380153,
+        "ratio_of_backend_means": 2.5117927631967882,
+        "reference_p95_ms": 0.3283519893884659,
+        "triton_p95_ms": 0.1348800055682659,
+        "reference_peak_allocated_bytes": 80487936,
+        "triton_peak_allocated_bytes": 22569984,
+        "max_abs_error": 1.1920928955078125e-07,
+        "numerical_passed": true,
+        "profile_actual_triton_kernel": [
+          "_weighted_spatial_pool_kernel"
+        ],
+        "source_summary_bytes": 3768,
+        "source_summary_sha256": "fb492c7fe0e8d9e099b71a84e18b52ed4a54bbf69382c0193a511746265f7357"
+      },
+      "fp32": {
+        "input_dtype": "float32",
+        "input_shape": [
+          8,
+          729,
+          1152
+        ],
+        "output_shape": [
+          8,
+          16,
+          1152
+        ],
+        "reference_median_ms": 0.2101920023560524,
+        "triton_median_ms": 0.09204800054430962,
+        "ratio_of_backend_medians": 2.283504270740473,
+        "median_time_reduction_percent": 56.20765799243592,
+        "reference_mean_ms": 0.20777343973517418,
+        "triton_mean_ms": 0.08411136023700237,
+        "ratio_of_backend_means": 2.470218519231249,
+        "reference_p95_ms": 0.24839359894394875,
+        "triton_p95_ms": 0.10784640125930309,
+        "reference_peak_allocated_bytes": 94313984,
+        "triton_peak_allocated_bytes": 36396032,
+        "max_abs_error": 1.4901161193847656e-07,
+        "numerical_passed": true,
+        "profile_actual_triton_kernel": [
+          "_weighted_spatial_pool_kernel"
+        ],
+        "source_summary_bytes": 3769,
+        "source_summary_sha256": "2cd685a17e9cbb388fd4cd38392f7880833ba95c6a0d65ebb06421aa244303bf"
+      }
+    },
+    "ratio_definition": "reference backend statistic divided by Triton backend statistic; ratios of medians and means are distinct",
+    "statistics_recomputed_from_all_raw_measurements": true,
+    "timing_statistics": "100 calls per backend and dtype in one run; P95 uses R7 linear interpolation. Descriptive statistics, not cross-run confidence intervals.",
+    "peak_memory_scope": "Max allocated bytes during a backend call, including already resident synthetic inputs and other live tensors; not whole-model memory or an incremental-peak estimate.",
+    "model_or_training_speedup_measured": false,
+    "quality_measured": false,
+    "limits": [
+      "Two dtype cases and one synthetic shape/seed; no cross-hardware or real-video generalization measured.",
+      "Ratios are ratios of backend medians or means, not full-model or distributed training speedups.",
+      "No new held-out quality result."
+    ]
+  },
+  "remaining_matrix": {
+    "models": 18,
+    "completed_models": 2,
+    "training_stages": 34,
+    "completed_training_stages": 5,
+    "benchmark_evaluations": 36,
+    "completed_benchmark_evaluations": 4,
+    "full_model_latency": 15,
+    "completed_full_model_latency": 0,
+    "latency_comparisons": 12,
+    "completed_latency_comparisons": 0,
+    "scope": "Configured core matrix; conditional MVBench/H20/equal-compute/novel selective-refresh co-design extensions are outside these counts."
+  },
+  "new_execution_policy": {
+    "max_nodes": 4,
+    "gpus_per_node": 8,
+    "gpu_class": "B300",
+    "priority": "normal",
+    "home_limit_bytes": 150000000000,
+    "oss_limit_bytes": 150000000000,
+    "limits_are_separate": true,
+    "new_gpu_job_submitted_for_this_publication": false
+  },
+  "sources": {
+    "status": {
+      "source_path": "experiment/results/status.json",
+      "sha256": "55b10e258cf2643c0a4a6d38ee7433f96c435d8138eb95e193230907886cdd9c"
+    },
+    "a5_handoff": {
+      "source_path": "experiment/docs/operations/evidence/smollm2-resume-a5-20261118/ROOT_A5_FAILED_STATUS_HANDOFF_20261119.json",
+      "sha256": "6913d5f5635739882eea2f610d14216e32c82057f505742179518c5dff379a5b"
+    },
+    "cuda_recalculation_sha256": "1461a111d2dd8e55cb7487ac59c1293481458446f400611e6c85508927857762"
+  }
+}

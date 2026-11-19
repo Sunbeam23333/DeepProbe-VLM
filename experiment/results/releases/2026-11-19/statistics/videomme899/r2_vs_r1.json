@@ -1,0 +1,174 @@
+{
+  "status": "MEASURED_INPUTS_ONLY",
+  "bootstrap_unit": "source_video_id",
+  "bootstrap_resamples": 2000,
+  "seed": 17,
+  "by_metric": {
+    "strict_mcq_accuracy": {
+      "estimate": 0.1846496106785317,
+      "ci95": [
+        0.16981831664812755,
+        0.19985168705969597
+      ],
+      "sources": 899,
+      "questions": 2697,
+      "paired_accuracy_delta": {
+        "estimate": 0.12124582869855395,
+        "ci95": [
+          0.10604375231738969,
+          0.13571560993696696
+        ],
+        "sources": 899,
+        "questions": 2697
+      },
+      "by_task": {
+        "Action Reasoning": {
+          "estimate": 0.20350877192982456,
+          "ci95": [
+            0.15625,
+            0.2508594058694637
+          ],
+          "sources": 234,
+          "questions": 285
+        },
+        "Action Recognition": {
+          "estimate": 0.1501597444089457,
+          "ci95": [
+            0.11249278052805281,
+            0.1904801720019111
+          ],
+          "sources": 256,
+          "questions": 313
+        },
+        "Attribute Perception": {
+          "estimate": 0.13063063063063063,
+          "ci95": [
+            0.0863441850941851,
+            0.17727272727272728
+          ],
+          "sources": 205,
+          "questions": 222
+        },
+        "Counting Problem": {
+          "estimate": 0.25,
+          "ci95": [
+            0.19924776020511048,
+            0.30337910944652513
+          ],
+          "sources": 246,
+          "questions": 268
+        },
+        "Information Synopsis": {
+          "estimate": 0.33126934984520123,
+          "ci95": [
+            0.28172165247678016,
+            0.38095238095238093
+          ],
+          "sources": 297,
+          "questions": 323
+        },
+        "OCR Problems": {
+          "estimate": 0.10071942446043165,
+          "ci95": [
+            0.05185185185185185,
+            0.15671641791044777
+          ],
+          "sources": 124,
+          "questions": 139
+        },
+        "Object Reasoning": {
+          "estimate": 0.22026431718061673,
+          "ci95": [
+            0.18340611353711792,
+            0.26116517375038567
+          ],
+          "sources": 368,
+          "questions": 454
+        },
+        "Object Recognition": {
+          "estimate": 0.0906515580736544,
+          "ci95": [
+            0.060336206896551725,
+            0.12257003581376837
+          ],
+          "sources": 292,
+          "questions": 353
+        },
+        "Spatial Perception": {
+          "estimate": 0.14814814814814814,
+          "ci95": [
+            0.07407407407407407,
+            0.24074074074074073
+          ],
+          "sources": 54,
+          "questions": 54
+        },
+        "Spatial Reasoning": {
+          "estimate": 0.05555555555555555,
+          "ci95": [
+            0.0,
+            0.1273316498316495
+          ],
+          "sources": 51,
+          "questions": 54
+        },
+        "Temporal Perception": {
+          "estimate": 0.23636363636363636,
+          "ci95": [
+            0.12957070707070706,
+            0.35714285714285715
+          ],
+          "sources": 54,
+          "questions": 55
+        },
+        "Temporal Reasoning": {
+          "estimate": 0.11299435028248588,
+          "ci95": [
+            0.06817218798151001,
+            0.1666899441340781
+          ],
+          "sources": 171,
+          "questions": 177
+        }
+      },
+      "by_duration": {
+        "long": {
+          "estimate": 0.20666666666666667,
+          "ci95": [
+            0.18,
+            0.23333333333333334
+          ],
+          "sources": 300,
+          "questions": 900
+        },
+        "medium": {
+          "estimate": 0.189520624303233,
+          "ci95": [
+            0.16387959866220736,
+            0.21518952062430308
+          ],
+          "sources": 299,
+          "questions": 897
+        },
+        "short": {
+          "estimate": 0.15777777777777777,
+          "ci95": [
+            0.13666666666666666,
+            0.17888888888888888
+          ],
+          "sources": 300,
+          "questions": 900
+        }
+      }
+    }
+  },
+  "notes": [
+    "No official judge score is inferred from normalized exact match.",
+    "Confidence intervals do not remove cross-model pretraining confounds."
+  ],
+  "timing_examples": 2697,
+  "profiled_timing_examples_excluded": 0,
+  "timing_status": "COLD_OR_MIXED_DESCRIPTIVE_ONLY_NOT_A_WARMED_BENCHMARK",
+  "model_seconds_median": 0.18230382166802883,
+  "model_seconds_p95": 0.5144283294677734
+}

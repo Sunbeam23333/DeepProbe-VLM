@@ -1,0 +1,252 @@
+{
+  "schema_version": 1,
+  "sources": {
+    "accepted_results.json": {
+      "source_path": "experiment/results/accepted_results.json",
+      "original_sha256": "3607850d36c92f1e45fa316f38c92ac1ee12a352942ee58304b65ce3c1955383",
+      "original_bytes": 8623,
+      "derivative": {
+        "path": "accepted_results.json",
+        "bytes": 8623,
+        "sha256": "3607850d36c92f1e45fa316f38c92ac1ee12a352942ee58304b65ce3c1955383"
+      },
+      "transformation": "byte-identical copy"
+    },
+    "RESULTS_SOURCE_MAP.original.json": {
+      "source_path": "experiment/results/RESULTS_SOURCE_MAP.json",
+      "original_sha256": "b47f9327622b80bdaba3936218e293675e617233b2baaf950a4db2f7163df9ef",
+      "original_bytes": 4849,
+      "derivative": {
+        "path": "RESULTS_SOURCE_MAP.original.json",
+        "bytes": 4849,
+        "sha256": "b47f9327622b80bdaba3936218e293675e617233b2baaf950a4db2f7163df9ef"
+      },
+      "transformation": "byte-identical copy"
+    },
+    "RESULTS.md": {
+      "source_path": "experiment/results/RESULTS.md",
+      "original_sha256": "877b2254183062fe261194f94f2c7bfe140918a3d41a8b6c6e83c54580b01ddc",
+      "original_bytes": 4130,
+      "derivative": {
+        "path": "RESULTS.md",
+        "bytes": 4130,
+        "sha256": "877b2254183062fe261194f94f2c7bfe140918a3d41a8b6c6e83c54580b01ddc"
+      },
+      "transformation": "byte-identical copy"
+    },
+    "predictions/videomme899/r1.jsonl": {
+      "source_path": "experiment/docs/operations/evidence/experiment-execution-20261021/videomme-a3-result-validation/original-run/r1/predictions.jsonl",
+      "original_sha256": "55a8d76f2d3296dffd203c43da3385dfb5496b75473a92c2433763597696d9e9",
+      "original_bytes": 3117686,
+      "derivative": {
+        "path": "predictions/videomme899/r1.jsonl",
+        "bytes": 2869562,
+        "sha256": "3da9cc835c45dc71f600892613f919c7cfa139ff6d026f63c26bd51a1c126875"
+      },
+      "transformation": "Replace only private model_name filesystem value with public experiment identifier; JSON serialization canonicalized. Scores, sample/source identities, predictions and timing labels unchanged."
+    },
+    "predictions/videomme899/r2.jsonl": {
+      "source_path": "experiment/docs/operations/evidence/experiment-execution-20261021/videomme-a3-result-validation/original-run/r2/predictions.jsonl",
+      "original_sha256": "0e8db5e2a80a6db0fe6e09c97d750f20be8baf622cef7359d0cc8093a8c2a580",
+      "original_bytes": 3092257,
+      "derivative": {
+        "path": "predictions/videomme899/r2.jsonl",
+        "bytes": 2844133,
+        "sha256": "1bff900a9569098b0a6c3988b47f5d9337bcbe9f8bfe7e8b5043dda4cbc7e370"
+      },
+      "transformation": "Replace only private model_name filesystem value with public experiment identifier; JSON serialization canonicalized. Scores, sample/source identities, predictions and timing labels unchanged."
+    },
+    "statistics/videomme899/r2_vs_r1.json": {
+      "source_path": "experiment/docs/operations/evidence/paired-statistics-20261107/results-v1/videomme899/r2_vs_r1.json",
+      "original_sha256": "5c2c9818ebc81ab0cf0c41e1bd4cf4b65f9ad35dca602609b573e93ad1520941",
+      "original_bytes": 4464,
+      "derivative": {
+        "path": "statistics/videomme899/r2_vs_r1.json",
+        "bytes": 4464,
+        "sha256": "5c2c9818ebc81ab0cf0c41e1bd4cf4b65f9ad35dca602609b573e93ad1520941"
+      },
+      "transformation": "byte-identical copy"
+    },
+    "predictions/tempcompass/r1.jsonl": {
+      "source_path": "experiment/docs/operations/evidence/tempcompass-success-20261107/independent-result-audit/run-files/r1/official/scored_predictions.jsonl",
+      "original_sha256": "890571be68d523858d6c31e4e2b114b0358c6968d8dc8235804a1b8f2aeb3c67",
+      "original_bytes": 794988,
+      "derivative": {
+        "path": "predictions/tempcompass/r1.jsonl",
+        "bytes": 794988,
+        "sha256": "890571be68d523858d6c31e4e2b114b0358c6968d8dc8235804a1b8f2aeb3c67"
+      },
+      "transformation": "byte-identical copy"
+    },
+    "predictions/tempcompass/r2.jsonl": {
+      "source_path": "experiment/docs/operations/evidence/tempcompass-success-20261107/independent-result-audit/run-files/r2/official/scored_predictions.jsonl",
+      "original_sha256": "5d7c525601d8d744b8cdb21723a10a5016e9a0d71e3bb05a55e5d8e548a3d43c",
+      "original_bytes": 788223,
+      "derivative": {
+        "path": "predictions/tempcompass/r2.jsonl",
+        "bytes": 788223,
+        "sha256": "5d7c525601d8d744b8cdb21723a10a5016e9a0d71e3bb05a55e5d8e548a3d43c"
+      },
+      "transformation": "byte-identical copy"
+    },
+    "statistics/tempcompass/r2_vs_r1.json": {
+      "source_path": "experiment/docs/operations/evidence/paired-statistics-20261107/results-v1/tempcompass/r2_vs_r1.json",
+      "original_sha256": "bcfe8b7ace661a63bfeda868ac1257180d29338a174e09dd06eb0ad673d85dd3",
+      "original_bytes": 1007,
+      "derivative": {
+        "path": "statistics/tempcompass/r2_vs_r1.json",
+        "bytes": 1007,
+        "sha256": "bcfe8b7ace661a63bfeda868ac1257180d29338a174e09dd06eb0ad673d85dd3"
+      },
+      "transformation": "byte-identical copy"
+    },
+    "cuda_pool/bf16/measurements.jsonl": {
+      "source_path": "experiment/docs/operations/evidence/progress-check-20261117/qa-a3-independent-archive-20261117T032159Z/full_get/bf16/measurements.jsonl",
+      "original_sha256": "020cdeaf7cef966a6cd9a1c9714a884e1a36b73b4ec55452123de31111a868b5",
+      "original_bytes": 57915,
+      "derivative": {
+        "path": "cuda_pool/bf16/measurements.jsonl",
+        "bytes": 57915,
+        "sha256": "020cdeaf7cef966a6cd9a1c9714a884e1a36b73b4ec55452123de31111a868b5"
+      },
+      "transformation": "byte-identical copy"
+    },
+    "cuda_pool/bf16/SUMMARY.json": {
+      "source_path": "experiment/docs/operations/evidence/progress-check-20261117/qa-a3-independent-archive-20261117T032159Z/full_get/bf16/SUMMARY.json",
+      "original_sha256": "fb492c7fe0e8d9e099b71a84e18b52ed4a54bbf69382c0193a511746265f7357",
+      "original_bytes": 3768,
+      "derivative": {
+        "path": "cuda_pool/bf16/SUMMARY.json",
+        "bytes": 3768,
+        "sha256": "fb492c7fe0e8d9e099b71a84e18b52ed4a54bbf69382c0193a511746265f7357"
+      },
+      "transformation": "byte-identical copy"
+    },
+    "cuda_pool/bf16/NUMERICAL.json": {
+      "source_path": "experiment/docs/operations/evidence/progress-check-20261117/qa-a3-independent-archive-20261117T032159Z/full_get/bf16/NUMERICAL.json",
+      "original_sha256": "3fce371f56315acdca8cd18958455f943827e4e81faf663e84e5b2020f573b57",
+      "original_bytes": 302,
+      "derivative": {
+        "path": "cuda_pool/bf16/NUMERICAL.json",
+        "bytes": 302,
+        "sha256": "3fce371f56315acdca8cd18958455f943827e4e81faf663e84e5b2020f573b57"
+      },
+      "transformation": "byte-identical copy"
+    },
+    "cuda_pool/bf16/RUNTIME.json": {
+      "source_path": "experiment/docs/operations/evidence/progress-check-20261117/qa-a3-independent-archive-20261117T032159Z/full_get/bf16/RUNTIME.json",
+      "original_sha256": "428581d4ad6913ac8bdf04e733ffe3179abc8a2aa2969589fc5957e32135c76e",
+      "original_bytes": 433,
+      "derivative": {
+        "path": "cuda_pool/bf16/RUNTIME.json",
+        "bytes": 433,
+        "sha256": "428581d4ad6913ac8bdf04e733ffe3179abc8a2aa2969589fc5957e32135c76e"
+      },
+      "transformation": "byte-identical copy"
+    },
+    "cuda_pool/fp32/measurements.jsonl": {
+      "source_path": "experiment/docs/operations/evidence/progress-check-20261117/qa-a3-independent-archive-20261117T032159Z/full_get/fp32/measurements.jsonl",
+      "original_sha256": "fc916aa00801c8b9f6dc81eed2a6bab8185d54a5ddbbea1a8416fc96d3537adf",
+      "original_bytes": 57935,
+      "derivative": {
+        "path": "cuda_pool/fp32/measurements.jsonl",
+        "bytes": 57935,
+        "sha256": "fc916aa00801c8b9f6dc81eed2a6bab8185d54a5ddbbea1a8416fc96d3537adf"
+      },
+      "transformation": "byte-identical copy"
+    },
+    "cuda_pool/fp32/SUMMARY.json": {
+      "source_path": "experiment/docs/operations/evidence/progress-check-20261117/qa-a3-independent-archive-20261117T032159Z/full_get/fp32/SUMMARY.json",
+      "original_sha256": "2cd685a17e9cbb388fd4cd38392f7880833ba95c6a0d65ebb06421aa244303bf",
+      "original_bytes": 3769,
+      "derivative": {
+        "path": "cuda_pool/fp32/SUMMARY.json",
+        "bytes": 3769,
+        "sha256": "2cd685a17e9cbb388fd4cd38392f7880833ba95c6a0d65ebb06421aa244303bf"
+      },
+      "transformation": "byte-identical copy"
+    },
+    "cuda_pool/fp32/NUMERICAL.json": {
+      "source_path": "experiment/docs/operations/evidence/progress-check-20261117/qa-a3-independent-archive-20261117T032159Z/full_get/fp32/NUMERICAL.json",
+      "original_sha256": "d509fc5e4c7e3ce3c8bb4179003a3a0df7f1e888e0fde07ebbdb4b31af0cb133",
+      "original_bytes": 302,
+      "derivative": {
+        "path": "cuda_pool/fp32/NUMERICAL.json",
+        "bytes": 302,
+        "sha256": "d509fc5e4c7e3ce3c8bb4179003a3a0df7f1e888e0fde07ebbdb4b31af0cb133"
+      },
+      "transformation": "byte-identical copy"
+    },
+    "cuda_pool/fp32/RUNTIME.json": {
+      "source_path": "experiment/docs/operations/evidence/progress-check-20261117/qa-a3-independent-archive-20261117T032159Z/full_get/fp32/RUNTIME.json",
+      "original_sha256": "428581d4ad6913ac8bdf04e733ffe3179abc8a2aa2969589fc5957e32135c76e",
+      "original_bytes": 433,
+      "derivative": {
+        "path": "cuda_pool/fp32/RUNTIME.json",
+        "bytes": 433,
+        "sha256": "428581d4ad6913ac8bdf04e733ffe3179abc8a2aa2969589fc5957e32135c76e"
+      },
+      "transformation": "byte-identical copy"
+    }
+  },
+  "original_acceptance_sources": {
+    "paired_statistics_audit": {
+      "available_in_github": false,
+      "original_bytes": 8349,
+      "original_sha256": "00905c4ffb631da98959dc9c363a9f547f13cd461acf7bf614e1fcb25b3542e3",
+      "role": "Original private operational evidence; its digest identifies the original, not this curated projection.",
+      "source_path": "experiment/docs/operations/evidence/paired-statistics-20261107/independent-review-v1/INDEPENDENT_PAIRED_STATISTICS_AUDIT.json"
+    },
+    "r4_alignment_acceptance": {
+      "available_in_github": false,
+      "original_bytes": 2620,
+      "original_sha256": "62331648b4aa885d0d3f83d9dbe257e549882e35f38a859c561bfdfc3dc7ec06",
+      "role": "Original private operational evidence; its digest identifies the original, not this curated projection.",
+      "source_path": "experiment/docs/operations/evidence/r4-progress-20261109/a5-independent-success-review-v1/INDEPENDENT_ALIGNMENT_SUCCESS_ARCHIVE_ACCEPTANCE.json"
+    },
+    "tempcompass_archive_acceptance": {
+      "available_in_github": false,
+      "original_bytes": 61273,
+      "original_sha256": "fb92294304f3ba6fe0e297b3f901204f2b97608263979de44cbb464f0fdc4314",
+      "role": "Original private operational evidence; its digest identifies the original, not this curated projection.",
+      "source_path": "experiment/docs/operations/evidence/tempcompass-success-20261107/independent-result-audit/INDEPENDENT_SUCCESS_ARCHIVE_ACCEPTANCE.json"
+    },
+    "tempcompass_paired_statistics": {
+      "available_in_github": false,
+      "original_bytes": 1007,
+      "original_sha256": "bcfe8b7ace661a63bfeda868ac1257180d29338a174e09dd06eb0ad673d85dd3",
+      "role": "Original private operational evidence; its digest identifies the original, not this curated projection.",
+      "source_path": "experiment/docs/operations/evidence/paired-statistics-20261107/results-v1/tempcompass/r2_vs_r1.json"
+    },
+    "tempcompass_result_audit": {
+      "available_in_github": false,
+      "original_bytes": 85030,
+      "original_sha256": "fee4c43a72b38eef1598f22e2fe28d4541f82a193b00dd40f13acdd7d0a698fe",
+      "role": "Original private operational evidence; its digest identifies the original, not this curated projection.",
+      "source_path": "experiment/docs/operations/evidence/tempcompass-success-20261107/independent-result-audit/INDEPENDENT_RESULTS_PREARCHIVE_CHECK.json"
+    },
+    "videomme_archive_acceptance": {
+      "available_in_github": false,
+      "original_bytes": 30553,
+      "original_sha256": "f40fca3fba7ae5018873f6ea0db8423b366b11768e135ea857438629491a1868",
+      "role": "Original private operational evidence; its digest identifies the original, not this curated projection.",
+      "source_path": "experiment/docs/operations/evidence/experiment-execution-20261021/videomme-a3-independent-result-audit/INDEPENDENT_SUCCESS_ARCHIVE_ACCEPTANCE.json"
+    },
+    "videomme_paired_statistics": {
+      "available_in_github": false,
+      "original_bytes": 4464,
+      "original_sha256": "5c2c9818ebc81ab0cf0c41e1bd4cf4b65f9ad35dca602609b573e93ad1520941",
+      "role": "Original private operational evidence; its digest identifies the original, not this curated projection.",
+      "source_path": "experiment/docs/operations/evidence/paired-statistics-20261107/results-v1/videomme899/r2_vs_r1.json"
+    },
+    "videomme_result_audit": {
+      "available_in_github": false,
+      "original_bytes": 25838,
+      "original_sha256": "e84c2f63731eeca02aea0e75cadb59e9b0fce153b47bb43a1b852cbf51ae88ea",
+      "role": "Original private operational evidence; its digest identifies the original, not this curated projection.",
+      "source_path": "experiment/docs/operations/evidence/experiment-execution-20261021/videomme-a3-independent-result-audit/INDEPENDENT_RESULTS_PREARCHIVE_CHECK.json"
+    }
+  },
+  "digest_convention": "Original evidence and published derivatives have separate SHA256 values. No benchmark score was changed.",
+  "subgroup_intervals_independently_recomputed": false
+}
