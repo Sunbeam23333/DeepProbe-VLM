@@ -87,13 +87,16 @@ class SuiteWorkflowTest(unittest.TestCase):
 
     def test_default_one_command_has_no_asset_network_admission_or_scheduler_effect(self):
         candidate = {'schema_version': 1, 'environment': {'history': {}, 'storage': {'home_limit_bytes': 150000000000,
-                    'oss_limit_bytes': 150000000000}}, 'state_root': str(self.root / 'state')}
-        with mock.patch.object(workflow, 'prepare_benchmark', side_effect=AssertionError('asset work from plan')):
+                    'oss_limit_bytes': 150000000000}, 'run_root': str(self.root / 'runs/suite')},
+                     'state_root': str(self.root / 'state')}
+        with mock.patch.object(workflow, 'prepare_benchmark', side_effect=AssertionError('asset work from plan')), \
+             mock.patch('deepprobe_vlm.suite_storage.budget_for', side_effect=AssertionError('ledger from plan')):
             result = workflow.prepare_workflow(self.plan, candidate, self.root / 'control')
         self.assertEqual(result['status'], 'SUITE_WORKFLOW_PLANNED_NOT_EXECUTED')
         self.assertFalse(result['production_admitted'])
         self.assertEqual(result['task_count'], 185)
         self.assertFalse((self.root / 'state').exists())
+        self.assertFalse((self.root / 'runs').exists())
 
     def test_evaluation_history_rejects_incomplete_scored_rows(self):
         task = next(t for t in self.plan['tasks'] if t['id'] == 'evaluate__ouro_r1_s17__videomme899')
@@ -112,7 +115,13 @@ class SuiteWorkflowTest(unittest.TestCase):
         # propagation run. This test deliberately produces CPU_GATED, never a
         # production admission or a scheduler operation.
         env = {'suite_id': 'synthetic-workflow', 'experiment_root': str(self.root), 'history': {},
-               'storage': {'roots': [str(self.root)]}, 'assets': {'benchmarks': {}, 'training': {},
+               'run_root': str(self.root / 'runs/suite'),
+               'storage': {'schema_version': 2, 'roots': [str(self.root)],
+                   'ledger_root': str(self.root / 'ledger'), 'home_limit_bytes': 150000000000,
+                   'oss_limit_bytes': None, 'home_safety_bytes': 1000000, 'oss_safety_bytes': 0,
+                   'free_guard_bytes': 0, 'oss_prefixes': ['oss://ss-devbox-stream/synthetic/workflow/']},
+               'tools': {'ossutil': '/bin/true', 'oss_config': self.original['path']},
+               'assets': {'benchmarks': {}, 'training': {},
                'development': {'source_metadata': self.original}}, 'source_files': []}
         request = {'benchmark': 'videomme899', 'frames': 4, 'source_manifest': self.original,
                    'oss_prefix': 'synthetic', 'max_png_bytes': 100, 'metadata_reserve_bytes': 100}
@@ -130,6 +139,7 @@ class SuiteWorkflowTest(unittest.TestCase):
             seen.append('preflight')
             return {'status': 'SUITE_CPU_GATED', 'scope': 'synthetic integration fixture'}
         def cache(*args, **kwargs):
+            self.assertTrue(Path(env['run_root']).is_dir())
             seen.append('cache'); return descriptor, {'scope': 'synthetic integration fixture'}
         with mock.patch.object(workflow, 'prepare_benchmark', side_effect=cache), \
              mock.patch.object(bindings, 'remaining_summary', return_value={'blocked_history_tasks': []}), \
@@ -141,6 +151,24 @@ class SuiteWorkflowTest(unittest.TestCase):
         self.assertFalse(result['cpu_admitted'])
         self.assertFalse(result['gpu_submitted'])
         self.assertFalse((self.root / 'state').exists())
+        from deepprobe_vlm.checkpoint_retention import claim_owned_run
+        owner = claim_owned_run(env['run_root'], 'synthetic-train', env['suite_id'], 'a' * 64)
+        self.assertEqual(owner['runs_root'], env['run_root'])
+        prepared = runner.read(result['run_root_preparation']['path'])
+        self.assertEqual(prepared['status'], 'SUITE_RUN_ROOT_PREPARED')
+        self.assertFalse(prepared['run_ownership_claimed'])
+
+    def test_unsafe_run_root_gates_before_asset_work(self):
+        target = self.root / 'not-a-directory'; target.write_text('preserve original')
+        candidate = {'schema_version': 1, 'environment': {'history': {},
+            'storage': {'roots': [str(self.root)]}, 'run_root': str(target)},
+            'state_root': str(self.root / 'state')}
+        with mock.patch.object(workflow, 'prepare_benchmark', side_effect=AssertionError('unsafe asset work')):
+            result = workflow.prepare_workflow(self.plan, candidate, self.root / 'control', prepare_assets=True)
+        self.assertEqual(result['status'], 'SUITE_WORKFLOW_RUN_ROOT_GATED')
+        self.assertFalse(result['asset_preparation_started'])
+        self.assertFalse(result['cpu_admitted'])
+        self.assertEqual(target.read_text(), 'preserve original')
 
     def test_token_file_never_puts_value_in_returned_receipt(self):
         token = self.root / 'private-token'; token.write_text('synthetic-token-value'); token.chmod(0o600)
@@ -154,7 +182,9 @@ class SuiteWorkflowTest(unittest.TestCase):
     def test_capacity_gate_is_actionable_append_only_and_precedes_asset_work(self):
         plan_pin = self.pin('RETIREMENT_PLAN.json', {'status': 'review required', 'automatic_delete': False})
         candidate = {'schema_version': 1, 'environment': {'history': {}, 'storage': {'schema_version': 2,
-                    'home_limit_bytes': 150000000000, 'oss_limit_bytes': 150000000000}},
+                    'roots': [str(self.root)], 'ledger_root': str(self.root / 'ledger'),
+                    'home_limit_bytes': 150000000000, 'oss_limit_bytes': 150000000000},
+                    'run_root': str(self.root / 'runs/suite')},
                     'state_root': str(self.root / 'state'), 'capacity_recovery_plan': plan_pin}
         gate = {'status': 'SUITE_PREPARATION_CAPACITY_GATED', 'blocked_domains': ['oss'],
                 'fresh_snapshot': {'utc': 'first'}, 'recovery_plan': plan_pin}
@@ -168,6 +198,7 @@ class SuiteWorkflowTest(unittest.TestCase):
         self.assertNotEqual(first['capacity_gate']['path'], second['capacity_gate']['path'])
         self.assertEqual(runner.read(first['capacity_gate']['path'])['fresh_snapshot']['utc'], 'first')
         self.assertFalse((self.root / 'state').exists())
+        self.assertFalse((self.root / 'runs').exists())
 
     def test_preparation_capacity_accepts_unlimited_oss_with_real_shared_budget(self):
         from deepprobe_vlm import suite_storage as storage

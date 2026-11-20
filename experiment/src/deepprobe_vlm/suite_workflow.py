@@ -209,6 +209,11 @@ def prepare_workflow(plan, candidate, output, *, prepare_assets=False, resume_as
     runner.require(candidate.get("schema_version") == 1 and isinstance(candidate.get("environment"), dict), "Invalid workflow candidate")
     env = deepcopy(candidate["environment"])
     report = workflow_report(plan, candidate)
+    if env.get("run_root"):
+        declared_root = runner.safe(env["run_root"])
+        runner.require(output != declared_root and not output.is_relative_to(declared_root)
+                       and not declared_root.is_relative_to(output),
+                       "Workflow reports must be disjoint from the declared suite run root")
     output.mkdir(parents=True, exist_ok=True)
     save(output / "WORKFLOW_REQUEST.json", candidate)
     if not prepare_assets:
@@ -218,6 +223,17 @@ def prepare_workflow(plan, candidate, output, *, prepare_assets=False, resume_as
     # while preserving identical candidate/history/source/binding artifacts.
     attempt = output / "attempts" / uuid.uuid4().hex
     attempt.mkdir(parents=True)
+    from .suite_run_root import prepare_run_root, validate_run_root_location
+    def run_root_failure(exc):
+        result = {"status": "SUITE_WORKFLOW_RUN_ROOT_GATED", "error_type": type(exc).__name__,
+                  "error": str(exc), "cpu_admitted": False, "gpu_submitted": False,
+                  "asset_preparation_started": False, "automatic_deletion": False}
+        save(attempt / "WORKFLOW_GATED.json", result)
+        return result
+    try:
+        validate_run_root_location(env)
+    except (ValueError, OSError, KeyError) as exc:
+        return run_root_failure(exc)
     if env["storage"].get("schema_version") == 2:
         capacity = preparation_capacity(env, candidate.get("capacity_recovery_plan"))
         capacity_pin = save(attempt / "CAPACITY_GATE.json", capacity)
@@ -227,6 +243,13 @@ def prepare_workflow(plan, candidate, output, *, prepare_assets=False, resume_as
                       "cpu_admitted": False, "gpu_submitted": False, "asset_preparation_started": False}
             save(attempt / "WORKFLOW_GATED.json", result)
             return result
+    # Prepare this shared container before any recovery/cache adapter can
+    # create descendants. Task ownership and checkpoint cleanup stay separate.
+    try:
+        run_root = prepare_run_root(env)
+    except (ValueError, OSError, KeyError) as exc:
+        return run_root_failure(exc)
+    run_root_pin = save(attempt / "RUN_ROOT_PREPARATION.json", run_root)
     if env.get("modelscope_token_file"):
         bindings.load_modelscope_token_file(env["modelscope_token_file"])
     for request in [*candidate.get("recovery_preparations", []), *candidate.get("history_preparations", [])]:
@@ -291,7 +314,8 @@ def prepare_workflow(plan, candidate, output, *, prepare_assets=False, resume_as
     binding_pin = save(output / "BINDING.json", binding)
     result = {"status": "SUITE_WORKFLOW_BOUND_NOT_ADMITTED", "plan": plan_pin, "environment": environment_pin,
               "binding": binding_pin, "cache_preparations": cache_results, "gpu_submitted": False,
-              "state_root": candidate["state_root"], "cpu_admitted": False}
+              "state_root": candidate["state_root"], "cpu_admitted": False,
+              "run_root_preparation": run_root_pin}
     if cpu_admission:
         from .suite_preflight import inspect
         preflight = inspect(plan, binding, env, plan_sha256=plan_pin["sha256"], binding_sha256=binding_pin["sha256"],
@@ -349,7 +373,8 @@ def main(argv=None):
                 "submit" if args.submit else "dry-run")
         result["launch"] = launched
     print(json.dumps(result, indent=2))
-    unsuccessful = result.get("status") in {"SUITE_WORKFLOW_CAPACITY_GATED", "SUITE_WORKFLOW_HISTORY_GATED"}
+    unsuccessful = result.get("status") in {"SUITE_WORKFLOW_CAPACITY_GATED", "SUITE_WORKFLOW_HISTORY_GATED",
+                                           "SUITE_WORKFLOW_RUN_ROOT_GATED"}
     unsuccessful |= args.cpu_admission and not result.get("cpu_admitted")
     unsuccessful |= result.get("launch", {}).get("status") in {"SUBMISSION_OUTCOME_UNKNOWN", "FLEET_WORKER_TERMINATED"}
     return 2 if unsuccessful else 0

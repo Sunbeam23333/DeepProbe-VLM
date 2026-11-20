@@ -179,7 +179,9 @@ def test_insufficient_training_reserve_gates_entire_suite_before_hydration(tmp_p
         'config':{'path':'recipe.json'},'historical_hint':{'status':'planned'}}
     plan={'tasks':[task],'models':[{'id':'tiny','family':'ouro_r1'}],'training_data':{}}
     source=write(tmp_path/'source.json',{'fixture':True});write(tmp_path/'recipe.json',{'model':{},'training':{}})
+    (tmp_path/'runs').mkdir()
     env={'experiment_root':str(tmp_path),'source_files':[source],'history':{},'task_reserve_bytes':{'train_alignment':1},
+        'run_root':str(tmp_path/'runs'),'storage':{'roots':[str(tmp_path)]},
         'assets':{'training':{k:source for k in ('train_manifest','eval_manifest','formal_ready','frozen_source_manifest')},
                   'backbones':{'ouro_r1':{'language_root':'/lm','vision_root':'/vision'}},'benchmarks':{}}}
     binding={'source_files':[source],'tasks':{'train':{'reserve_bytes':1}}}

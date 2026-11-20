@@ -107,7 +107,9 @@ def admission(tmp_path, monkeypatch):
     declarations = {suite_progressive.key(b, f): {'contract_sha256': 'a' * 64,
         'ready_path': str(tmp_path / (b + '-' + str(f) + '.json'))}
         for b in suite_progressive.BENCHMARKS for f in suite_progressive.FRAMES}
+    (tmp_path / 'runs').mkdir()
     env = {'experiment_root': str(tmp_path), 'source_files': [source_pin], 'history': {},
+        'run_root': str(tmp_path / 'runs'),
         'storage': {'roots': [str(tmp_path)]}, 'task_reserve_bytes': {'train_alignment': 300},
         'benchmark_preparations': declarations,
         'assets': {'training': {k: source_pin for k in ('train_manifest', 'eval_manifest', 'formal_ready', 'frozen_source_manifest')},
@@ -126,6 +128,17 @@ def admission(tmp_path, monkeypatch):
         return suite_preflight.inspect(plan, binding, env, plan_sha256='a' * 64, binding_sha256='b' * 64,
             environment_sha256='c' * 64, state_root=tmp_path / 'state')
     return env, binding, run
+
+
+def test_missing_run_root_gates_cpu_without_creating_it_or_hydrating(admission, monkeypatch):
+    env, _, run = admission
+    root = Path(env['run_root']); root.rmdir()
+    with mock.patch.object(suite_preflight, '_bound_environment', side_effect=AssertionError('must stop before model checks')):
+        result = run()
+    assert result['status'] == 'SUITE_CPU_GATED'
+    assert [row['check'] for row in result['failures']] == ['run_root_directory']
+    assert 'missing' in result['failures'][0]['error']
+    assert not root.exists() and not (root.parent / 'state').exists()
 
 
 def test_six_pending_caches_get_explicit_deferred_status_but_training_is_checked(admission):
@@ -167,8 +180,10 @@ def test_external_cache_workflow_keeps_full_dag_and_never_replays_history_or_cac
     declarations = {suite_progressive.key(r['benchmark'], r['frames']): {
         'contract': {'request': r}, 'contract_sha256': 'a' * 64, 'ready_path': str(tmp_path / ('ready-' + str(i)))}
         for i, r in enumerate(requests)}
+    (tmp_path / 'runs').mkdir()
     env = {'experiment_root': str(tmp_path), 'source_files': [], 'history': {'prepared': {'synthetic': True}},
-        'storage': {}, 'assets': {'training': {}, 'development': {'source_metadata': pin}},
+        'run_root': str(tmp_path / 'runs'), 'storage': {'roots': [str(tmp_path)]},
+        'assets': {'training': {}, 'development': {'source_metadata': pin}},
         'benchmark_preparations': declarations}
     candidate = {'schema_version': 1, 'environment': env, 'state_root': str(tmp_path / 'state'),
         'benchmark_preparations': requests, 'benchmark_preparation_mode': 'external_progressive'}

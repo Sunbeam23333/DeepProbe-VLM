@@ -17,6 +17,7 @@ from . import suite_runner as runner
 from .suite_actions import inventory, load_operation, validate_benchmark, verify_inventory, save
 from .suite_bindings import validate_environment, reserve_for
 from .experiment_suite import validate_plan
+from .suite_run_root import inspect_run_root
 
 require = runner.require
 
@@ -487,6 +488,9 @@ def inspect(plan, binding, environment, *, plan_sha256, binding_sha256, environm
     check('scientific_plan', lambda: bool(validate_plan(plan, config_root=environment['experiment_root'])))
     check('environment', lambda: bool(validate_environment(environment, plan)))
     check('binding', lambda: bool(runner.validate_binding(plan, binding, plan_sha256=plan_sha256)))
+    if failures:
+        return result()
+    check('run_root_directory', lambda: inspect_run_root(environment))
     if failures:
         return result()
     def state_location():
