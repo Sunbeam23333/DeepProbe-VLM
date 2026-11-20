@@ -85,7 +85,9 @@ def benchmark_resume_mode(output, prefix, store, *, resume_requested):
     if (output / "BUILD_PLAN.json").is_file():
         runner.require(resume_requested, "Existing cache plan requires explicit asset resume")
         return True
-    runner.require(not output.exists() and not store.keys(prefix),
+    # The real OSS adapter yields keys lazily. A generator is truthy even when
+    # its complete listing is empty; consume it before deciding ownership.
+    runner.require(not output.exists() and not list(store.keys(prefix)),
                    "Cache objects or output exist without a local build plan; reconcile exact ownership")
     return False
 

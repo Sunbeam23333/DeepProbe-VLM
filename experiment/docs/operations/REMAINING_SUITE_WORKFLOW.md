@@ -267,14 +267,59 @@ The completed migration receipt SHA is
 `6e52607d15c0a79ee4732346a3c70f529f1730a7c8aa381c115ab1ff8995c1d2`;
 the exact previous ledger was retained before atomic replacement.
 
-At 2026-11-19 16:52:05 UTC (November 20 in Asia/Shanghai), the one-worker CPU
-preparation driver started on the development machine. Its persistent status
-is in `control-v5/CPU_PREPARE_ACTIVE.json` and
-`control-v5/cpu-prepare/<invocation>/START.json`, `CHILD.json`, `stdout`, `stderr`
-and, when it exits, `EXIT.json`. Do not start another preparation while this
-driver or its descendants are active. It cannot submit a GPU Job. Successful
-preparation still requires a `WORKFLOW_PREPARED.json` with `cpu_admitted=true`;
-then use `launch-prepared` with the verified binding and fresh admission.
+The one-worker CPU preparation driver ran from 2026-11-19 16:52:05 to
+17:38:44 UTC (November 20 in Asia/Shanghai), then exited with code 1 and
+`group_cleanup_verified=true`. Its invocation is
+`8379d12cf0314b3eb4861f5c3149baff`; `CPU_PREPARE_ACTIVE.json` is now absent.
+All seven checkpoint/history preparations completed before the failure.
+Smol checkpoint350 and R4 SFT checkpoint600 passed complete archive GET/SHA
+and native metadata checks; the other five histories bind accepted finals.
+These preparations do not prove that a resumed Trainer has loaded its state.
+
+The failure occurred before building the first benchmark cache. The OSS
+adapter returns a generator, and the old ownership guard incorrectly treated
+an empty generator as a nonempty object listing. A fresh read-only inspection
+at 2026-11-20 01:15:49 UTC confirmed all six output directories absent and all
+six exact OSS prefixes empty. The fix consumes the complete listing and fails
+closed if listing is interrupted; 15 workflow tests passed. The deployed v1
+source remains immutable, and cache continuation requires a new source
+release. Reuse the seven authenticated histories rather than repeating their
+payload transfers. See [the exact driver/cache observation](evidence/suite-cache-ownership-diagnosis-20261120-v1/REMOTE.stdout.json)
+and [the recovered history receipts](evidence/smol-a6-launch-20261120-v1/RECOVERY_COMPLETIONS_INDEX.json).
+
+The full suite is not yet admitted or submitted. Successful preparation still
+requires a `WORKFLOW_PREPARED.json` with `cpu_admitted=true`; then use
+`launch-prepared` with the verified binding and fresh admission. A separate
+Smol checkpoint350 continuation can use its own admission without waiting for
+the benchmark caches.
+
+That separate continuation was submitted once on November 20 at 01:40:03 UTC
+as `jinhaopeng-dpvlm-p1-smollm2-s29-align-a6-n1-16f41`, UID
+`58a74e0d-7309-4ad6-8a22-266be9d8d956`, using normal/stream, one node/eight GPUs
+and restart-Never. At 01:48:21 UTC its exact Job and Pod were Running with zero
+restarts, and the formal training log had advanced from cp350 to **354/718**.
+All eight BF16/NCCL preflight ranks and the enclosing preflight process passed.
+The shared 42 GB reservation was persisted before Job creation; the independent
+submission review confirmed a 104,526,968,806-byte projected home total and no
+other active project Job/Pod. This starts only the standalone Smol stage, not
+the complete suite. See [the actual running handoff](evidence/smollm2-resume-a6-20261120/ROOT_A6_RUNNING_HANDOFF.json).
+
+The offline helper `scripts/operations/derive_suite_cache_continuation.py`
+authenticates the original candidate and 35 captured preparation receipts,
+preserves all seven history bindings, four evaluation imports and six cache
+requests, and removes completed preparation requests and GPU launch templates.
+The local candidate at
+`evidence/suite-cache-continuation-20261120-v1/CANDIDATE-CACHE-CONTINUATION.json`
+has SHA `d5c93e1639a49fed265b821d0578a1bfd18a40eff246c71718ae2ce4d5af3398`.
+Its new source path is `suite-source/20261120-v2/experiment` and workflow output
+is `suite-suite-remaining-20261119/control-v6/cache-workflow`; neither is
+deployed by this derivation. The workflow/helper regressions passed 24 tests.
+After deploying and verifying that new source, the cache-only phase uses
+`--prepare-assets --resume-assets`, without CPU admission or GPU submission.
+The live workflow still verifies its history pins and exact cache ownership.
+Before any later full-suite GPU launch, replace the old Smol cp350 binding
+with the separately observed a6 outcome to avoid repeating optimizer work.
+
 The 16:52:57 UTC cluster snapshot had zero unallocated GPUs across the 56
 matching stream B300-platform nodes and zero active project GPU Jobs.
 The final local regression for this source passed 240 tests across 21 modules.

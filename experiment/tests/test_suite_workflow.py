@@ -220,15 +220,24 @@ class SuiteWorkflowTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'metadata pin differs'): bindings.validate_history_shape(self.task, value)
 
     def test_global_asset_resume_starts_untouched_shape_and_rejects_unowned_objects(self):
-        store = mock.Mock(); store.keys.return_value = []
+        store = mock.Mock(); store.keys.side_effect = lambda prefix: (row for row in [])
         self.assertFalse(workflow.benchmark_resume_mode(self.root / 'new-f16', 'exact/', store, resume_requested=True))
-        store.keys.return_value = ['exact/unowned.png']
+        store.keys.side_effect = lambda prefix: (row for row in ['exact/unowned.png'])
         with self.assertRaisesRegex(ValueError, 'reconcile exact ownership'):
             workflow.benchmark_resume_mode(self.root / 'new-f16', 'exact/', store, resume_requested=True)
         output = self.root / 'started-f4'; output.mkdir(); (output / 'BUILD_PLAN.json').write_text('{}')
         self.assertTrue(workflow.benchmark_resume_mode(output, 'exact/', store, resume_requested=True))
         with self.assertRaisesRegex(ValueError, 'explicit asset resume'):
             workflow.benchmark_resume_mode(output, 'exact/', store, resume_requested=False)
+
+    def test_cache_empty_listing_still_requires_complete_generator_success(self):
+        def failing_listing(prefix):
+            yield from ()
+            raise OSError('synthetic OSS listing interrupted')
+        store = mock.Mock(); store.keys.side_effect = failing_listing
+        with self.assertRaisesRegex(OSError, 'listing interrupted'):
+            workflow.benchmark_resume_mode(self.root / 'never-started', 'exact/', store, resume_requested=False)
+        self.assertFalse((self.root / 'never-started').exists())
 
 
 if __name__ == '__main__': unittest.main()

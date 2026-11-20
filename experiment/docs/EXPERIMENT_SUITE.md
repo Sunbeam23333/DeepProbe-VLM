@@ -7,117 +7,120 @@ states. Only the real task's verified outputs advance its completion journal.
 
 ## Current admission status
 
-As of **2026-11-19**, the 185-task suite has **not been submitted**. Its declared
-DAG and scientific scope are unchanged. The separately controlled Smol recovery
-below does not start the full suite or complete a suite-history binding.
+As of **2026-11-20 01:48 UTC**, the 185-task suite has **not been submitted**.
+Its declared DAG and scientific scope are unchanged. Separately controlled
+Smol recovery is tracked independently of the full suite.
+
+- SmolLM2 seed29 alignment **a6 was submitted once** as
+  `jinhaopeng-dpvlm-p1-smollm2-s29-align-a6-n1-16f41`, UID
+  `58a74e0d-7309-4ad6-8a22-266be9d8d956`, created at **01:40:03 UTC** and
+  confirmed by the root controller at **01:40:44 UTC**.
+  The observed Job contract is **normal / stream / one node / eight GPUs /
+  restart Never**, with no forced node. It targets native recovery from the
+  verified checkpoint350 toward step718; it does not submit the full suite.
+  [The exact submission receipt](operations/evidence/smollm2-resume-a6-20261120/submit-execution-v1/stdout.json)
+  establishes creation and identity. The **01:48:21 UTC**
+  [actual training readback](operations/evidence/smollm2-resume-a6-20261120/exact-training-progress-v2/stdout.json)
+  confirms the Job remains Running, with eight GPUs allocated and zero
+  restarts; its original Running transition was **01:40:05 UTC**. The
+  submission startup handshake passed after **36.8 seconds**, startup
+  admission passed, and all eight ranks passed BF16 forward/backward and
+  NCCL checks. The enclosing preflight ended with code0 and formal alignment
+  training started. Logs show steps **351 through 354/718**: actual native
+  continuation from checkpoint350 has added **four optimizer updates**. The
+  target remains step718; no final checkpoint, completion receipt or new
+  held-out result is established by this observation.
+
+- Seven completed historical preparations are now authenticated for suite
+  reuse: Ouro R1 seed17 alignment/SFT, R2 seed17 alignment/SFT and R4 seed17
+  alignment each have their accepted **718-step final**, with 20 checkpoint
+  files per stage. SmolLM2 seed29 alignment has a **step350** native-resume
+  binding (29 files / **8,642,274,062 bytes**, 368 updates remaining). R4 seed17
+  SFT has a **step600** native-resume binding (31 files /
+  **22,317,153,372 bytes**, 118 updates remaining). All seven retain their
+  exact original source/config identities and independently accepted archive
+  inventories. The R4 binding uses `verify_archived_resume`; it does not depend
+  on the previously incomplete old local checkpoint tree.
+- The November 20 review authenticated the existing preparation, full GET/SHA
+  archive acceptance, history acceptance and native metadata receipts. It made
+  **zero new checkpoint payload GETs**. Native CPU metadata verification does
+  not deserialize optimizer/scheduler/RNG state or establish successful GPU
+  continuation. Five final-stage histories are eligible for accepted reuse;
+  the two resume histories still need runtime restoration and completion.
+  The concrete reuse proof is
+  [PREPARED_REUSE.stdout.json](operations/evidence/suite-cache-ownership-diagnosis-20261120-v1/PREPARED_REUSE.stdout.json),
+  SHA256 `bfb16d20dd03e5c3b836a3349ddd3beac48472285d39644df1778a158a74a504`.
+- Preparation stopped at the first new benchmark cache because the ownership
+  check treated an empty OSS key generator as truthy. The complete read-only
+  inspection found **all six exact prefixes empty and all six cache output
+  directories absent**: Video-MME899 and TempCompass, each at F4/F8/F16. The
+  code now consumes the complete listing before deciding whether the prefix
+  is empty; a listing error still stops preparation. The failed CPU driver
+  exited1 with process-group cleanup verified. None of these six new caches
+  has been built or admitted; the existing benchmark results are unchanged.
+  [The continuation handoff](operations/evidence/suite-cache-ownership-diagnosis-20261120-v1/CONTINUATION_HANDOFF.md)
+  binds the actual diagnosis and the offline helper. It preserves the seven
+  histories and four evaluation imports, and omits GPU submission templates.
+  **24 local tests and independent review passed**; these tests are not cache,
+  training, performance or GPU-admission evidence. Continue preparation from a
+  new immutable source/output after the separate recovery admission finishes.
+
+The following attempt history remains part of the record; these dated
+observations do not reinstate superseded preparation blockers:
 
 - CUDA QA attempt 3 completed eight-rank BF16/NCCL startup, the pooling tests
   including a real CUDA numerical test, and BF16/FP32 single-device synthetic
-  operator measurements. Its complete 56-object archive and raw timing
-  statistics were independently accepted. These are operator-level results;
-  full-model, distributed-training and H20/B300 speed comparisons remain open.
-  See [the accepted QA evidence and scope](../results/STATUS.md#cuda-engineering-validation).
-- SmolLM2 seed29 alignment a2 remains a failed training attempt. Its exact
-  268-object failure archive and all 29 checkpoint300 files have now passed
-  independent full GET/SHA verification. A fresh a3 control package for native
-  recovery from step 300 to 718 passed its first source review, but its v1 CPU
-  admission then failed on an overly broad framework-import guard. A real Linux
-  probe confirmed that the unchanged native CPU safetensor header reader imports
-  PyTorch without materializing tensors, loading optimizer state or initializing
-  CUDA. The v2 control corrects this guard and its reported facts, preserves the
-  original source and allocation mask, and has passed targeted local tests.
-  The v2 package has now passed fresh CPU admission and independent review and
-  was submitted once as `jinhaopeng-dpvlm-p1-smollm2-s29-align-a3-n1-bdff2`, UID
-  `ab061a99-000f-4283-b806-249ea5287fdf`. The November 17 **04:37:10 UTC** readback
-  recorded the Job Created and its Pod Pending/Unschedulable for node resources.
-  The stream/low, one-node/eight-GPU, restart-Never contract passed, with no
-  forced node. The **15:16:12 UTC** exact readback now confirms Running at
-  **06:20:58 UTC** and Failed at **06:25:50 UTC**. Hardware identity and all
-  eight ranks' BF16 forward/backward and NCCL checks passed, but the preflight
-  process received SIGTERM after 58.5 seconds and did not exit normally.
-  The signal source is unconfirmed. **No formal training startup, native
-  recovery or new optimizer step is observed**; the requested recovery remains
-  300 → 718. All six project Jobs and three remaining Pods are terminal in this
-  readback. The original CPU admission, Pending history, recipe and checkpoint
-  bindings remain intact; the v1 attempt and its failure evidence are retained.
-  At **15:18:48 UTC**, exact Job/Pod UID event queries returned no events and
-  the exact attempt-3 OSS run prefix contained zero objects. Its failure archive
-  was incomplete at that observation. The source checkpoint still had 29 files / 8,642,273,132
-  bytes by count/size inspection; its large payloads were not rehashed in that
-  check. This attempt produced no training-directory files.
-  On November 18 at **00:40:07 Beijing time**, a separate one-time failure
-  archive passed independent full GET/SHA acceptance: 337 objects / 940,846,953
-  bytes. Original run/control files were preserved; the accepted attempt-2
-  archive was not repeated. Attempt-4 control is sealed around the same
-  attempt-2 checkpoint 300. Fresh CPU/live admission and independent review
-  passed at **00:47:33** and **00:48:09 Beijing time**, with a 77,200,884,510-byte
-  capacity projection. Client/server dry-runs created no actual job. The actual
-  attempt-4 Job `jinhaopeng-dpvlm-p1-smollm2-s29-align-a4-n1-0aece`, UID
-  `01f3dce0-998d-47c3-95c0-98d7c5c833d2`, was submitted once at **00:52:31**,
-  became Running at **00:52:59** and Failed at **00:53:02 Beijing time**.
-  Its container exited1 with no restarts after startup could not read its
-  exact submission receipt. The later submission collection contains that
-  receipt. No startup admission, hardware/preflight, native recovery or new
-  optimizer update was observed. The **00:53:30** readback finds all seven
-  project Jobs and four Pods terminal. This failure remains separately recorded
-  and does not invalidate its earlier CPU admission.
-- Attempt-4 metadata/startup failure archival passed independent full GET/SHA
-  acceptance on November 18 at **01:06:57 Beijing time**: **124 objects /
-  15,310,756 bytes**. No new training checkpoint was created; original trees
-  remain preserved and the attempt-2 checkpoint/archive was not repeated.
-  Attempt 5 adds atomic submission READY publication and a bounded startup
-  wait, with 90 passing CPU tests and a real Linux shared-filesystem synthetic
-  smoke. These checks do not establish actual GPU submission or recovery;
-  Fresh CPU/live admission and independent review subsequently passed at
-  **01:14:19** and **01:14:54 Beijing time**, with a **77,216,548,305-byte**
-  capacity projection. The actual attempt-5 Job
-  `jinhaopeng-dpvlm-p1-smollm2-s29-align-a5-n1-6e7fe`, UID
-  `f9761d5d-7e4e-4e0b-8e45-78dd658f580a`, was created once at **01:19:04**.
-  Root confirmed its identity and published the atomic READY receipt at
-  **01:19:36**. Independent submission review accepted the complete 45-file
-  readback and READY/intent bindings. At **01:22:49 Beijing time**, the exact
-  Pod was Pending/Unschedulable for CPU, memory and GPU resources; it was the
-  sole nonterminal project Job/Pod among eight Jobs and five Pods. This remains
-  a dated Pending observation. The same Job became Running at **02:18:19**
-  and Failed at **02:37:32 Beijing time on November 18**. Its real GPU
-  submission handshake, eight-device hardware checks, eight-rank BF16/NCCL
-  checks and enclosing preflight command passed. Formal training continued
-  natively from checkpoint300 to logged **354/718**, adding 54 updates.
-  A separate native CPU verification at **18:34:11 on November 19** passed
-  checkpoint350's full 29-file / 8,642,274,062-byte SHA inventory and native
-  metadata/contract checks. It is a candidate for the remaining 368 updates;
-  optimizer/scheduler/RNG deserialization, exact archival and fresh independent
-  recovery admission remain open. The controller records SIGTERM with unknown
-  source; runner exit1 does not establish the missing original container's
-  exit code. The November 19 **18:29:22 Beijing time** exact readback has six
-  project Jobs and three Pods, all terminal, and the original a5 Pod is absent.
-  At **18:31:29**, exact Job/Pod UID event lists were empty and the exact a5
-  OSS run prefix had zero objects; automatic failure archival is incomplete.
-  No final model, training-completion receipt or new held-out result is
-  observed. Actual native continuation does not prove numerical resume
-  equivalence or complete the suite's independent recovery binding.
-- R4 seed17 SFT has a durable step600/718 checkpoint, but five model/optimizer
-  payload files are missing locally. Recovery still needs their exact archived
-  bytes restored and rehashed, followed by complete native-state and fresh
-  capacity/source/scheduler admission. Its larger recovery remains capacity
-  gated; a recorded checkpoint is not a completed R4 model or benchmark result.
-- The full suite still needs its own independently accepted, byte-bound
-  historical entries and complete machine environment. A separate failure
-  archive or recovery package does not supply `SUITE_HISTORY_ACCEPTED` or prove
-  a successful GPU resume by itself.
-- Real F4/F16 original-video caches have not been generated and admitted. The
-  cache builder, hydration adapter and synthetic-data tests do not replace
-  those actual bucket artifacts.
+  operator measurements. Its 56-object archive and raw timing statistics were
+  independently accepted. These are operator-level results; full-model,
+  distributed-training and H20/B300 speed comparisons remain open. See
+  [the accepted QA evidence and scope](../results/STATUS.md#cuda-engineering-validation).
+- SmolLM2 seed29 alignment a2 failed, and its 268-object failure archive and
+  29-file checkpoint300 passed independent full GET/SHA verification. Attempt
+  3 retained that checkpoint and original source. Its first control package
+  failed a CPU framework-import guard; corrected v2 passed admission and was
+  submitted as `jinhaopeng-dpvlm-p1-smollm2-s29-align-a3-n1-bdff2`, UID
+  `ab061a99-000f-4283-b806-249ea5287fdf`. On November 17 it became Running at
+  **06:20:58 UTC** and Failed at **06:25:50 UTC**. Hardware and eight-rank
+  BF16/NCCL checks passed, but preflight received SIGTERM. The signal source
+  is unconfirmed; no native training recovery or new optimizer step was
+  observed. Its separate failure archive passed independent acceptance on
+  November 18 at **00:40:07 Beijing time**: 337 objects / 940,846,953 bytes.
+- Attempt 4, `jinhaopeng-dpvlm-p1-smollm2-s29-align-a4-n1-0aece`, UID
+  `01f3dce0-998d-47c3-95c0-98d7c5c833d2`, passed CPU/live admission and was
+  submitted on November 18 at **00:52:31 Beijing time**. It became Running
+  at **00:52:59** and Failed at **00:53:02** after startup could not read its
+  exact submission receipt. The later collection contains that receipt.
+  No native recovery or optimizer update was observed. Its separate
+  metadata/startup archive passed independent full GET/SHA acceptance at
+  **01:06:57**: 124 objects / 15,310,756 bytes. Original trees and the accepted
+  attempt-2 archive were preserved.
+- Attempt 5 added atomic submission READY publication and a bounded startup
+  wait. CPU/live admission, independent review and the exact submission
+  handshake passed for `jinhaopeng-dpvlm-p1-smollm2-s29-align-a5-n1-6e7fe`, UID
+  `f9761d5d-7e4e-4e0b-8e45-78dd658f580a`. It was created at **01:19:04**, became
+  Running at **02:18:19** and Failed at **02:37:32 Beijing time on November
+  18**. Hardware, eight-rank BF16/NCCL and preflight passed; formal training
+  natively continued from step300 to logged **354/718**, adding 54 updates.
+  Durable checkpoint350 subsequently passed its full 29-file SHA and native
+  CPU metadata checks and is now included in the prepared history above.
+  The controller recorded SIGTERM with unknown source; runner exit1 does not
+  establish the missing original container's exit code. The November 19
+  **18:29:22 Beijing time** readback found six project Jobs and three Pods
+  terminal, with the original a5 Pod absent. At **18:31:29**, exact UID event
+  lists were empty and the original a5 run prefix contained zero objects.
+  The later dedicated checkpoint-preparation archive is distinct from that
+  dated incomplete whole-run archive observation. No a5 final model or new
+  held-out result was established.
 
 The current model results and curated evidence identities are linked from
 [STATUS.md](../results/STATUS.md) and [status.json](../results/status.json).
-The Smol failure-archive acceptance SHA256 is
+The Smol attempt-2 failure-archive acceptance SHA256 is
 `ee0fdcb1e2c6198e1cb6b10b9c167787a4c9875d545f06ba82a4caa5cb052b6f`;
 the corrected a3 v2 control manifest is
 `ec16b955ebe27da3971e2290d44447eb01e596552593373af8d555d04eba24f4`.
 Original operational artifacts remain private.
 
-These are a preparation snapshot, not permanent assumptions. Re-read the
+These are preparation snapshots, not permanent assumptions. Re-read the
 latest human instructions, source artifacts, exact scheduler Job/Pod state
 and exact bucket prefixes before any real operation. Do not reconstruct
 acceptance JSON from this prose or mark an old run complete from its name.
@@ -165,7 +168,7 @@ declared test does not silently remove it from the scope.
 ## Allocation and storage contract
 
 Human authorization permits both `haopengjin2ali` and `haopengjin3ali`.
-The latest November 17 operations use the authorized `haopengjin3ali` alias;
+The November 20 observations use the authorized `haopengjin3ali` alias;
 fresh read-only checks matched the shared runtime versions and source pins.
 The November 13 connection observations are historical and must not override
 this newer evidence. SSH configuration is unchanged; host addresses remain
@@ -178,28 +181,49 @@ inputs. Moving execution to another authorized host requires that same review
 and verification, without editing or bypassing an old frozen package. The
 public suite does not impose a blanket alias-name guard.
 
-The suite allocation is
-`ali-gpu` / `stream`, priority `low`, one Master node, eight GPUs, and
-`restartPolicy: Never`. At most one project workload may exist in an active
-state, including Pending Jobs, orphan Pods and terminating workloads. The
-launcher performs a fresh complete project Job/Pod check. It never raises
-priority, changes pool, selects a fixed node, preempts another user, starts
-Baidu parallel training, or creates a monitoring automation.
+The current authorization permits **one to four B300 worker nodes** in
+`ali-gpu` / `stream`, with **`normal` or `low` priority**. Each exact worker Job
+has one Master node, eight GPUs and `restartPolicy: Never`; this is a
+coordinated fleet of single-node workers, not one distributed multi-node
+training run. The separate a6 recovery preparation targets one eight-GPU
+node. Its actual submission and runtime state require their own evidence.
+See [the current fleet workflow](operations/REMAINING_SUITE_WORKFLOW.md) for the
+execution profile, admission rules, complete project Job/Pod checks and shared
+task claims. A standalone
+recovery and suite workers must not perform the same stage concurrently.
+No launcher may infer a priority/pool change from spare capacity, preempt
+another user, start Baidu parallel training or create a monitoring automation.
 
-The suite controller is one foreground process. Training and sharded
+The earlier a3–a5 attempts and the legacy single-worker launcher example below
+retain their original **low / one-node / eight-GPU** contracts. Their earlier
+two-root **99 GB** admission observations are historical evidence; they do
+not impose the current fleet/storage policy or authorize editing frozen
+attempts in place.
+
+Each worker's suite controller is one foreground process. Training and sharded
 evaluation launch their own eight-rank process groups sequentially; the
 controller itself must not be launched under `torchrun`. Startup verifies the
 actual Job/Pod UID, allocation fields, eight distinct GPU UUIDs and distributed
 all-reduce. A low-priority node can still be preempted externally; "one node"
 is not a promise that an allocation will survive to the last task.
 
-The two declared storage roots are disjoint paths on the same filesystem.
-Their combined projected use must stay **below 99,000,000,000 bytes**, with
-the configured extra reserve and at least a 1,000,000,000-byte free-space
-guard. Charge restored inputs, benchmark PNGs, weights, FP32 Adam state,
-checkpoint rotation, logs and the 64 MiB OSS multipart scratch. New training
-stages estimate their peak using real safetensor headers and recheck capacity.
-Do not credit a future deletion before its successful cleanup receipt exists.
+The current storage schema is v2. Four declared, non-overlapping roots are
+accounted together: `~/.cache/Paper/DeepProbe-VLM`,
+`~/.cache/Paper/DeepProbe-VLM-p1`, `~/Paper/DeepProbe-VLM`, and
+`~/.config/deepprobe-vlm`. The exact remote paths are bound in the environment.
+All workers share one reservation ledger. Combined projected home use,
+including live reservations and the **2,000,000,000-byte safety reserve**, must
+stay **below 150,000,000,000 bytes**, with a **1,000,000,000-byte filesystem
+free-space guard**. Charge restored inputs, benchmark PNGs, weights, FP32 Adam
+state, checkpoint rotation, logs and the 64 MiB OSS multipart scratch. New
+training stages estimate their peak using real safetensor headers and recheck
+capacity. Do not credit a future deletion before its cleanup receipt exists.
+
+The user removed the OSS quota: `oss_limit_bytes: null`. Retain verified OSS
+checkpoint archives; do not delete them to satisfy an obsolete bucket cap.
+Eligible local weights can be removed after verified OSS archival and all
+declared consumers complete. A ModelScope backup is not a prerequisite for
+that local cleanup when the accepted OSS archive is retained.
 
 Checkpoint cleanup releases local disk space. Separate process exit/model
 unloading releases host RAM and GPU memory. Removing a checkpoint while its
@@ -262,8 +286,9 @@ by `suite_bindings.validate_environment`:
 - `schema_version`, `suite_id`, `experiment_root`, `python`, `run_root` and
   `archive_root`: exact execution identity and paths. The archive root is
   the fresh stream namespace before the per-run `/runs/<run_id>/` suffix.
-- `storage`: the two roots, fixed `limit_bytes`, `other_reserve_bytes` and
-  `free_guard_bytes`.
+- `storage`: v2's four exact roots, shared `ledger_root`,
+  `home_limit_bytes: 150000000000`, `home_safety_bytes: 2000000000`,
+  `free_guard_bytes: 1000000000`, and `oss_limit_bytes: null`.
 - `source_files` and `runtime_environment`: immutable sources and the allowed
   runtime variables. Credentials stay in the installed config files.
 - `task_reserve_bytes`: explicit reserves for startup, gate, alignment, SFT,
@@ -357,6 +382,13 @@ checked again during launch and before tasks; a CPU estimate cannot reserve
 future free space or prove a CUDA implementation is correct.
 
 ## 5. Review exact YAML and launch once
+
+For the current one-to-four-worker profile, use
+[REMAINING_SUITE_WORKFLOW.md](operations/REMAINING_SUITE_WORKFLOW.md) and the fleet
+launcher. The commands below document the retained **legacy v1 single-worker
+low-priority launcher**; they do not change its fixed allocation checks to
+accept a normal-priority fleet. Never reuse a legacy launch intent as a new
+fleet submission.
 
 Prepare one candidate PyTorchJob YAML with the installed scheduler's
 documented dry-run tooling. This repository's launcher consumes that reviewed
@@ -501,7 +533,8 @@ original runtime configuration bytes and the original data/batch/schedule
 contract. Recovery copies or restores into a fresh owned suite run and leaves
 the original interrupted run intact. On a later interruption, the newest
 structurally complete checkpoint in that owned run takes precedence over the
-original step300/step600 recovery input. Torn newer saves are preserved.
+currently bound step350/step600 recovery input. The older Smol a3–a5 packages
+retain their historical step300 initializer. Torn newer saves are preserved.
 
 An OSS-only historical checkpoint additionally supplies an
 `archive_acceptance` file pin present in the independent audit's `evidence`.
@@ -528,7 +561,7 @@ preserved as a failure and does not trigger repeated trials seeking a pass.
 
 ## Preparation verification
 
-The final public CPU suite passed **624 tests**, with **80 skips**, on
+The historical full public CPU suite passed **624 tests**, with **80 skips**, on
 2026-11-12. The captured pytest output SHA-256 is
 `cda7bdbf62b4f80faa5ea07385227cc3d5ce3118c04b85844e7cc4343a5c7820`.
 Skipped CUDA/private-evidence checks do not count as real GPU acceptance.
