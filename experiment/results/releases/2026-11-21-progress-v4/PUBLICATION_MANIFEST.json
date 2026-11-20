@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "release_id": "2026-11-21-progress-v4",
+  "kind": "CURATED_EXPERIMENT_RESULTS",
+  "created_utc": "2026-11-20T20:44:32.030394+00:00",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 2830,
+      "sha256": "dbc01b95f3112b9b597ecab969beb6779359ae68268771e11c3bba5a286c1074"
+    },
+    {
+      "path": "progress.json",
+      "bytes": 14464,
+      "sha256": "3b9158a8b04227b6fd583794ab7e8c7f715b71a129078332371b658aa6a141f1"
+    }
+  ],
+  "file_count": 2,
+  "payload_bytes": 17294,
+  "provenance": {
+    "source_code_commit": "65e562c67d0adfd1573c99dca722082b231c03a2",
+    "snapshot_observed_at_utc": "2026-11-20T20:36:26.404126+00:00",
+    "exact_terminal_observation_sha256": "7966f4d9affaafd5453fb5b94a5c64087cd5be4b7e6d3d5e8bc84f6c416652e7",
+    "independent_admission_sha256": "b5492f7a82d30e8e91460b734bfcfa74711843dc20a051439f8ad6bb351000d4",
+    "new_scientific_results": false
+  },
+  "scope": "Results and documents only; no media, weights or private cluster snapshots."
+}

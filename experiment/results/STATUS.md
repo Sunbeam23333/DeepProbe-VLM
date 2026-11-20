@@ -6,35 +6,60 @@ at about **11:25:46 Beijing time** after 100 min 15 s; both preflights also exit
 Formal and stage completion receipts, Trainer state and the saved final/cp718
 inventories agree on completion. This completes alignment training only.
 
-The enclosing Job **Failed at 11:27:04 Beijing time**, with container exit1,
-after the controller could not read `/proc/1687474/environ` during archival.
+The enclosing Job **Failed at 11:27:04 Beijing time on November 20**, with
+container exit1, after a process-metadata permission error during archival.
 The archive child received SIGTERM; external preemption is not established.
-The original archive manifest lists 239 payloads / 18,149,819,512 bytes. The exact
-prefix at the November 20 14:57 UTC readback contained 82 objects /
-916,219,811 bytes, leaving 157 payloads / 17,233,599,701 bytes absent.
-There is no `ARCHIVED.json` or independent archive
-acceptance. Final 18 files / 8,589,657,473 bytes and cp718 29 files / 8,642,280,705 bytes
-remained locally; names and lengths matched the manifest, with fresh full hashes
-still pending in that observation. The later recovery precheck passed at
-**01:18:26 Beijing time on November 21**: all 240 local files passed SHA checks,
-and all 82 existing objects passed full GET/SHA. The supplement-upload and
-independent-audit client started at **01:19:54** and is running, with no client,
-execute or audit completion receipt yet. Completion receipts and root acceptance
-remain required; client startup does not establish a completed upload.
-The original Job remains Failed, and no native `ARCHIVED.json` is fabricated.
-**Do not repeat alignment training.** Complete and verify its
-archive before admitting Smol SFT and evaluations. No new held-out result exists.
-Current source identities and evidence hashes are recorded in [status.json](status.json).
+The original Job remains Failed. A separate recovery uploaded **158 objects /
+17,233,643,424 bytes**, preserving the existing 82 objects. The complete archive
+contains **240 objects / 18,149,863,235 bytes**: 239 original payloads and their
+original manifest. All objects passed full GET/SHA verification and a separate
+independent audit, followed by archive acceptance at **03:19:10 Beijing time on
+November 21**. The final checkpoint has **18 files / 8,589,657,473 bytes**.
+The completed final was also successfully imported into native suite history.
+The recovery acceptance is separate; no native `ARCHIVED.json` was fabricated.
+**Do not repeat alignment training.** Matched Smol SFT and evaluations remain
+pending. There is no new Smol SFT completion or held-out result.
+Evidence hashes and dated observation scopes are recorded in [status.json](status.json).
 
-The full **185-task** source is synchronized at `4034666`; **190 scoped CPU
-tests** passed, including synthetic full-DAG execution with 1–4 claimants.
-The synthetic completions are not experiment results. Checkpoint-chain
-backpressure covers 17 components, permits at most one active training claim,
-waits for the previous stage's archive and holds a component until all its
-consumer/cleanup barriers finish. The source-v4/control-v8 candidate is locally
-frozen and has not been deployed or submitted to the GPU queue. The current
-plan is **one normal-priority worker, one node and eight GPUs** under the
-shared 150 GB home budget; fresh capacity and submission admission remain required.
+Latest code is synchronized at `65e562c`. The v6 repair uses bounded,
+paginated server metadata queries and exact project-object reads; **137 scoped
+CPU tests** passed. Earlier 190-test and full-repository records remain dated history.
+The full 185-task candidate passed CPU admission at **04:25:13 Beijing time on
+November 21**: 68 checks passed, four F4/F16 cache shapes were explicitly deferred,
+and no check failed. The **04:28:09** server dry-run passed with 52 exact empty
+archive prefixes and no duplicate Job UID; independent admission passed at **04:30:30**. The reviewed
+worst checkpoint-chain peak is **142,546,098,993 bytes**, leaving
+**7,453,901,007 bytes** below the 150 GB home limit. Capacity is rechecked per task.
+
+The replacement **attempt-2 Job and Pod are observed Failed** at **04:36:26 Beijing time**,
+with the exact identity returned by the successful single submission, **exit1 and
+zero restarts**. Its eight-device hardware report passed the B300 identity contract
+(compute capability 10.3, 267.69 GiB per device), BF16 attention forward/backward
+and all-reduce. The new controller startup acceptance receipt is present.
+The first engineering `gpu_gate` task was claimed and failed during Triton
+`cuda_utils` initialization: the default `/.triton` cache directory was not writable.
+The intended numerical kernel had not launched; this is not a CUDA numerical
+discrepancy. **No training/evaluation task, scientific completion or new optimizer
+update is observed.** An explicit task-owned cache-directory repair is being prepared.
+The failed allocation used one normal-priority stream worker, one node and eight GPUs.
+
+The first worker remains Failed after the 03:52:38 controller query timeout;
+its 03:54:45 terminal observation and passed startup are retained as history.
+It produced no scientific task or checkpoint. Its small failure archive now has
+**18 objects / 103,783 bytes**, verified by complete GET/SHA. The stopped worker's
+lease was retired before the separate v6 attempt. Original files are preserved.
+
+Both Video-MME and TempCompass **F8 caches remain READY**. The F4/F16 decoder and
+publisher have restarted under controlled CPU recovery; no new shape READY has
+been observed. Their earlier `_UnverifiedMarker` failure is retained separately.
+Training proceeds through its own input and capacity gates; every evaluation
+waits for its own READY receipt. Checkpoint-chain backpressure covers 17 components
+and permits one training claim at a time. A local checkpoint is retired only after
+verified durable archival and all evaluation/latency/other consumers complete.
+
+After accepting a6 alignment, the remaining model work is **27 new training
+stages plus 118 R4 SFT updates**, and **32 new model/benchmark evaluations**.
+Full-model latency measurements and comparative statistics also remain open.
 
 At **01:13 Beijing time on November 21**, independently checked cleanup removed
 six already archived old checkpoint weight files, releasing **17,116,975,648 bytes**.
@@ -82,7 +107,7 @@ accepted and remain distinct from this new run; original source/checkpoint
 files were preserved. The historical attempt 5 continuation did not complete alignment or establish
 numerical resume equivalence; the newer a6 training completion is recorded above.
 
-The full experiment suite remains unsubmitted. R4 SFT still needs its final 118
+The full-suite worker was submitted and failed at its first engineering gate. R4 SFT still needs its final 118
 updates from the authenticated cp600 archive binding. Smol SFT and new-model
 evaluation remain pending; the a6 alignment result is not a complete two-stage
 model or a held-out quality result.
@@ -164,8 +189,7 @@ restart policy Never and no forced node. The server dry-run object was **not
 created**; its temporary UID is not an actual Job identity.
 
 After fresh submission checks, attempt 3 was submitted once at **12:36:14** as
-`jinhaopeng-dpvlm-p1-smollm2-s29-align-a3-n1-bdff2`, UID
-`ab061a99-000f-4283-b806-249ea5287fdf`. The client exited 0, and the actual Job
+`jinhaopeng-dpvlm-p1-smollm2-s29-align-a3-n1-bdff2`. The client exited 0, and the actual Job
 contract matches stream/low, one node, eight GPUs, restartNever and no forced
 node. The final submission-side capacity projection was **75,879,399,133
 bytes**, still below 99 GB. This actual Job is distinct from the earlier
@@ -241,8 +265,7 @@ The server dry-run object was not created; its name ending `8abcf` is not an
 actual Job identity.
 
 The one-shot submit client exited0 and confirmed the actual Job
-`jinhaopeng-dpvlm-p1-smollm2-s29-align-a4-n1-0aece`, UID
-`01f3dce0-998d-47c3-95c0-98d7c5c833d2`, created at **00:52:31**. The actual
+`jinhaopeng-dpvlm-p1-smollm2-s29-align-a4-n1-0aece`, created at **00:52:31**. The actual
 contract matches stream/low, one node, eight GPUs, restart Never and no forced
 node. Submission freshly rechecked a **77,200,944,069-byte** capacity projection
 and bound its durable intent before the single create.
@@ -282,8 +305,7 @@ created no actual Job. The scientific recipe and checkpoint300 recovery
 source remain unchanged.
 
 After fresh submission checks, the one-shot client exited0 and created
-`jinhaopeng-dpvlm-p1-smollm2-s29-align-a5-n1-6e7fe`, UID
-`f9761d5d-7e4e-4e0b-8e45-78dd658f580a`, at **01:19:04**. The actual allocation
+`jinhaopeng-dpvlm-p1-smollm2-s29-align-a5-n1-6e7fe`, at **01:19:04**. The actual allocation
 contract matches stream/low, one node, eight GPUs, restart Never and no forced
 node. Submission remeasured **49,932,063,109 bytes** plus the same reserve,
 for a **77,216,609,373-byte** projection. The durable intent preceded the one
@@ -423,9 +445,8 @@ No new benchmark results are claimed by these training and archive updates.
 
 Run `dp-cuda-pool-qa-20261114-a3` binds source commit
 `5a14d3e7bd65a5869f21cb32d79221a03d695af9` and the reviewed v3 package.
-Its exact job is `jinhaopeng-dpvlm-cuda-pool-qa-20261114-a3-n1-abd5f`, UID
-`152670ef-e80f-4ec0-8359-1060e0db32dc`. The earlier November 14 Pending
-observations remain in history. The Job became Running at **13:48:11** and
+The original Job identity is retained in private evidence. The earlier
+November 14 Pending observations remain in history. The Job became Running at **13:48:11** and
 Succeeded at **13:51:28**; its container ran from **13:48:10 to 13:51:26**,
 exit code 0, with no restarts. The contract was stream/low, one node, eight
 GPUs, restart Never and no forced node.
@@ -465,8 +486,7 @@ review, an exact server-side dry-run and independent submission review passed
 before/after the one-shot create as recorded in their individual receipts.
 
 The attempt-2 exact job
-`jinhaopeng-dpvlm-cuda-pool-qa-20261113-a2-n1-772f8`, UID
-`ca956db5-7166-4452-93b8-d89fecd6cc33`, was created at **00:26:08 on November
+`jinhaopeng-dpvlm-cuda-pool-qa-20261113-a2-n1-772f8`, was created at **00:26:08 on November
 13** (UTC November 12, 16:26:08). The **00:26**, **00:27** and **00:31 Pending**
 observations remain in history. It subsequently became Running at **01:11:09**
 and Failed at **01:14:39**. The original Pod is still present; its container
@@ -580,27 +600,22 @@ rescan capacity. No new recovery-submission evidence was found. These fresh
 observations are separately retained under `training_progress_observations`;
 the older training and capacity facts remain unchanged.
 
-The complete suite retains 18 model configurations, 34 training stages,
-36 evaluations, 15 latency runs, 12 comparisons and **185 operational tasks**.
-It remains unsubmitted. The new locally tested scheduler can run admitted,
-ready tasks while benchmark caches prepare; it publishes verified cache
-receipts as they become ready and applies checkpoint-chain backpressure.
-This does not waive individual task inputs, capacity or startup checks.
-The seven November 20 historical/checkpoint preparations are authenticated;
-R4 cp600 has full archive GET/SHA and native metadata verification, while
-runtime model/optimizer/RNG recovery remains untested. The suite must replace
-its old Smol cp350 continuation with the accepted a6 final after archive
-recovery, so the completed 368 alignment updates are not repeated.
+The full plan retains 18 model configurations, 34 training stages, 36 evaluations,
+15 latency runs, 12 comparisons and **185 operational tasks**. Six training stages
+and four evaluations are authenticated historical reuse. R4 cp600 has complete
+archive GET/SHA and native metadata verification; actual model/optimizer/RNG restore
+is still a runtime requirement. The completed a6 alignment is imported into suite
+history and must not be repeated.
 
 ## Remaining work
 
-1. Obtain completion receipts from the running a6 supplement-upload/audit client
-   and root archive acceptance, import its completed final into the suite, then
-   admit matched Smol SFT and evaluations. Its 718 alignment updates are complete.
-2. Finish R4 runtime checkpoint recovery and storage admission, run its remaining
-   118 SFT updates, then archive and evaluate the completed model.
-3. Complete the additional training seeds and declared ablations, controlled
-   cost/latency experiments and updated comparative statistics.
+1. Repair the task-owned Triton cache directory and pass fresh admission before
+   launching a separate replacement. Hardware/startup already passed on attempt 2.
+2. Run Smol SFT and evaluations from the accepted a6 final; restore R4 cp600,
+   verify runtime recovery and complete its remaining 118 SFT updates.
+3. Finish F4/F16 cache READY publication. Both F8 caches are already accepted.
+4. Complete 27 new training stages, 32 new evaluations, 15 latency runs,
+   12 comparisons, verified archival/consumer cleanup and final aggregation.
 
 MVBench has no accepted result in this release. Its authorization/media status
 was not reverified in this check. Existing benchmark timings do not constitute

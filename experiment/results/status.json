@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
-  "observed_at_utc": "2026-11-20T17:18:26.556688+00:00",
+  "observed_at_utc": "2026-11-20T20:36:26.404126+00:00",
   "display_timezone": "Asia/Shanghai",
-  "observation_note": "Smol a6 completed all 718 alignment optimizer steps, adding 368 updates from cp350; its formal training child and both preflights exited 0. The original Job remains Failed after the archival interruption. Recovery precheck passed at 2026-11-20T17:18:26Z: 240 local files passed SHA and 82 existing objects passed full GET/SHA. The supplement-upload and independent-audit client started at 2026-11-20T17:19:54Z and is running; client, execute and audit completion receipts plus root archive acceptance are still pending. Client startup is not upload completion. Do not repeat alignment. Source 4034666 preserves the full 185-task DAG and passed 190 scoped CPU tests; source-v4/control-v8 is locally frozen, not deployed or GPU submitted. The current plan is one normal-priority, one-node/eight-GPU worker under the 150 GB shared home budget. No new held-out result is claimed.",
+  "observation_note": "The repaired v6 full185 attempt-2 worker is confirmed Failed at 2026-11-20T20:36:26.404126+00:00, with the same Job UID as its successful one-shot submission, exit 1 and zero restarts. Its eight-device hardware report passed, including BF16 attention forward/backward and all-reduce. The new controller startup acceptance receipt is present. The first engineering gpu_gate task was claimed, then failed during Triton cuda_utils initialization because its default /.triton cache directory was not writable. The intended numerical kernel had not launched; this is not a CUDA numerical discrepancy. No training/evaluation claim, scientific completion or new optimizer update is observed. An explicit task-owned cache-directory repair is being prepared. The original worker remains Failed; its small failure archive is accepted. Both F8 caches remain READY; F4/F16 CPU recovery is active but none of its four READY descriptors has been observed. Accepted a6 alignment/archive/history and R1/R2 quality results are unchanged.",
   "new_held_out_results": false,
   "runs": {
     "dp-p1-ouro-r4-f8-g4-s17-sft-a1": {
@@ -859,7 +859,7 @@
       "submission_status": "submitted_exact_job_observed",
       "submission_outcome_confirmed": true,
       "gpu_submitted": true,
-      "job_uid": "ab061a99-000f-4283-b806-249ea5287fdf",
+      "job_uid": "withheld_from_public_status",
       "last_observed_at_utc": "2026-11-17T15:16:12.944130+00:00",
       "source_run_id": "dp-p1-smollm2-f8-g4-s29-alignment-a2",
       "source_checkpoint_step": 300,
@@ -894,7 +894,7 @@
       "scientific_source_changed": false,
       "control_package_sha256": "ec16b955ebe27da3971e2290d44447eb01e596552593373af8d555d04eba24f4",
       "runtime_config_sha256": "ba40e4a90c5ca3c58ff67c367c55948b8d2732087b468a98e0c66d02e318b7e0",
-      "exact_new_oss_prefix": "oss://ss-devbox-stream/jinhaopeng/Paper/DeepProbe-VLM/runs/dp-p1-smollm2-f8-g4-s29-alignment-a3/",
+      "exact_new_oss_prefix": "withheld_from_public_status",
       "exact_new_oss_prefix_empty_at_admission": true,
       "client_and_server_dryrun_contracts_verified": true,
       "server_dryrun_object_not_created": true,
@@ -940,7 +940,7 @@
           "last_observed_at_utc": "2026-11-17T04:37:10.526227+00:00",
           "job_condition": "Created",
           "pod_phase": "Pending",
-          "pod_uid": "56247464-e013-4422-b9ee-7fb6cab6ab2a",
+          "pod_uid": "withheld_from_public_status",
           "pending_reason": "Unschedulable: matching stream nodes lack sufficient CPU, memory and GPU resources for the single-node eight-GPU allocation.",
           "allocated_node_observed": false,
           "container_observed": false,
@@ -976,7 +976,7 @@
         {
           "status": "Pending",
           "observed_at_utc": "2026-11-17T04:44:59.569797+00:00",
-          "job_uid": "ab061a99-000f-4283-b806-249ea5287fdf",
+          "job_uid": "withheld_from_public_status",
           "pod_phase": "Pending",
           "training_startup_observed": false,
           "new_optimizer_updates_observed": false,
@@ -992,7 +992,7 @@
           "archive_observation": {
             "observed_at_utc": "2026-11-17T15:18:48.324188+00:00",
             "completed_at_utc": "2026-11-17T15:18:50.483291+00:00",
-            "exact_prefix": "oss://ss-devbox-stream/jinhaopeng/Paper/DeepProbe-VLM/runs/dp-p1-smollm2-f8-g4-s29-alignment-a3/",
+            "exact_prefix": "withheld_from_public_status",
             "listing_returncode": 0,
             "object_count": 0,
             "bytes": 0,
@@ -1004,8 +1004,8 @@
           "status": "failure_archive_writer_verified_before_independent_review",
           "archive_observation": {
             "observed_at_utc": "2026-11-17T16:38:21.605733+00:00",
-            "exact_prefix": "oss://ss-devbox-stream/jinhaopeng/Paper/DeepProbe-VLM/runs/dp-p1-smollm2-f8-g4-s29-alignment-a3/",
-            "failure_prefix": "oss://ss-devbox-stream/jinhaopeng/Paper/DeepProbe-VLM/runs/dp-p1-smollm2-f8-g4-s29-alignment-a3/failure-evidence/",
+            "exact_prefix": "withheld_from_public_status",
+            "failure_prefix": "withheld_from_public_status",
             "object_count": 337,
             "bytes": 940846953,
             "writer_verification_passed": true,
@@ -1177,7 +1177,7 @@
       "job_created_at_utc": "2026-11-17T04:36:14Z",
       "job_condition": "Failed",
       "pod_phase": null,
-      "pod_uid": "56247464-e013-4422-b9ee-7fb6cab6ab2a",
+      "pod_uid": "withheld_from_public_status",
       "pending_reason": null,
       "no_forced_node": true,
       "allocated_node_observed": null,
@@ -1232,8 +1232,8 @@
       },
       "archive_latest_observation": {
         "observed_at_utc": "2026-11-17T16:40:07.350830+00:00",
-        "exact_prefix": "oss://ss-devbox-stream/jinhaopeng/Paper/DeepProbe-VLM/runs/dp-p1-smollm2-f8-g4-s29-alignment-a3/",
-        "failure_prefix": "oss://ss-devbox-stream/jinhaopeng/Paper/DeepProbe-VLM/runs/dp-p1-smollm2-f8-g4-s29-alignment-a3/failure-evidence/",
+        "exact_prefix": "withheld_from_public_status",
+        "failure_prefix": "withheld_from_public_status",
         "object_count": 337,
         "bytes": 940846953,
         "writer_verification_passed": true,
@@ -1322,7 +1322,7 @@
       "submission_status": "submitted_exact_job_observed",
       "submission_outcome_confirmed": true,
       "gpu_submitted": true,
-      "job_uid": "01f3dce0-998d-47c3-95c0-98d7c5c833d2",
+      "job_uid": "withheld_from_public_status",
       "exact_job": "jinhaopeng-dpvlm-p1-smollm2-s29-align-a4-n1-0aece",
       "control_package_sha256": "93c962a60465ff72952c2592ab7ddb9bbd33eec9792eb650ca85ed8343e881e8",
       "cpu_admission_passed": true,
@@ -1507,7 +1507,7 @@
       "capacity_requires_no_cleanup_credit": true,
       "model_weights_loaded_during_cpu_admission": false,
       "optimizer_scheduler_rng_deserialized_during_cpu_admission": false,
-      "exact_new_oss_prefix": "oss://ss-devbox-stream/jinhaopeng/Paper/DeepProbe-VLM/runs/dp-p1-smollm2-f8-g4-s29-alignment-a4/",
+      "exact_new_oss_prefix": "withheld_from_public_status",
       "exact_new_oss_prefix_empty_at_admission": true,
       "client_and_server_dryrun_contracts_verified": true,
       "server_dryrun_object_not_created": true,
@@ -1528,7 +1528,7 @@
       "job_failed_at_utc": "2026-11-17T16:53:02Z",
       "failure_at_utc": "2026-11-17T16:53:02Z",
       "job_condition": "Failed",
-      "pod_uid": "e4c035ca-32fa-4464-afc9-a594d4a10120",
+      "pod_uid": "withheld_from_public_status",
       "pod_phase": "Failed",
       "original_pod_present": true,
       "original_container_exit_code": 1,
@@ -1571,8 +1571,8 @@
       "external_a2_checkpoint_archival_repeated": false,
       "archive_latest_observation": {
         "observed_at_utc": "2026-11-17T17:06:57.550497+00:00",
-        "exact_prefix": "oss://ss-devbox-stream/jinhaopeng/Paper/DeepProbe-VLM/runs/dp-p1-smollm2-f8-g4-s29-alignment-a4/",
-        "failure_prefix": "oss://ss-devbox-stream/jinhaopeng/Paper/DeepProbe-VLM/runs/dp-p1-smollm2-f8-g4-s29-alignment-a4/failure-evidence/",
+        "exact_prefix": "withheld_from_public_status",
+        "failure_prefix": "withheld_from_public_status",
         "object_count": 124,
         "bytes": 15310756,
         "archive_accepted": true,
@@ -1624,7 +1624,7 @@
       "submission_status": "submitted_exact_job_observed",
       "submission_outcome_confirmed": true,
       "gpu_submitted": true,
-      "job_uid": "f9761d5d-7e4e-4e0b-8e45-78dd658f580a",
+      "job_uid": "withheld_from_public_status",
       "exact_job": "jinhaopeng-dpvlm-p1-smollm2-s29-align-a5-n1-6e7fe",
       "control_package_sha256": "5dbb98c55a92edaf7b9188f368edae41181a84f93d33d16fdfc238c1fa92fab5",
       "cpu_admission_passed": true,
@@ -1863,7 +1863,7 @@
         {
           "status": "Pending",
           "observed_at_utc": "2026-11-17T17:20:07.089216+00:00",
-          "job_uid": "f9761d5d-7e4e-4e0b-8e45-78dd658f580a",
+          "job_uid": "withheld_from_public_status",
           "pod_phase": "Pending",
           "gpu_startup_handshake_observed": false,
           "new_optimizer_updates_observed": false,
@@ -1879,7 +1879,7 @@
           "status": "Pending",
           "last_observed_at_utc": "2026-11-17T17:22:49.591658+00:00",
           "job_condition": "Created",
-          "job_uid": "f9761d5d-7e4e-4e0b-8e45-78dd658f580a",
+          "job_uid": "withheld_from_public_status",
           "pod_phase": "Pending",
           "pending_reason": "Unschedulable: eligible nodes have insufficient CPU, memory and GPU resources for the one-node eight-GPU allocation.",
           "hardware_admission_passed": false,
@@ -1932,7 +1932,7 @@
       "capacity_requires_no_cleanup_credit": true,
       "model_weights_loaded_during_cpu_admission": false,
       "optimizer_scheduler_rng_deserialized_during_cpu_admission": false,
-      "exact_new_oss_prefix": "oss://ss-devbox-stream/jinhaopeng/Paper/DeepProbe-VLM/runs/dp-p1-smollm2-f8-g4-s29-alignment-a5/",
+      "exact_new_oss_prefix": "withheld_from_public_status",
       "exact_new_oss_prefix_empty_at_admission": true,
       "client_and_server_dryrun_contracts_verified": true,
       "server_dryrun_object_not_created": true,
@@ -1950,7 +1950,7 @@
       "current_job_uid_verified": true,
       "job_created_at_utc": "2026-11-17T17:19:04Z",
       "job_condition": "Failed",
-      "pod_uid": "61eebc37-16c8-49af-a4da-fdb006c031ad",
+      "pod_uid": "withheld_from_public_status",
       "pod_phase": null,
       "pending_reason": null,
       "submission_client_exit_code": 0,
@@ -2006,7 +2006,7 @@
         "shared_lock_held_while_waiting": false,
         "status": "ROOT_SUBMISSION_HANDSHAKE_ACCEPTED",
         "submission_sha256": "3f75fb93c68c8db15fb921f41daddcfdcf71ee937cba012570e9bf91bc64e282",
-        "uid": "f9761d5d-7e4e-4e0b-8e45-78dd658f580a",
+        "uid": "withheld_from_public_status",
         "utc": "2026-11-17T18:18:20.581407+00:00"
       },
       "preflight_command_completed_successfully": true,
@@ -2036,7 +2036,7 @@
       "local_archive_receipt_present": false,
       "archive_latest_observation": {
         "observed_at_utc": "2026-11-19T10:31:29.973989+00:00",
-        "exact_prefix": "oss://ss-devbox-stream/jinhaopeng/Paper/DeepProbe-VLM/runs/dp-p1-smollm2-f8-g4-s29-alignment-a5/",
+        "exact_prefix": "withheld_from_public_status",
         "object_count": 0,
         "bytes": 0,
         "archive_accepted": false,
@@ -2045,8 +2045,8 @@
       },
       "terminal_events_observation": {
         "observed_at_utc": "2026-11-19T10:31:29.973989+00:00",
-        "exact_job_uid": "f9761d5d-7e4e-4e0b-8e45-78dd658f580a",
-        "exact_pod_uid": "61eebc37-16c8-49af-a4da-fdb006c031ad",
+        "exact_job_uid": "withheld_from_public_status",
+        "exact_pod_uid": "withheld_from_public_status",
         "job_event_count": 0,
         "pod_event_count": 0,
         "termination_source": "unknown",
@@ -2131,9 +2131,9 @@
       "schema_version": 1,
       "run_id": "dp-p1-smollm2-f8-g4-s29-alignment-a6",
       "stage": "alignment",
-      "observed_at_utc": "2026-11-20T17:18:26.556688+00:00",
+      "observed_at_utc": "2026-11-20T19:19:10.078909+00:00",
       "job_name": "jinhaopeng-dpvlm-p1-smollm2-s29-align-a6-n1-16f41",
-      "job_uid": "58a74e0d-7309-4ad6-8a22-266be9d8d956",
+      "job_uid": "withheld_from_public_status",
       "status": "Failed",
       "container_exit_code": 1,
       "failure_at_utc": "2026-11-20T03:27:04Z",
@@ -2150,7 +2150,7 @@
       "training_process_elapsed_seconds": 6014.715020755306,
       "preflight_before_returncode": 0,
       "preflight_after_returncode": 0,
-      "controller_error": "PermissionError reading /proc/1687474/environ",
+      "controller_error": "PermissionError reading process metadata during archival",
       "archive_interrupted_by_signal": 15,
       "failure_interpretation": "Post-training controller/archival failure. The denied PID identity is unknown; external preemption is not established.",
       "final_local_inventory": {
@@ -2158,25 +2158,26 @@
         "bytes": 8589657473,
         "matches_archive_manifest_names_and_lengths": true,
         "fresh_payload_sha_verified": true,
-        "sha_verified_at_utc": "2026-11-20T17:18:26.556688+00:00",
-        "sha_verification_evidence_key": "archive_recovery_precheck"
+        "sha_verified_at_utc": "2026-11-20T19:17:40.057605+00:00",
+        "sha_verification_evidence_key": "archive_recovery_independent_audit",
+        "canonical_inventory_sha256": "d23711cbc2d703821c212ee6590ee3ed2bbe57cd7fa63f38762181b42b8c8098"
       },
       "checkpoint718_local_inventory": {
         "files": 29,
         "bytes": 8642280705,
         "matches_archive_manifest_names_and_lengths": true,
         "fresh_payload_sha_verified": true,
-        "sha_verified_at_utc": "2026-11-20T17:18:26.556688+00:00",
-        "sha_verification_evidence_key": "archive_recovery_precheck"
+        "sha_verified_at_utc": "2026-11-20T19:17:40.057605+00:00",
+        "sha_verification_evidence_key": "archive_recovery_independent_audit"
       },
       "archive_payload_count": 239,
       "archive_payload_bytes": 18149819512,
-      "archive_exact_prefix": "oss://ss-devbox-stream/jinhaopeng/Paper/DeepProbe-VLM/runs/dp-p1-smollm2-f8-g4-s29-alignment-a6/",
-      "archive_present_objects": 82,
-      "archive_present_bytes": 916219811,
-      "archive_missing_payload_count": 157,
-      "archive_missing_payload_bytes": 17233599701,
-      "archive_accepted": false,
+      "archive_exact_prefix": "withheld_from_public_status",
+      "archive_present_objects": 240,
+      "archive_present_bytes": 18149863235,
+      "archive_missing_payload_count": 0,
+      "archive_missing_payload_bytes": 0,
+      "archive_accepted": true,
       "archive_receipt_present": false,
       "local_cleanup_performed": false,
       "storage_reservation_released": true,
@@ -2230,10 +2231,35 @@
           "bytes": 403,
           "sha256": "86e3f7b0a0a8a747bf9112da571caf36794f2917bb003da25407ab1a4777402a",
           "available_in_github": false
+        },
+        "archive_recovery_execution": {
+          "bytes": 302900,
+          "sha256": "d93815596861714d30364d1ac883fad2093618b615bc26ade2c31266b27b5282",
+          "available_in_github": false
+        },
+        "archive_recovery_independent_audit": {
+          "bytes": 266301,
+          "sha256": "4d6865ecaaefa8c6caee67ff8be65f14153d598552fc4503127147070f970414",
+          "available_in_github": false
+        },
+        "archive_recovery_acceptance": {
+          "bytes": 2480,
+          "sha256": "b4551ba06ad9a57dd022e3c6e8ac233814c23003a37030722585a4b1272fab52",
+          "available_in_github": false
+        },
+        "native_history_acceptance": {
+          "bytes": 2780,
+          "sha256": "ea0b5938c118f4f790525594b64ae48e7785a9f8878839110033aae9d3c6922e",
+          "available_in_github": false
+        },
+        "native_history_import_result": {
+          "bytes": 4440,
+          "sha256": "9621d81db1eaec4ba61a5b1a2291f0060e29ea43259cf00ec00e13b97ced3356",
+          "available_in_github": false
         }
       },
-      "archive_inventory_observed_at_utc": "2026-11-20T17:18:26.556688+00:00",
-      "archive_inventory_scope": "Recovery precheck verified 82 existing objects before the upload/audit client started. These counts do not report later upload progress; no complete recovery acceptance exists yet.",
+      "archive_inventory_observed_at_utc": "2026-11-20T19:19:10.078909+00:00",
+      "archive_inventory_scope": "Complete original archive: 239 payloads plus the original manifest, all 240 objects full GET/SHA verified during recovery and independently audited. Original Job remains Failed; recovery acceptance is separate from the absent native ARCHIVED.json.",
       "historical_storage_observations": [
         {
           "observed_at_utc": "2026-11-20T14:57:36.375748+00:00",
@@ -2248,10 +2274,10 @@
         "available_in_github": false
       },
       "archive_recovery": {
-        "status": "SUPPLEMENT_UPLOAD_AND_INDEPENDENT_AUDIT_CLIENT_RUNNING_AWAITING_COMPLETION_AND_ROOT_ACCEPTANCE",
+        "status": "RECOVERED_ARCHIVE_INDEPENDENTLY_ACCEPTED_AND_NATIVE_HISTORY_IMPORTED",
         "original_job_status_unchanged": "Failed",
-        "independently_accepted": false,
-        "history_import_accepted": false,
+        "independently_accepted": true,
+        "history_import_accepted": true,
         "native_ARCHIVED_receipt_fabricated": false,
         "completed_alignment_updates_must_not_repeat": true,
         "sealed_package_evidence": {
@@ -2260,16 +2286,16 @@
           "sha256": "8841e8ebbeba03ed03b8613c9f4e08028b05169c78808b4e2bd2e5146f729d9a",
           "available_in_github": false
         },
-        "scope": "Precheck completed real local SHA, existing-object full GET/SHA and terminal/writer checks. The supplement-upload and independent-audit client is running. No completed upload, completed audit, root archive acceptance or completed-final history import is claimed; client startup alone is not upload completion.",
+        "scope": "Supplement upload, complete 240-object full GET/SHA verification, separate independent audit and root archive acceptance completed. The accepted final was imported into native suite history. This accepts completed alignment and its recovered archive only: the original Job stays Failed, no native ARCHIVED.json is fabricated, and no Smol SFT or held-out completion is claimed.",
         "precheck_status": "A6_ARCHIVE_RECOVERY_PRECHECK_PASSED",
         "precheck_completed_at_utc": "2026-11-20T17:18:26.556688+00:00",
         "local_files_sha_verified": 240,
         "existing_objects_full_get_sha_verified": 82,
         "precheck_uploaded_files": 0,
         "client_started_at_utc": "2026-11-20T17:19:54.191832+00:00",
-        "client_completion_receipt_present": false,
-        "execute_completion_receipt_present": false,
-        "audit_completion_receipt_present": false,
+        "client_completion_receipt_present": true,
+        "execute_completion_receipt_present": true,
+        "audit_completion_receipt_present": true,
         "automatic_retry": false,
         "precheck_evidence": {
           "source_path": "experiment/docs/operations/evidence/smollm2-resume-a6-20261120/archive-recovery-20261121-v2/precheck-once-v3/readback/RESULT.json",
@@ -2282,7 +2308,44 @@
           "bytes": 403,
           "sha256": "86e3f7b0a0a8a747bf9112da571caf36794f2917bb003da25407ab1a4777402a",
           "available_in_github": false
-        }
+        },
+        "execute_completed_at_utc": "2026-11-20T19:09:57.408759+00:00",
+        "audit_completed_at_utc": "2026-11-20T19:17:40.057605+00:00",
+        "root_accepted_at_utc": "2026-11-20T19:19:10.078909+00:00",
+        "uploaded_objects": 158,
+        "uploaded_bytes": 17233643424,
+        "complete_archive_objects": 240,
+        "complete_archive_bytes": 18149863235,
+        "complete_archive_all_objects_full_get_sha_verified": true,
+        "native_history_status": "SUITE_HISTORY_ACCEPTED",
+        "completion_evidence": {
+          "archive_recovery_execution": {
+            "bytes": 302900,
+            "sha256": "d93815596861714d30364d1ac883fad2093618b615bc26ade2c31266b27b5282",
+            "available_in_github": false
+          },
+          "archive_recovery_independent_audit": {
+            "bytes": 266301,
+            "sha256": "4d6865ecaaefa8c6caee67ff8be65f14153d598552fc4503127147070f970414",
+            "available_in_github": false
+          },
+          "archive_recovery_acceptance": {
+            "bytes": 2480,
+            "sha256": "b4551ba06ad9a57dd022e3c6e8ac233814c23003a37030722585a4b1272fab52",
+            "available_in_github": false
+          },
+          "native_history_acceptance": {
+            "bytes": 2780,
+            "sha256": "ea0b5938c118f4f790525594b64ae48e7785a9f8878839110033aae9d3c6922e",
+            "available_in_github": false
+          },
+          "native_history_import_result": {
+            "bytes": 4440,
+            "sha256": "9621d81db1eaec4ba61a5b1a2291f0060e29ea43259cf00ec00e13b97ced3356",
+            "available_in_github": false
+          }
+        },
+        "history_import_timestamp_note": "Successful actual native history acceptance and result were retained in the later six-file readback; those receipts do not provide a completion timestamp."
       },
       "historical_inventory_verifications": [
         {
@@ -2300,17 +2363,31 @@
             "fresh_payload_sha_verified": false
           }
         }
-      ]
+      ],
+      "historical_archive_inventory_observations": [
+        {
+          "observed_at_utc": "2026-11-20T17:18:26.556688+00:00",
+          "archive_present_objects": 82,
+          "archive_present_bytes": 916219811,
+          "archive_missing_payload_count": 157,
+          "archive_missing_payload_bytes": 17233599701,
+          "scope": "Pre-upload recovery precheck; superseded by completed and independently accepted recovery."
+        }
+      ],
+      "recovery_archive_receipt_present": true,
+      "native_archive_receipt_present": false,
+      "archive_receipt_scope": "archive_receipt_present refers only to native ARCHIVED.json, which remains absent; separate recovery archive receipt is present and accepted."
     }
   },
   "remaining_work": [
-    "Obtain completion receipts from the running a6 supplement-upload/independent-audit client and root archive acceptance, then import the completed final and admit matched Smol SFT and evaluations. Its 718 alignment updates are complete; do not repeat the 368 updates from cp350.",
-    "Use the authenticated R4 checkpoint-600 archive and native metadata binding, restore required runtime payloads, verify model/optimizer/scheduler/RNG recovery and fresh capacity/source/scheduler admission, then complete its remaining 118 SFT updates and evaluations.",
-    "Deploy and verify the locally frozen source-v4/control-v8 185-task suite, derive its candidate from accepted a6 history, pass full CPU and one-worker normal/eight-GPU submission admission, and complete ready tasks with verified cache publication and checkpoint-chain backpressure.",
-    "Additional seeds and declared ablations, controlled cost/latency measurements, new-model evaluations and comparative statistics remain to be executed; synthetic scheduling tests are not scientific results."
+    "Repair the task-owned Triton cache path after attempt-2 gpu_gate failure; preserve failure evidence and pass fresh admission before a separate replacement.",
+    "Run matched Smol SFT and evaluations from the accepted a6 final; do not repeat its completed alignment.",
+    "Restore and verify R4 checkpoint600 model/optimizer/scheduler/RNG runtime state, then complete 118 remaining SFT updates and evaluations.",
+    "Finish F4/F16 cache recovery and per-shape READY publication. Both accepted F8 caches remain available.",
+    "Finish 27 new training stages, 32 new evaluations, 15 full-model latency runs and 12 comparisons, plus the separate R4 continuation and final aggregate. Retire local checkpoints only after verified archive and all consumers complete."
   ],
   "active_run_id": null,
-  "active_run_observation": "The a6 exact Job remains Failed after completed alignment. At the November 20 17:18:26 UTC recovery precheck, all five project GPU Jobs and three Pods were terminal. The separate archive upload/audit client started at 17:19:54 UTC and is running without completion receipts; it is not a GPU training Job. No full-suite GPU worker has been submitted, and no free-node claim follows from the workload snapshot.",
+  "active_run_observation": "The repaired v6 full185 attempt-2 worker is confirmed Failed at 2026-11-20T20:36:26.404126+00:00, with the same Job UID as its successful one-shot submission, exit 1 and zero restarts. Its eight-device hardware report passed, including BF16 attention forward/backward and all-reduce. The new controller startup acceptance receipt is present. The first engineering gpu_gate task was claimed, then failed during Triton cuda_utils initialization because its default /.triton cache directory was not writable. The intended numerical kernel had not launched; this is not a CUDA numerical discrepancy. No training/evaluation claim, scientific completion or new optimizer update is observed. An explicit task-owned cache-directory repair is being prepared. The original worker remains Failed; its small failure archive is accepted. Both F8 caches remain READY; F4/F16 CPU recovery is active but none of its four READY descriptors has been observed. Accepted a6 alignment/archive/history and R1/R2 quality results are unchanged.",
   "engineering_qa": {
     "run_id": "dp-cuda-pool-qa-20261114-a3",
     "scope": "synthetic CUDA weighted-pooling correctness and microbenchmark; no model training or quality evaluation",
@@ -2323,8 +2400,8 @@
     "job_status": "Succeeded",
     "pod_phase": "Succeeded",
     "exact_job": "jinhaopeng-dpvlm-cuda-pool-qa-20261114-a3-n1-abd5f",
-    "job_uid": "152670ef-e80f-4ec0-8359-1060e0db32dc",
-    "pod_uid": "150ce228-91e4-4fa2-b173-39002f95b0f7",
+    "job_uid": "withheld_from_public_status",
+    "pod_uid": "withheld_from_public_status",
     "allocation": {
       "cluster": "ali-gpu",
       "queue": "stream",
@@ -2459,7 +2536,7 @@
     "new_training_or_heldout_result": false,
     "archive_accepted": true,
     "archive_status": "independent_success_archive_accepted",
-    "exact_archive_prefix": "oss://ss-devbox-stream/jinhaopeng/Paper/DeepProbe-VLM/runs/dp-cuda-pool-qa-20261114-a3/",
+    "exact_archive_prefix": "withheld_from_public_status",
     "exact_archive_prefix_empty_at_cpu_admission": true,
     "exact_archive_prefix_empty_before_submission": true,
     "archive_admission_observed_at_utc": "2026-11-14T04:07:55.632222+00:00",
@@ -2665,7 +2742,7 @@
   },
   "training_observed_at_utc": "2026-11-20T14:57:36.375748+00:00",
   "serial_suite_preparation": {
-    "status": "CURRENT_SOURCE_LOCALLY_FROZEN_CPU_SCOPED_TESTED_NOT_DEPLOYED_OR_GPU_SUBMITTED",
+    "status": "FULL185_V6_ATTEMPT2_FAILED_TRITON_CACHE_PERMISSION",
     "plan_path": "experiment/configs/experiment_suite.json",
     "plan_sha256": "be12c2aa1f48699fe603be9f84ccc83e7b843b315bfa14495464813337e93cd0",
     "planned_scope": {
@@ -2693,49 +2770,38 @@
       "exit_code": 0,
       "output_sha256": "cda7bdbf62b4f80faa5ea07385227cc3d5ce3118c04b85844e7cc4343a5c7820"
     },
-    "full_suite_gpu_submitted": false,
+    "full_suite_gpu_submitted": true,
     "checkpoint_cleanup_executed_this_preparation": false,
     "actual_frame_variant_caches_created_this_preparation": false,
     "remaining_admission": [
-      "complete_and_independently_accept_a6_archive_and_history",
-      "deploy_and_verify_source_v4_and_control_v8",
-      "derive_exact_candidate_and_complete_cpu_admission",
-      "fresh_global_capacity_all_reservations_exact_prefix_and_project_workload_checks",
-      "exact_job_server_dryrun_and_single_worker_submission",
-      "actual_GPU_startup_and_CUDA_gate",
-      "per_task_verified_original_video_cache_and_input_readiness"
+      "task_owned_cache_directory_repair",
+      "fresh_replacement_source_capacity_and_scheduler_admission"
     ],
     "conditional_research_work_completed": false,
-    "latest_gate_observed_at_utc": "2026-11-20T17:18:26.556688+00:00",
-    "latest_gate_note": "Latest a6 recovery precheck passed at 17:18:26 UTC with 240 local SHA checks, 82 existing-object full GET/SHA checks and all five project Jobs/three Pods terminal. Its supplement-upload and independent-audit client started at 17:19:54 UTC and is running; completion receipts and root acceptance remain pending. Accepted old-checkpoint cleanup preserves all a6 files and other reservations. Source-v4/control-v8 remains locally frozen and CPU-scoped tested, not deployed or GPU submitted. Seven historical/checkpoint preparations are authenticated, including R4 cp600 archive/native metadata. Completed a6 history binding, source deployment and full-suite admission remain required. The dated workload snapshot does not measure free GPUs.",
+    "latest_gate_observed_at_utc": "2026-11-20T20:36:26.404126+00:00",
+    "latest_gate_note": "The repaired v6 full185 attempt-2 worker is confirmed Failed at 2026-11-20T20:36:26.404126+00:00, with the same Job UID as its successful one-shot submission, exit 1 and zero restarts. Its eight-device hardware report passed, including BF16 attention forward/backward and all-reduce. The new controller startup acceptance receipt is present. The first engineering gpu_gate task was claimed, then failed during Triton cuda_utils initialization because its default /.triton cache directory was not writable. The intended numerical kernel had not launched; this is not a CUDA numerical discrepancy. No training/evaluation claim, scientific completion or new optimizer update is observed. An explicit task-owned cache-directory repair is being prepared. The original worker remains Failed; its small failure archive is accepted. Both F8 caches remain READY; F4/F16 CPU recovery is active but none of its four READY descriptors has been observed. Accepted a6 alignment/archive/history and R1/R2 quality results are unchanged.",
     "historical_gate_observations": [
       {
         "observed_at_utc": "2026-11-19T10:34:35.716149+00:00",
         "note": "The complete 185-task suite remains unsubmitted. Separate attempt5 recovery passed real GPU startup and preflight, then continued from 300 to logged 354 before SIGTERM and Job failure. Checkpoint350 full SHA and native CPU metadata/contract checks passed; failure archival and fresh recovery/submission admission remain open. The exact a5 OSS prefix is empty. All six project Jobs and three Pods are terminal; no next attempt has been created or named. R4 restoration, actual F4/F16 caches and full-suite admission remain outstanding."
       }
     ],
-    "source_commit": "4034666e468a8abc09fcbf2013b625c294028ec9",
-    "source_release_candidate": "20261121-v4",
-    "control_candidate": "control-v8",
-    "source_remote_deployed": false,
-    "control_remote_deployed": false,
-    "cpu_tests_scope_note": "The existing 624-pass/80-skip cpu_tests record is retained as a historical regression. The latest 190-test result below is scoped, not a claim of a new complete repository test run.",
+    "source_commit": "65e562c67d0adfd1573c99dca722082b231c03a2",
+    "source_release_candidate": "20261121-v6",
+    "control_candidate": "control-v10",
+    "source_remote_deployed": true,
+    "control_remote_deployed": true,
+    "cpu_tests_scope_note": "Historical 624-pass/80-skip and 190-test records are preserved. Latest v6 137 scoped tests cover query, launchers and cache compatibility only.",
     "latest_scoped_cpu_tests": {
-      "passed": 190,
-      "seconds": 44.96,
-      "scope": "chain_capacity,chain_backpressure,cache_publisher,progressive,progressive_integration,evaluation_reuse,workflow,fleet,preflight,launch,fleet_launch,bindings,actions_media,actions",
-      "synthetic_full185_dag_claimants": [
-        1,
-        2,
-        3,
-        4
-      ],
-      "synthetic_completions_are_production_results": false,
-      "gpu_admission": false,
+      "passed": 137,
+      "cluster_query": 25,
+      "launchers": 23,
+      "public_cache_compatibility": 89,
+      "private_tests_excluded": 2,
+      "full_repository_suite": false,
       "evidence": {
-        "source_path": "experiment/docs/operations/evidence/suite-progressive-fleet-20261121-v2/LOCAL_TEST_RESULTS.json",
-        "bytes": 513,
-        "sha256": "d8437e244f01cf461d9ea346f59b4c1c2f0f28ff79fa7891a16dfb14824a6fb2",
+        "bytes": 2067,
+        "sha256": "73ba26438005788c75ca2617b800ac72173bcc2a5c99db248d7ab8851cc27af0",
         "available_in_github": false
       }
     },
@@ -2756,44 +2822,865 @@
       "home_limit_bytes": 150000000000,
       "current_capacity_supports_four_workers": false,
       "fresh_capacity_and_gpu_admission_required": true,
-      "gpu_submitted": false
+      "gpu_submitted": true,
+      "status": "ATTEMPT2_FAILED_CACHE_REPAIR_PENDING",
+      "fresh_per_task_capacity_required": true
     },
     "evidence": {
       "local_source_manifest": {
-        "source_path": "experiment/docs/operations/evidence/suite-progressive-fleet-20261121-v2/P1_SOURCE_MANIFEST.json",
-        "bytes": 21742,
-        "sha256": "7f6a0d40385d6363845b6f936a161ef9ca02356a587a60a7ff62864981b96208",
+        "bytes": 22089,
+        "sha256": "4d8dfbaeed162d770ef7086e28e6d04c41d94da9c9f0f8e79645df7858fb18c5",
         "available_in_github": false
       },
-      "local_scoped_cpu_tests": {
-        "source_path": "experiment/docs/operations/evidence/suite-progressive-fleet-20261121-v2/LOCAL_TEST_RESULTS.json",
-        "bytes": 513,
-        "sha256": "d8437e244f01cf461d9ea346f59b4c1c2f0f28ff79fa7891a16dfb14824a6fb2",
+      "public_code_sync": {
+        "bytes": 2067,
+        "sha256": "73ba26438005788c75ca2617b800ac72173bcc2a5c99db248d7ab8851cc27af0",
         "available_in_github": false
       },
-      "unexecuted_command_template": {
-        "source_path": "experiment/docs/operations/evidence/suite-progressive-fleet-20261121-v2/EXECUTION_HANDOFF_TEMPLATE.json",
-        "bytes": 3583,
-        "sha256": "8af779cfc849623dfdbd05a4966d8e73590f279bea495be1fe6a349d33000ddb",
+      "cpu_preflight": {
+        "bytes": 4825277,
+        "sha256": "1f2b4de0ff65cdf2677b9d28423f1b81cb5adc9ae83a1b8def8e491559983796",
         "available_in_github": false
       },
-      "accepted_old_checkpoint_cleanup": {
-        "source_path": "experiment/docs/operations/evidence/smol-old-checkpoint-retention-20261121-v1/CLEANUP_READBACK_ACCEPTANCE.json",
-        "bytes": 4708,
-        "sha256": "3a94b46f40d552182f342ecb7239e88318970c87f89a688a0654341fc895cd0d",
+      "workflow_prepared": {
+        "bytes": 3469,
+        "sha256": "0403442ac8d67a43f4a33a039e866d463e634d71b7ec58c01057721ba05cfc93",
         "available_in_github": false
       },
-      "a6_recovery_precheck": {
-        "source_path": "experiment/docs/operations/evidence/smollm2-resume-a6-20261120/archive-recovery-20261121-v2/precheck-once-v3/readback/RESULT.json",
-        "bytes": 203089,
-        "sha256": "6ecdf6057e0e920b4cdf5748c35ae90a787dd68b872dc80d127ad4df168f771f",
+      "server_dryrun": {
+        "bytes": 16212,
+        "sha256": "b043c036fa7c2fb6c87acd33b482806ca19f47206af6f463ceacfe1151aff757",
         "available_in_github": false
       },
-      "a6_recovery_client_intent": {
-        "source_path": "experiment/docs/operations/evidence/smollm2-resume-a6-20261120/archive-recovery-20261121-v2/execute-and-audit-once-v1/CLIENT_INTENT.json",
-        "bytes": 403,
-        "sha256": "86e3f7b0a0a8a747bf9112da571caf36794f2917bb003da25407ab1a4777402a",
+      "independent_admission": {
+        "bytes": 2283,
+        "sha256": "b5492f7a82d30e8e91460b734bfcfa74711843dc20a051439f8ad6bb351000d4",
         "available_in_github": false
+      },
+      "actual_submit_result": {
+        "bytes": 1551,
+        "sha256": "8e90bcf1ac4248140a613272dde85693efae07f926b8b588515df412bc3a0fd5",
+        "available_in_github": false
+      },
+      "terminal_worker_observation": {
+        "bytes": 27205,
+        "sha256": "7966f4d9affaafd5453fb5b94a5c64087cd5be4b7e6d3d5e8bc84f6c416652e7",
+        "available_in_github": false
+      },
+      "hardware_report": {
+        "bytes": 4983,
+        "sha256": "923a1dd695123c692da794fbf1b72f966e108eec9e3bac868ccf429bc32c4168",
+        "available_in_github": false
+      },
+      "startup_receipt": {
+        "bytes": 316,
+        "sha256": "1c7293e536872b4e97e0d8ad2b88d87dfd48fe1ff9f1fcf4593c8a5d41a665b1",
+        "available_in_github": false
+      },
+      "gpu_gate_stderr": {
+        "bytes": 4019,
+        "sha256": "6ede7a55f135d254a93fa22ecc3ffc27ae3038f1af51184c67c259c00957fa71",
+        "available_in_github": false
+      },
+      "previous_worker_archive": {
+        "bytes": 5109,
+        "sha256": "6b7e43bc45c272ee4ef703e9ef9168fd7240b4a83234db8c00e66ce21636184e",
+        "available_in_github": false
+      },
+      "cpu_cache_runtime_observation": {
+        "bytes": 16309,
+        "sha256": "c7e387ab9102ea1c32c13f528b08147d5e757e5c6f4a02e615735856cbe006b0",
+        "available_in_github": false
+      },
+      "a6_archive_acceptance": {
+        "bytes": 2480,
+        "sha256": "b4551ba06ad9a57dd022e3c6e8ac233814c23003a37030722585a4b1272fab52",
+        "available_in_github": false
+      },
+      "a6_native_history_acceptance": {
+        "bytes": 2780,
+        "sha256": "ea0b5938c118f4f790525594b64ae48e7785a9f8878839110033aae9d3c6922e",
+        "available_in_github": false
+      }
+    },
+    "deployment_scope": "Frozen v6 and control-v10 deployed; CPU/server admission and actual hardware/startup passed. Attempt 2 failed at its first engineering gpu_gate because the Triton cache path was unwritable, before numerical kernel launch or model training.",
+    "source_manifest_sha256": "4d8dfbaeed162d770ef7086e28e6d04c41d94da9c9f0f8e79645df7858fb18c5",
+    "remaining_scientific_scope": {
+      "accepted_training_stages": 6,
+      "new_training_stages": 27,
+      "r4_native_resume_stages": 1,
+      "r4_remaining_optimizer_updates": 118,
+      "accepted_model_benchmark_evaluations": 4,
+      "new_model_benchmark_evaluations": 32,
+      "full_model_latency_runs_remaining": 15,
+      "latency_comparisons_remaining": 12,
+      "scope": "Counts follow actual a6 history acceptance. Conditional research work remains separately declared; operational DAG task count is not a completion percentage.",
+      "evidence": {
+        "bytes": 8551,
+        "sha256": "964e3eb413e9eaa025bdc137d5ad0a3c44d51e1cc580c94ba5e4748a05f2c594",
+        "available_in_github": false
+      }
+    },
+    "frame_cache_preparation": {
+      "observed_at_utc": "2026-11-20T20:34:38.916499+00:00",
+      "pipeline_status": "CPU_RECOVERY_ACTIVE_READY_PENDING",
+      "requested_frame_counts": [
+        4,
+        16
+      ],
+      "all_requested_shapes_complete": false,
+      "f8_first_reuse_publisher_status": "LEGACY_F8_PUBLICATION_EXITED",
+      "f8_first_reuse_publisher_returncode": 1,
+      "f8_first_reuse_publication_verified": false,
+      "f8_failure_reason": "Metadata-file link-count guard rejected an input.",
+      "f8_repair_accepted": true,
+      "gpu_submitted": false,
+      "evidence": {
+        "bytes": 16309,
+        "sha256": "c7e387ab9102ea1c32c13f528b08147d5e757e5c6f4a02e615735856cbe006b0",
+        "available_in_github": false
+      },
+      "historical_runtime_observed_at_utc": "2026-11-20T19:14:47.887580+00:00",
+      "historical_runtime_evidence": {
+        "bytes": 21403,
+        "sha256": "4e6a63fd9fd70f027ce4cc0e755e154597b2905020655ea94d9a7022a56de50c",
+        "available_in_github": false
+      },
+      "historical_shape_at_observation": "videomme899-f4",
+      "f8_repair_status": "BOTH_F8_RECOVERY_READY_VERIFIED",
+      "readiness": {
+        "videomme899_f8": {
+          "status": "SUITE_BENCHMARK_CACHE_READY",
+          "ready_receipt_bytes": 2156008,
+          "ready_receipt_sha256": "8c52ccb524a602cb9db44a51968bb8c3a68233ddfc41bce9fd301ada878c190e"
+        },
+        "tempcompass_mc_f8": {
+          "status": "SUITE_BENCHMARK_CACHE_READY",
+          "ready_receipt_bytes": 869971,
+          "ready_receipt_sha256": "7c5850bd73aea6c4ef09f624a68eb0e2d0f62d34b0a410a5a4a4653bbab1949e"
+        },
+        "f4_f16": {
+          "status": "CPU_RECOVERY_ACTIVE_READY_PENDING",
+          "all_requested_shapes_complete": false,
+          "ready_descriptors_observed": 0
+        }
+      },
+      "scope": "F4/F16 decoder and publisher were restarted under a new controlled recovery. Both F8 READY receipts are preserved; all four new shapes still require their own READY. Prior failures remain in history.",
+      "recovery_process": {
+        "returncode": 0,
+        "group_cleanup_verified": true,
+        "original_failure_preserved": true,
+        "evidence": {
+          "complete": {
+            "bytes": 1483,
+            "sha256": "7b5b654b5b1fded7b0c88722aa82383190463538069cf5f0dc620e055aa7fde2",
+            "available_in_github": false
+          },
+          "exit": {
+            "bytes": 477,
+            "sha256": "e6f9bf1bed27e01af5f8fffa2b8fa68837f59524b6267d368cd4f9648a728dd1",
+            "available_in_github": false
+          }
+        }
+      },
+      "decoder_exit": {
+        "exited_at_utc": "2026-11-20T19:47:54.641584+00:00",
+        "error_type": "_UnverifiedMarker",
+        "returncode": -15,
+        "group_cleanup_verified": true,
+        "prepared_asset_descriptors_observed": 0,
+        "requested_cache_shapes": 4,
+        "recovery_complete": false,
+        "evidence": {
+          "bytes": 5274,
+          "sha256": "840dc7035457b6d7c1031a73fc00e732974878380385bb36e7382341b81ee069",
+          "available_in_github": false
+        }
+      },
+      "recovered_shapes_at_observation": {
+        "videomme899-f4": {
+          "entries_observed": 109,
+          "png_objects_observed": 436,
+          "ready": false,
+          "scope": "Dated listing while decoder may still write; not an acceptance receipt."
+        },
+        "tempcompass_mc-f4": {
+          "entries_observed": 0,
+          "png_objects_observed": 0,
+          "ready": false,
+          "scope": "Dated listing while decoder may still write; not an acceptance receipt."
+        },
+        "videomme899-f16": {
+          "entries_observed": 0,
+          "png_objects_observed": 0,
+          "ready": false,
+          "scope": "Dated listing while decoder may still write; not an acceptance receipt."
+        },
+        "tempcompass_mc-f16": {
+          "entries_observed": 0,
+          "png_objects_observed": 0,
+          "ready": false,
+          "scope": "Dated listing while decoder may still write; not an acceptance receipt."
+        }
+      }
+    },
+    "cpu_admission": {
+      "status": "SUITE_CPU_PROGRESSIVE_ADMITTED",
+      "observed_at_utc": "2026-11-20T20:25:13.864485+00:00",
+      "passed_checks": 68,
+      "deferred_benchmark_shapes": 4,
+      "failures": 0,
+      "completed": true,
+      "passed": true,
+      "candidate_sha256": "3ec1ba7b0f9c120278c13145f4d7e650d4fa5eaf04cdfd5cb91979b4a9cfd598",
+      "dag_tasks": 185,
+      "gpu_submitted_by_cpu_admission": false,
+      "training_waits_for_all_evaluation_caches": false,
+      "evaluation_requires_own_ready_receipt": true,
+      "server_dry_run_passed": true,
+      "exact_empty_archive_prefixes": 52,
+      "duplicate_job_uids": 0,
+      "independent_admission_passed": true,
+      "fresh_worst_home_bytes": 142546098993,
+      "home_limit_bytes": 150000000000,
+      "remaining_headroom_bytes": 7453901007,
+      "evidence": {
+        "cpu_preflight": {
+          "bytes": 4825277,
+          "sha256": "1f2b4de0ff65cdf2677b9d28423f1b81cb5adc9ae83a1b8def8e491559983796",
+          "available_in_github": false
+        },
+        "workflow_prepared": {
+          "bytes": 3469,
+          "sha256": "0403442ac8d67a43f4a33a039e866d463e634d71b7ec58c01057721ba05cfc93",
+          "available_in_github": false
+        },
+        "server_dryrun": {
+          "bytes": 16212,
+          "sha256": "b043c036fa7c2fb6c87acd33b482806ca19f47206af6f463ceacfe1151aff757",
+          "available_in_github": false
+        },
+        "independent_admission": {
+          "bytes": 2283,
+          "sha256": "b5492f7a82d30e8e91460b734bfcfa74711843dc20a051439f8ad6bb351000d4",
+          "available_in_github": false
+        },
+        "root_crosscheck": {
+          "bytes": 819,
+          "sha256": "a2fdf3783b531414fb5dd83a08b99e2deef221506146d9369ce79f27bb9253ed",
+          "available_in_github": false
+        }
+      }
+    },
+    "public_code_commit": "65e562c67d0adfd1573c99dca722082b231c03a2",
+    "submission_status": "EXACT_FLEET_JOBS_OBSERVED",
+    "gpu_submission_confirmed": true,
+    "gpu_running_confirmed": false,
+    "server_dryrun": {
+      "status": "PASSED",
+      "observed_at_utc": "2026-11-20T20:28:09.677802+00:00",
+      "exact_empty_archive_prefixes": 52,
+      "duplicate_job_uids": 0,
+      "worker_count": 1,
+      "gpu_submitted_by_dryrun": false,
+      "evidence": {
+        "bytes": 16212,
+        "sha256": "b043c036fa7c2fb6c87acd33b482806ca19f47206af6f463ceacfe1151aff757",
+        "available_in_github": false
+      }
+    },
+    "reviewed_worst_chain_capacity": {
+      "peak_bytes": 142546098993,
+      "home_limit_bytes": 150000000000,
+      "headroom_bytes": 7453901007,
+      "includes_actual_usage_reserves_safety_and_chain_peak": true,
+      "future_cleanup_credited": false,
+      "observed_at_utc": "2026-11-20T20:30:30.724563+00:00",
+      "evidence": {
+        "bytes": 2283,
+        "sha256": "b5492f7a82d30e8e91460b734bfcfa74711843dc20a051439f8ad6bb351000d4",
+        "available_in_github": false
+      }
+    },
+    "gpu_submitted_field_scope": "Both the first and separate second worker submissions are confirmed. Attempt 2 is now Failed at gpu_gate; no third submission is claimed by this dated snapshot.",
+    "submission": {
+      "status": "EXACT_FLEET_JOBS_OBSERVED",
+      "process_returncode": 0,
+      "actual_jobs_observed": 1,
+      "job_status": "Failed",
+      "pod_status": "Failed",
+      "job_terminal": true,
+      "job_terminating": false,
+      "observed_at_utc": "2026-11-20T20:36:26.404126+00:00",
+      "created_at_utc": "2026-11-20T20:32:25Z",
+      "container_started_at_utc": "2026-11-20T20:32:31Z",
+      "container_finished_at_utc": "2026-11-20T20:35:21Z",
+      "container_exit_code": 1,
+      "restart_count": 0,
+      "allocated_gpus": 8,
+      "exact_submitted_job_uid_matched": true,
+      "job_uid": "withheld_from_public_status",
+      "automatic_resubmit": false,
+      "hardware_report_passed": true,
+      "startup_acceptance_receipt_observed": true,
+      "claims_observed": 1,
+      "engineering_gate_claims_observed": 1,
+      "scientific_train_eval_claims_observed": 0,
+      "completed_tasks_observed": 0,
+      "training_optimizer_updates_observed": false,
+      "invocation_artifact_files_observed": 6,
+      "evidence": {
+        "submit_result": {
+          "bytes": 1551,
+          "sha256": "8e90bcf1ac4248140a613272dde85693efae07f926b8b588515df412bc3a0fd5",
+          "available_in_github": false
+        },
+        "terminal_observation": {
+          "bytes": 27205,
+          "sha256": "7966f4d9affaafd5453fb5b94a5c64087cd5be4b7e6d3d5e8bc84f6c416652e7",
+          "available_in_github": false
+        },
+        "hardware_report": {
+          "bytes": 4983,
+          "sha256": "923a1dd695123c692da794fbf1b72f966e108eec9e3bac868ccf429bc32c4168",
+          "available_in_github": false
+        },
+        "gpu_gate_stderr": {
+          "bytes": 4019,
+          "sha256": "6ede7a55f135d254a93fa22ecc3ffc27ae3038f1af51184c67c259c00957fa71",
+          "available_in_github": false
+        },
+        "startup_acceptance": {
+          "bytes": 316,
+          "sha256": "1c7293e536872b4e97e0d8ad2b88d87dfd48fe1ff9f1fcf4593c8a5d41a665b1",
+          "available_in_github": false
+        }
+      }
+    },
+    "gpu_ever_running_confirmed": true,
+    "replacement_gpu_submitted": true,
+    "hardware_startup": {
+      "hardware_report_passed": true,
+      "gpu_count": 8,
+      "compute_capability": [
+        10,
+        3
+      ],
+      "memory_gib_per_gpu": 267.69,
+      "startup_acceptance_receipt_observed": true,
+      "attention_forward_backward": "pass",
+      "distributed_all_reduce": "pass",
+      "evidence": {
+        "bytes": 4983,
+        "sha256": "923a1dd695123c692da794fbf1b72f966e108eec9e3bac868ccf429bc32c4168",
+        "available_in_github": false
+      }
+    },
+    "controller_failure": {
+      "status": "STOPPED_BEFORE_FIRST_SCIENTIFIC_TASK",
+      "stopped_at_utc": "2026-11-20T19:52:38.789313+00:00",
+      "error_type": "TimeoutExpired",
+      "failed_operation": "_fleet_live cluster inventory query",
+      "timeout_seconds": 40,
+      "task_claims": 0,
+      "completed_scientific_tasks": 0,
+      "optimizer_updates": 0,
+      "training_checkpoints_produced": 0,
+      "automatic_retry": false,
+      "automatic_requeue": false,
+      "repair_status": "PENDING",
+      "evidence": {
+        "stopped": {
+          "bytes": 450,
+          "sha256": "307038deb1ae8acb39251ac4ce0fffd4d2fb7a1926f528558d2240834acdcee1",
+          "available_in_github": false
+        },
+        "terminal_job_and_trace": {
+          "bytes": 27338,
+          "sha256": "51ef56d22f27ca2708b4eecaaa8558c92ccb7296e4e2ef13dc20402a1655a0dd",
+          "available_in_github": false
+        }
+      },
+      "followup": {
+        "repair": "Separate v6 metadata-query implementation deployed and CPU/server admitted.",
+        "original_job_status_unchanged": true,
+        "original_source_preserved": true,
+        "archive_full_get_sha_verified": true,
+        "archive_objects": 18,
+        "archive_bytes": 103783,
+        "archive_evidence": {
+          "bytes": 5109,
+          "sha256": "6b7e43bc45c272ee4ef703e9ef9168fd7240b4a83234db8c00e66ce21636184e",
+          "available_in_github": false
+        }
+      },
+      "scope": "Historical first-worker failure; original PENDING repair status is retained as observed then. See followup and attempt2_gpu_gate_failure for newer events."
+    },
+    "historical_execution_observations": [
+      {
+        "status": "FIRST_FULL185_WORKER_FAILED_BEFORE_FIRST_TASK_CONTROLLER_QUERY_TIMEOUT",
+        "source_release_candidate": "20261121-v5",
+        "control_candidate": "control-v9",
+        "source_manifest_sha256": "205ec15613ee156606f9e3d33bd4e0b893cd3f6723083be0025d64edaa3776c0",
+        "cpu_admission": {
+          "status": "PASSED",
+          "observed_at_utc": "2026-11-20T19:40:56.718223+00:00",
+          "candidate_sha256": "2c89b99a4e7e55247f9963eef7b1239752efd53a9921c8b2d67ec366307df369",
+          "candidate_bytes": 127645,
+          "dag_tasks": 185,
+          "completed": true,
+          "passed": true,
+          "gpu_submitted": false,
+          "training_waits_for_all_evaluation_caches": false,
+          "evaluation_requires_own_ready_receipt": true,
+          "evidence": {
+            "candidate_derivation": {
+              "bytes": 4414,
+              "sha256": "839634bdc480524c245d33d7ec056a4e73051a2ed386a2f8aa707540daf24f39",
+              "available_in_github": false
+            },
+            "runtime_observation": {
+              "bytes": 6410,
+              "sha256": "7e5a6301a6a6ae60565d128179b5c51af7d5b0a7e60acd17b2caec625257f2c8",
+              "available_in_github": false
+            },
+            "cpu_process_result": {
+              "bytes": 22,
+              "sha256": "1e3f6691f455051e8adb15d961e4bf3c7a17e83dd88b2afdd13315cc288250bb",
+              "available_in_github": false
+            },
+            "cpu_admission_result": {
+              "bytes": 3844,
+              "sha256": "762daa73c26239b35355b6900528b4bba370f6f6fabadab7c6c86d558c8a4b5f",
+              "available_in_github": false
+            },
+            "cpu_preflight": {
+              "bytes": 4825011,
+              "sha256": "64d7c5bc2c90d9bf5b3dd9d63be82bbff4f1986c1e7f096dae948f5c9420e7b0",
+              "available_in_github": false
+            },
+            "workflow_prepared": {
+              "bytes": 3462,
+              "sha256": "eab66c9bd1b0fb26e03ec8d4ddf0bc5b0f3973a51b488bedfc19f9b45a5330e5",
+              "available_in_github": false
+            }
+          },
+          "process_returncode": 0,
+          "workflow_prepared_sha256": "eab66c9bd1b0fb26e03ec8d4ddf0bc5b0f3973a51b488bedfc19f9b45a5330e5",
+          "cpu_preflight_sha256": "64d7c5bc2c90d9bf5b3dd9d63be82bbff4f1986c1e7f096dae948f5c9420e7b0"
+        },
+        "submission": {
+          "status": "EXACT_FLEET_JOBS_OBSERVED",
+          "process_returncode": 0,
+          "actual_jobs_observed": 1,
+          "job_terminal": true,
+          "job_terminating": false,
+          "pod_observed": true,
+          "hardware_startup_observed": true,
+          "training_optimizer_updates_observed": false,
+          "automatic_resubmit": false,
+          "evidence": {
+            "submit_result": {
+              "bytes": 1546,
+              "sha256": "69c3273ef51be971f346bb29cf02c3e45f9c6a9633fea014af9f4ee013998cf8",
+              "available_in_github": false
+            },
+            "submit_client_exit": {
+              "bytes": 22,
+              "sha256": "1e3f6691f455051e8adb15d961e4bf3c7a17e83dd88b2afdd13315cc288250bb",
+              "available_in_github": false
+            },
+            "running_worker_observation": {
+              "bytes": 14855,
+              "sha256": "e8b526939a446edcfae65f12c6500922de9b422301aa352c50a1cae8e8c44af1",
+              "available_in_github": false
+            },
+            "terminal_worker_observation": {
+              "bytes": 27338,
+              "sha256": "51ef56d22f27ca2708b4eecaaa8558c92ccb7296e4e2ef13dc20402a1655a0dd",
+              "available_in_github": false
+            }
+          },
+          "job_status": "Failed",
+          "pod_status": "Failed",
+          "observed_at_utc": "2026-11-20T19:54:45.305502+00:00",
+          "container_started_at_utc": "2026-11-20T19:48:56Z",
+          "restart_count": 0,
+          "allocated_gpus": 8,
+          "hardware_startup_verified": true,
+          "logs_empty": false,
+          "invocations_observed": 1,
+          "claims_observed": 0,
+          "completed_tasks_observed": 0,
+          "container_exit_code": 1,
+          "container_finished_at_utc": "2026-11-20T19:52:38Z",
+          "job_completed_at_utc": "2026-11-20T19:52:40Z",
+          "optimizer_updates": 0,
+          "invocation_artifact_files_observed": 6,
+          "training_task_invocations_observed": 0,
+          "invocation_scope": "One controller invocation contains six hardware/startup/stop artifact files; no scientific task was claimed."
+        },
+        "hardware_startup": {
+          "status": "PASSED",
+          "gpu_count": 8,
+          "compute_capability": [
+            10,
+            3
+          ],
+          "memory_gib_per_gpu": 267.69,
+          "expected_B300_identity_contract_passed": true,
+          "attention_forward_backward": "pass",
+          "distributed_all_reduce": "pass",
+          "hardware_observed_at_utc": "2026-11-20T19:50:56.658262+00:00",
+          "evidence": {
+            "hardware": {
+              "bytes": 4983,
+              "sha256": "536d77237d80c17d7d6c1370d3a35040f62d86a31a9f4fd8082eff9bed2c31b4",
+              "available_in_github": false
+            },
+            "startup": {
+              "bytes": 1169,
+              "sha256": "d0f35d0b17a3906e550b59cdb8227e70a010cd4318e92dfa5f550a6cf17c88bb",
+              "available_in_github": false
+            },
+            "startup_verified": {
+              "bytes": 315,
+              "sha256": "646ad8c3fa0ecc3b31ebfc7058a65e0daba820aecd0ffab7c84a45a7c329a341",
+              "available_in_github": false
+            }
+          }
+        },
+        "controller_failure": {
+          "status": "STOPPED_BEFORE_FIRST_SCIENTIFIC_TASK",
+          "stopped_at_utc": "2026-11-20T19:52:38.789313+00:00",
+          "error_type": "TimeoutExpired",
+          "failed_operation": "_fleet_live cluster inventory query",
+          "timeout_seconds": 40,
+          "task_claims": 0,
+          "completed_scientific_tasks": 0,
+          "optimizer_updates": 0,
+          "training_checkpoints_produced": 0,
+          "automatic_retry": false,
+          "automatic_requeue": false,
+          "repair_status": "PENDING",
+          "evidence": {
+            "stopped": {
+              "bytes": 450,
+              "sha256": "307038deb1ae8acb39251ac4ce0fffd4d2fb7a1926f528558d2240834acdcee1",
+              "available_in_github": false
+            },
+            "terminal_job_and_trace": {
+              "bytes": 27338,
+              "sha256": "51ef56d22f27ca2708b4eecaaa8558c92ccb7296e4e2ef13dc20402a1655a0dd",
+              "available_in_github": false
+            }
+          }
+        },
+        "frame_cache_preparation": {
+          "observed_at_utc": "2026-11-20T19:49:22.058607+00:00",
+          "pipeline_status": "EXITED_RECOVERY_PENDING",
+          "requested_frame_counts": [
+            4,
+            16
+          ],
+          "all_requested_shapes_complete": false,
+          "f8_first_reuse_publisher_status": "LEGACY_F8_PUBLICATION_EXITED",
+          "f8_first_reuse_publisher_returncode": 1,
+          "f8_first_reuse_publication_verified": false,
+          "f8_failure_reason": "Metadata-file link-count guard rejected an input.",
+          "f8_repair_accepted": true,
+          "gpu_submitted": false,
+          "evidence": {
+            "bytes": 6410,
+            "sha256": "7e5a6301a6a6ae60565d128179b5c51af7d5b0a7e60acd17b2caec625257f2c8",
+            "available_in_github": false
+          },
+          "historical_runtime_observed_at_utc": "2026-11-20T19:14:47.887580+00:00",
+          "historical_runtime_evidence": {
+            "bytes": 21403,
+            "sha256": "4e6a63fd9fd70f027ce4cc0e755e154597b2905020655ea94d9a7022a56de50c",
+            "available_in_github": false
+          },
+          "historical_shape_at_observation": "videomme899-f4",
+          "f8_repair_status": "BOTH_F8_RECOVERY_READY_VERIFIED",
+          "readiness": {
+            "videomme899_f8": {
+              "status": "SUITE_BENCHMARK_CACHE_READY",
+              "ready_receipt_bytes": 2156008,
+              "ready_receipt_sha256": "8c52ccb524a602cb9db44a51968bb8c3a68233ddfc41bce9fd301ada878c190e"
+            },
+            "tempcompass_mc_f8": {
+              "status": "SUITE_BENCHMARK_CACHE_READY",
+              "ready_receipt_bytes": 869971,
+              "ready_receipt_sha256": "7c5850bd73aea6c4ef09f624a68eb0e2d0f62d34b0a410a5a4a4653bbab1949e"
+            },
+            "f4_f16": {
+              "status": "DECODER_EXITED_RECOVERY_PENDING",
+              "all_requested_shapes_complete": false,
+              "prepared_asset_descriptors_observed": 0
+            }
+          },
+          "scope": "Both F8 recovery READY receipts and their successful completion remain valid. The F4/F16 decoder exited with _UnverifiedMarker; recovery is pending and no four-shape PREPARED_ASSET descriptors are present. Each evaluation waits for its own cache READY; submitted training is not globally gated on every evaluation cache.",
+          "recovery_process": {
+            "returncode": 0,
+            "group_cleanup_verified": true,
+            "original_failure_preserved": true,
+            "evidence": {
+              "complete": {
+                "bytes": 1483,
+                "sha256": "7b5b654b5b1fded7b0c88722aa82383190463538069cf5f0dc620e055aa7fde2",
+                "available_in_github": false
+              },
+              "exit": {
+                "bytes": 477,
+                "sha256": "e6f9bf1bed27e01af5f8fffa2b8fa68837f59524b6267d368cd4f9648a728dd1",
+                "available_in_github": false
+              }
+            }
+          },
+          "decoder_exit": {
+            "exited_at_utc": "2026-11-20T19:47:54.641584+00:00",
+            "error_type": "_UnverifiedMarker",
+            "returncode": -15,
+            "group_cleanup_verified": true,
+            "prepared_asset_descriptors_observed": 0,
+            "requested_cache_shapes": 4,
+            "recovery_complete": false,
+            "evidence": {
+              "bytes": 5274,
+              "sha256": "840dc7035457b6d7c1031a73fc00e732974878380385bb36e7382341b81ee069",
+              "available_in_github": false
+            }
+          }
+        },
+        "latest_gate_observed_at_utc": "2026-11-20T19:54:45.305502+00:00",
+        "evidence": {
+          "local_source_manifest": {
+            "source_path": "experiment/docs/operations/evidence/suite-progressive-fleet-20261121-v2/P1_SOURCE_MANIFEST.json",
+            "bytes": 21742,
+            "sha256": "7f6a0d40385d6363845b6f936a161ef9ca02356a587a60a7ff62864981b96208",
+            "available_in_github": false
+          },
+          "local_scoped_cpu_tests": {
+            "source_path": "experiment/docs/operations/evidence/suite-progressive-fleet-20261121-v2/LOCAL_TEST_RESULTS.json",
+            "bytes": 513,
+            "sha256": "d8437e244f01cf461d9ea346f59b4c1c2f0f28ff79fa7891a16dfb14824a6fb2",
+            "available_in_github": false
+          },
+          "unexecuted_command_template": {
+            "source_path": "experiment/docs/operations/evidence/suite-progressive-fleet-20261121-v2/EXECUTION_HANDOFF_TEMPLATE.json",
+            "bytes": 3583,
+            "sha256": "8af779cfc849623dfdbd05a4966d8e73590f279bea495be1fe6a349d33000ddb",
+            "available_in_github": false
+          },
+          "accepted_old_checkpoint_cleanup": {
+            "source_path": "experiment/docs/operations/evidence/smol-old-checkpoint-retention-20261121-v1/CLEANUP_READBACK_ACCEPTANCE.json",
+            "bytes": 4708,
+            "sha256": "3a94b46f40d552182f342ecb7239e88318970c87f89a688a0654341fc895cd0d",
+            "available_in_github": false
+          },
+          "a6_recovery_precheck": {
+            "source_path": "experiment/docs/operations/evidence/smollm2-resume-a6-20261120/archive-recovery-20261121-v2/precheck-once-v3/readback/RESULT.json",
+            "bytes": 203089,
+            "sha256": "6ecdf6057e0e920b4cdf5748c35ae90a787dd68b872dc80d127ad4df168f771f",
+            "available_in_github": false
+          },
+          "a6_recovery_client_intent": {
+            "source_path": "experiment/docs/operations/evidence/smollm2-resume-a6-20261120/archive-recovery-20261121-v2/execute-and-audit-once-v1/CLIENT_INTENT.json",
+            "bytes": 403,
+            "sha256": "86e3f7b0a0a8a747bf9112da571caf36794f2917bb003da25407ab1a4777402a",
+            "available_in_github": false
+          },
+          "cache_source_deployment": {
+            "bytes": 5857,
+            "sha256": "c1fa26761fc31b8e26fea353312419c821421e9b558c607d3f5563a7efa78497",
+            "available_in_github": false
+          },
+          "cache_source_deployment_independent_review": {
+            "bytes": 5494,
+            "sha256": "e7e26c36fc19dc275ac2f0ed49f67ac02a2d4fbcd0c18583f62d404cd75065a7",
+            "available_in_github": false
+          },
+          "cpu_cache_runtime_observation": {
+            "bytes": 21403,
+            "sha256": "4e6a63fd9fd70f027ce4cc0e755e154597b2905020655ea94d9a7022a56de50c",
+            "available_in_github": false
+          },
+          "a6_archive_acceptance": {
+            "bytes": 2480,
+            "sha256": "b4551ba06ad9a57dd022e3c6e8ac233814c23003a37030722585a4b1272fab52",
+            "available_in_github": false
+          },
+          "a6_native_history_acceptance": {
+            "bytes": 2780,
+            "sha256": "ea0b5938c118f4f790525594b64ae48e7785a9f8878839110033aae9d3c6922e",
+            "available_in_github": false
+          },
+          "full185_candidate_derivation": {
+            "bytes": 4414,
+            "sha256": "839634bdc480524c245d33d7ec056a4e73051a2ed386a2f8aa707540daf24f39",
+            "available_in_github": false
+          },
+          "latest_runtime_observation": {
+            "bytes": 6410,
+            "sha256": "7e5a6301a6a6ae60565d128179b5c51af7d5b0a7e60acd17b2caec625257f2c8",
+            "available_in_github": false
+          },
+          "cpu_preflight": {
+            "bytes": 4825011,
+            "sha256": "64d7c5bc2c90d9bf5b3dd9d63be82bbff4f1986c1e7f096dae948f5c9420e7b0",
+            "available_in_github": false
+          },
+          "workflow_prepared": {
+            "bytes": 3462,
+            "sha256": "eab66c9bd1b0fb26e03ec8d4ddf0bc5b0f3973a51b488bedfc19f9b45a5330e5",
+            "available_in_github": false
+          },
+          "server_dryrun": {
+            "bytes": 16204,
+            "sha256": "843482b2754d6a14b63699601bd09537c2fe899a29cddbe442f130a816e00bca",
+            "available_in_github": false
+          },
+          "both_f8_recovery_complete": {
+            "bytes": 1483,
+            "sha256": "7b5b654b5b1fded7b0c88722aa82383190463538069cf5f0dc620e055aa7fde2",
+            "available_in_github": false
+          },
+          "both_f8_recovery_exit": {
+            "bytes": 477,
+            "sha256": "e6f9bf1bed27e01af5f8fffa2b8fa68837f59524b6267d368cd4f9648a728dd1",
+            "available_in_github": false
+          },
+          "cpu_and_dryrun_independent_review": {
+            "bytes": 17771,
+            "sha256": "90d382046854fd5be0c7d40339cb7c4ea400e8fa9de1dff93a17032ef65f0da0",
+            "available_in_github": false
+          },
+          "actual_submit_result": {
+            "bytes": 1546,
+            "sha256": "69c3273ef51be971f346bb29cf02c3e45f9c6a9633fea014af9f4ee013998cf8",
+            "available_in_github": false
+          },
+          "decoder_exit_observation": {
+            "bytes": 5274,
+            "sha256": "840dc7035457b6d7c1031a73fc00e732974878380385bb36e7382341b81ee069",
+            "available_in_github": false
+          },
+          "running_worker_observation": {
+            "bytes": 14855,
+            "sha256": "e8b526939a446edcfae65f12c6500922de9b422301aa352c50a1cae8e8c44af1",
+            "available_in_github": false
+          },
+          "hardware_startup": {
+            "bytes": 4983,
+            "sha256": "536d77237d80c17d7d6c1370d3a35040f62d86a31a9f4fd8082eff9bed2c31b4",
+            "available_in_github": false
+          },
+          "startup_receipt": {
+            "bytes": 1169,
+            "sha256": "d0f35d0b17a3906e550b59cdb8227e70a010cd4318e92dfa5f550a6cf17c88bb",
+            "available_in_github": false
+          },
+          "controller_stopped": {
+            "bytes": 450,
+            "sha256": "307038deb1ae8acb39251ac4ce0fffd4d2fb7a1926f528558d2240834acdcee1",
+            "available_in_github": false
+          },
+          "terminal_worker_observation": {
+            "bytes": 27338,
+            "sha256": "51ef56d22f27ca2708b4eecaaa8558c92ccb7296e4e2ef13dc20402a1655a0dd",
+            "available_in_github": false
+          }
+        },
+        "public_code_commit": "fb23c7a2fe34e61d85d9ff27905278b3d086abdc",
+        "gpu_submitted_field_scope": "Historical actual submission is confirmed. That first worker is now Failed; no replacement submission is observed.",
+        "server_dryrun": {
+          "status": "PASSED",
+          "observed_at_utc": "2026-11-20T19:40:56.718223+00:00",
+          "exact_empty_archive_prefixes": 52,
+          "active_project_jobs": 0,
+          "worker_count": 1,
+          "gpu_submitted_by_dryrun": false,
+          "evidence": {
+            "bytes": 16204,
+            "sha256": "843482b2754d6a14b63699601bd09537c2fe899a29cddbe442f130a816e00bca",
+            "available_in_github": false
+          }
+        },
+        "reviewed_worst_chain_capacity": {
+          "peak_bytes": 142863833239,
+          "home_limit_bytes": 150000000000,
+          "headroom_bytes": 7136166761,
+          "includes_actual_usage_reserves_safety_and_chain_peak": true,
+          "future_cleanup_credited": false,
+          "evidence": {
+            "bytes": 17771,
+            "sha256": "90d382046854fd5be0c7d40339cb7c4ea400e8fa9de1dff93a17032ef65f0da0",
+            "available_in_github": false
+          }
+        }
+      }
+    ],
+    "historical_scoped_cpu_tests": [
+      {
+        "passed": 190,
+        "seconds": 44.96,
+        "scope": "chain_capacity,chain_backpressure,cache_publisher,progressive,progressive_integration,evaluation_reuse,workflow,fleet,preflight,launch,fleet_launch,bindings,actions_media,actions",
+        "synthetic_full185_dag_claimants": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "synthetic_completions_are_production_results": false,
+        "gpu_admission": false,
+        "evidence": {
+          "source_path": "experiment/docs/operations/evidence/suite-progressive-fleet-20261121-v2/LOCAL_TEST_RESULTS.json",
+          "bytes": 513,
+          "sha256": "d8437e244f01cf461d9ea346f59b4c1c2f0f28ff79fa7891a16dfb14824a6fb2",
+          "available_in_github": false
+        }
+      }
+    ],
+    "v6_query_repair": {
+      "public_code_commit": "65e562c67d0adfd1573c99dca722082b231c03a2",
+      "metadata_mode": "server_partial_object_metadata",
+      "pagination_and_owner_closure_verified": true,
+      "pagination_snapshot_resource_version_and_exact_uid_changes_fail_closed": true,
+      "bounded_read_retries_only": true,
+      "create_not_automatically_retried": true,
+      "real_readonly_census_seconds": 6.934634253382683,
+      "evidence": {
+        "bytes": 3060,
+        "sha256": "8ffb829e3a8c6ca4a2fea180db6a3bcf6ff015df9524c1168be0dfae49cc55cc",
+        "available_in_github": false
+      }
+    },
+    "attempt2_gpu_gate_failure": {
+      "failed_at_utc": "2026-11-20T20:35:19.091753+00:00",
+      "task_id": "gpu_gate",
+      "error": "Triton cache initialization PermissionError: /.triton is not writable",
+      "intended_numerical_kernel_launched": false,
+      "cuda_numerical_discrepancy_established": false,
+      "training_or_evaluation_started": false,
+      "optimizer_updates": 0,
+      "repair_status": "Explicit task-owned cache directories being prepared; no replacement execution claimed by this snapshot.",
+      "evidence": {
+        "task_failure": {
+          "bytes": 202,
+          "sha256": "23705c726de1314f4bc05c28ad98c57a4844d2c2c736587c1e950134c7a8137e",
+          "available_in_github": false
+        },
+        "stderr": {
+          "bytes": 4019,
+          "sha256": "6ede7a55f135d254a93fa22ecc3ffc27ae3038f1af51184c67c259c00957fa71",
+          "available_in_github": false
+        },
+        "terminal": {
+          "bytes": 27205,
+          "sha256": "7966f4d9affaafd5453fb5b94a5c64087cd5be4b7e6d3d5e8bc84f6c416652e7",
+          "available_in_github": false
+        }
       }
     }
   },
@@ -2859,8 +3746,8 @@
         }
       ],
       "exact_job": "jinhaopeng-dpvlm-cuda-pool-qa-20261112-a1-n1-bb1e7",
-      "job_uid": "2d1b0a1c-da16-4c55-abfc-148e98c5f318",
-      "last_observed_pod_uid": "204a49c4-a53e-480a-a3e9-1e2f10d1dd27",
+      "job_uid": "withheld_from_public_status",
+      "last_observed_pod_uid": "withheld_from_public_status",
       "running_at_utc": "2026-11-12T12:55:46Z",
       "preempted_at_utc": "2026-11-12T12:56:29.252164Z",
       "failure_at_utc": "2026-11-12T12:56:31Z",
@@ -2886,8 +3773,8 @@
       "job_status": "Failed",
       "pod_phase": "Failed",
       "exact_job": "jinhaopeng-dpvlm-cuda-pool-qa-20261113-a2-n1-772f8",
-      "job_uid": "ca956db5-7166-4452-93b8-d89fecd6cc33",
-      "pod_uid": "59084550-b687-468b-95d2-8e83e3633abe",
+      "job_uid": "withheld_from_public_status",
+      "pod_uid": "withheld_from_public_status",
       "allocation": {
         "cluster": "ali-gpu",
         "queue": "stream",
@@ -2914,7 +3801,7 @@
       "cuda_result": null,
       "new_training_or_heldout_result": false,
       "archive_accepted": true,
-      "exact_archive_prefix": "oss://ss-devbox-stream/jinhaopeng/Paper/DeepProbe-VLM/runs/dp-cuda-pool-qa-20261113-a2/",
+      "exact_archive_prefix": "withheld_from_public_status",
       "exact_archive_prefix_empty_at_cpu_admission": true,
       "archive_admission_observed_at_utc": "2026-11-12T16:20:52.141185+00:00",
       "scheduling_reason": null,
@@ -3247,7 +4134,7 @@
         "all_project_workloads_terminal": false,
         "all_other_project_workloads_terminal": true,
         "sole_nonterminal_job": "jinhaopeng-dpvlm-p1-smollm2-s29-align-a3-n1-bdff2",
-        "sole_nonterminal_job_uid": "ab061a99-000f-4283-b806-249ea5287fdf",
+        "sole_nonterminal_job_uid": "withheld_from_public_status",
         "observed_at_utc": "2026-11-17T04:37:10.526227+00:00",
         "scope": "Complete project Job/Pod projections plus the exact submitted Job and Pod; Pending is counted as nonterminal. Raw cluster outputs remain private.",
         "evidence": {
@@ -3316,7 +4203,7 @@
         "all_project_workloads_terminal": false,
         "all_other_project_workloads_terminal": true,
         "sole_nonterminal_job": "jinhaopeng-dpvlm-p1-smollm2-s29-align-a5-n1-6e7fe",
-        "sole_nonterminal_job_uid": "f9761d5d-7e4e-4e0b-8e45-78dd658f580a",
+        "sole_nonterminal_job_uid": "withheld_from_public_status",
         "observed_at_utc": "2026-11-17T17:20:07.089216+00:00",
         "scope": "Complete project Job/Pod projections plus exact attempt5 Job/Pod; Pending counts as nonterminal. All other project workloads are terminal. Raw cluster outputs remain private.",
         "evidence": {
@@ -3342,7 +4229,7 @@
         "all_project_workloads_terminal": false,
         "all_other_project_workloads_terminal": true,
         "sole_nonterminal_job": "jinhaopeng-dpvlm-p1-smollm2-s29-align-a5-n1-6e7fe",
-        "sole_nonterminal_job_uid": "f9761d5d-7e4e-4e0b-8e45-78dd658f580a",
+        "sole_nonterminal_job_uid": "withheld_from_public_status",
         "observed_at_utc": "2026-11-17T17:22:49.591658+00:00",
         "scope": "Complete project Job/Pod projections plus exact attempt5 Job/Pod; Pending counts as nonterminal. All other project workloads are terminal. Raw cluster outputs remain private.",
         "evidence": {
@@ -3428,22 +4315,18 @@
     }
   ],
   "project_workload_observation": {
-    "job_count": 5,
-    "pod_count": 3,
+    "observed_at_utc": "2026-11-20T20:36:26.404126+00:00",
+    "job_count": 1,
+    "pod_count": 1,
     "active_jobs_including_pending_or_unknown": 0,
     "active_pods_including_pending_or_unknown": 0,
-    "framing_complete": true,
-    "continuation_empty": true,
-    "all_project_workloads_terminal": true,
-    "all_other_project_workloads_terminal": true,
-    "sole_nonterminal_job": null,
-    "sole_nonterminal_job_uid": null,
-    "observed_at_utc": "2026-11-20T17:18:26.228010+00:00",
-    "scope": "Recovery precheck complete project Job/Pod projections: five Jobs and three Pods terminal. Raw cluster payloads remain private. This is not a free-node measurement or new GPU submission admission.",
+    "job_status": "Failed",
+    "pod_status": "Failed",
+    "restart_count": 0,
+    "scope": "Exact attempt-2 Job and owned Pod; not a complete inventory of other projects or a free-node forecast.",
     "evidence": {
-      "source_path": "experiment/docs/operations/evidence/smollm2-resume-a6-20261120/archive-recovery-20261121-v2/precheck-once-v3/readback/RESULT.json",
-      "bytes": 203089,
-      "sha256": "6ecdf6057e0e920b4cdf5748c35ae90a787dd68b872dc80d127ad4df168f771f",
+      "bytes": 27205,
+      "sha256": "7966f4d9affaafd5453fb5b94a5c64087cd5be4b7e6d3d5e8bc84f6c416652e7",
       "available_in_github": false
     }
   },
@@ -3455,7 +4338,7 @@
       "observed_oss_utc": "2026-11-13T03:51:37.639947+00:00",
       "runs": {
         "dp-p1-ouro-r4-f8-g4-s17-sft-a1": {
-          "exact_job_uid": "a0aa5024-b1e4-49a1-8321-21eb593475a8",
+          "exact_job_uid": "withheld_from_public_status",
           "original_uid_matches": true,
           "job_status": "Failed",
           "job_failure_utc": "2026-11-09T09:04:27Z",
@@ -3480,7 +4363,7 @@
           "delta_from_prior": "No new optimizer progress, checkpoint, final/completion receipt, or archive object identity change observed."
         },
         "dp-p1-smollm2-f8-g4-s29-alignment-a2": {
-          "exact_job_uid": "244826a2-7720-4d3c-9724-b76e3497855c",
+          "exact_job_uid": "withheld_from_public_status",
           "original_uid_matches": true,
           "job_status": "Failed",
           "job_failure_utc": "2026-11-11T13:34:31Z",
@@ -3526,7 +4409,7 @@
       "runs": {
         "dp-p1-ouro-r4-f8-g4-s17-sft-a1": {
           "exact_job": "jinhaopeng-dpvlm-p1-ouro-r4-s17-sft-a1-n1-261109132642",
-          "expected_job_uid": "a0aa5024-b1e4-49a1-8321-21eb593475a8",
+          "expected_job_uid": "withheld_from_public_status",
           "current_job_status": "NotFound",
           "current_job_uid_verified": false,
           "historical_job_status_on_20261114": "Failed",
@@ -3579,37 +4462,42 @@
             {
               "local_relative_path": "language_model/model-00001-of-00002.safetensors",
               "expected_bytes_from_20261114_stat": 4991971120,
-              "archive_key": "jinhaopeng/Paper/DeepProbe-VLM/runs/dp-p1-ouro-r4-f8-g4-s17-sft-a1/failure-evidence/original_run/training/checkpoint-600/language_model/model-00001-of-00002.safetensors",
               "archive_listing_present": true,
-              "archive_listing_bytes_match": true
+              "archive_listing_bytes_match": true,
+              "archive_object_filename": "model-00001-of-00002.safetensors",
+              "original_archive_key_sha256": "bb3168c1acf867ff21a6c0aa015850ae90885bac2e42e7a6dba7f2bc1bed0108"
             },
             {
               "local_relative_path": "language_model/model-00002-of-00002.safetensors",
               "expected_bytes_from_20261114_stat": 746670492,
-              "archive_key": "jinhaopeng/Paper/DeepProbe-VLM/runs/dp-p1-ouro-r4-f8-g4-s17-sft-a1/failure-evidence/original_run/training/checkpoint-600/language_model/model-00002-of-00002.safetensors",
               "archive_listing_present": true,
-              "archive_listing_bytes_match": true
+              "archive_listing_bytes_match": true,
+              "archive_object_filename": "model-00002-of-00002.safetensors",
+              "original_archive_key_sha256": "18670a21fc81bdcd3499f6eb929661efe8e1bbe1b53b1bfdfb5e8c5efad18539"
             },
             {
               "local_relative_path": "optimizer.pt",
               "expected_bytes_from_20261114_stat": 14834194549,
-              "archive_key": "jinhaopeng/Paper/DeepProbe-VLM/runs/dp-p1-ouro-r4-f8-g4-s17-sft-a1/failure-evidence/original_run/training/checkpoint-600/optimizer.pt",
               "archive_listing_present": true,
-              "archive_listing_bytes_match": true
+              "archive_listing_bytes_match": true,
+              "archive_object_filename": "optimizer.pt",
+              "original_archive_key_sha256": "a85a00fdcee4c10c07f346bd71a9bc2bc093e437453ab686df80cd047335cd09"
             },
             {
               "local_relative_path": "projector.safetensors",
               "expected_bytes_from_20261114_stat": 26235884,
-              "archive_key": "jinhaopeng/Paper/DeepProbe-VLM/runs/dp-p1-ouro-r4-f8-g4-s17-sft-a1/failure-evidence/original_run/training/checkpoint-600/projector.safetensors",
               "archive_listing_present": true,
-              "archive_listing_bytes_match": true
+              "archive_listing_bytes_match": true,
+              "archive_object_filename": "projector.safetensors",
+              "original_archive_key_sha256": "b2adf282d15c2931cf898c99fb11206e8fa4feeb403b296ac3de337824c3f2a0"
             },
             {
               "local_relative_path": "vision_model/model.safetensors",
               "expected_bytes_from_20261114_stat": 1712957296,
-              "archive_key": "jinhaopeng/Paper/DeepProbe-VLM/runs/dp-p1-ouro-r4-f8-g4-s17-sft-a1/failure-evidence/original_run/training/checkpoint-600/vision_model/model.safetensors",
               "archive_listing_present": true,
-              "archive_listing_bytes_match": true
+              "archive_listing_bytes_match": true,
+              "archive_object_filename": "model.safetensors",
+              "original_archive_key_sha256": "fc9fc3fd0b6ca2477ebede84af0b1ce9abdeff04ca18ac1d94ebbd824108cbc8"
             }
           ],
           "training_entries": [
@@ -3630,7 +4518,7 @@
             "training/eval_results.json"
           ],
           "oss": {
-            "exact_oss_prefix": "oss://ss-devbox-stream/jinhaopeng/Paper/DeepProbe-VLM/runs/dp-p1-ouro-r4-f8-g4-s17-sft-a1/",
+            "exact_oss_prefix": "withheld_from_public_status",
             "object_count": 147,
             "bytes": 23234938760,
             "complete_listing": true,
@@ -3642,7 +4530,7 @@
         },
         "dp-p1-smollm2-f8-g4-s29-alignment-a2": {
           "exact_job": "jinhaopeng-dpvlm-p1-smollm2-s29-align-a2-n1-74182",
-          "expected_job_uid": "244826a2-7720-4d3c-9724-b76e3497855c",
+          "expected_job_uid": "withheld_from_public_status",
           "current_job_status": "Failed",
           "current_job_uid_verified": true,
           "historical_job_status_on_20261114": "Failed",
@@ -3684,7 +4572,7 @@
             "training/eval_results.json"
           ],
           "oss": {
-            "exact_oss_prefix": "oss://ss-devbox-stream/jinhaopeng/Paper/DeepProbe-VLM/runs/dp-p1-smollm2-f8-g4-s29-alignment-a2/",
+            "exact_oss_prefix": "withheld_from_public_status",
             "object_count": 0,
             "bytes": 0,
             "complete_listing": true,
@@ -3713,7 +4601,7 @@
       "terminal_details_observed_utc": "2026-11-17T15:18:48.324188+00:00",
       "run_id": "dp-p1-smollm2-f8-g4-s29-alignment-a3",
       "exact_job": "jinhaopeng-dpvlm-p1-smollm2-s29-align-a3-n1-bdff2",
-      "job_uid": "ab061a99-000f-4283-b806-249ea5287fdf",
+      "job_uid": "withheld_from_public_status",
       "job_running_at_utc": "2026-11-17T06:20:58Z",
       "job_failed_at_utc": "2026-11-17T06:25:50Z",
       "hardware_identity_passed": true,
@@ -3926,7 +4814,7 @@
       "available_in_github": false
     }
   },
-  "project_workload_observation_scope_note": "Latest retained workload snapshot is the November 20 17:18:26 UTC recovery precheck. The prior November 19 snapshot is preserved under historical_project_workload_observations. No available-node or current free-GPU claim is made.",
+  "project_workload_observation_scope_note": "Latest exact attempt-2 Job and owned Pod only. Prior terminal/Running observations remain dated history.",
   "historical_project_workload_observations": [
     {
       "job_count": 6,
@@ -3947,6 +4835,68 @@
         "sha256": "0e08059970a17d5b069ebaae1aecfc9f1a37c69c56dcb88d3c9c2b224a5b2164",
         "bytes": 3437645
       }
+    },
+    {
+      "job_count": 5,
+      "pod_count": 3,
+      "active_jobs_including_pending_or_unknown": 0,
+      "active_pods_including_pending_or_unknown": 0,
+      "framing_complete": true,
+      "continuation_empty": true,
+      "all_project_workloads_terminal": true,
+      "all_other_project_workloads_terminal": true,
+      "sole_nonterminal_job": null,
+      "sole_nonterminal_job_uid": null,
+      "observed_at_utc": "2026-11-20T17:18:26.228010+00:00",
+      "scope": "Recovery precheck complete project Job/Pod projections: five Jobs and three Pods terminal. Raw cluster payloads remain private. This is not a free-node measurement or new GPU submission admission.",
+      "evidence": {
+        "source_path": "experiment/docs/operations/evidence/smollm2-resume-a6-20261120/archive-recovery-20261121-v2/precheck-once-v3/readback/RESULT.json",
+        "bytes": 203089,
+        "sha256": "6ecdf6057e0e920b4cdf5748c35ae90a787dd68b872dc80d127ad4df168f771f",
+        "available_in_github": false
+      }
+    },
+    {
+      "observed_at_utc": "2026-11-20T19:50:29.655845+00:00",
+      "job_count": 1,
+      "pod_count": 1,
+      "active_jobs_including_pending_or_unknown": 1,
+      "active_pods_including_pending_or_unknown": 1,
+      "all_project_workloads_terminal": false,
+      "job_status": "Running",
+      "pod_status": "Running",
+      "allocated_gpus": 8,
+      "restart_count": 0,
+      "scope": "Exact full-suite worker Job and owned Pod only; not a complete inventory of every project workload or a free-node measurement.",
+      "evidence": {
+        "bytes": 14855,
+        "sha256": "e8b526939a446edcfae65f12c6500922de9b422301aa352c50a1cae8e8c44af1",
+        "available_in_github": false
+      }
+    },
+    {
+      "observed_at_utc": "2026-11-20T19:54:45.305502+00:00",
+      "job_count": 1,
+      "pod_count": 1,
+      "active_jobs_including_pending_or_unknown": 0,
+      "active_pods_including_pending_or_unknown": 0,
+      "job_status": "Failed",
+      "pod_status": "Failed",
+      "container_exit_code": 1,
+      "restart_count": 0,
+      "scope": "Exact first full-suite worker Job and owned Pod only; not a complete inventory of other project workloads or free nodes.",
+      "evidence": {
+        "bytes": 27338,
+        "sha256": "51ef56d22f27ca2708b4eecaaa8558c92ccb7296e4e2ef13dc20402a1655a0dd",
+        "available_in_github": false
+      }
     }
-  ]
+  ],
+  "public_identifier_policy": "Private home paths, exact object-storage prefixes and internal Job UIDs are withheld; original raw evidence remains private and is bound by opaque SHA256 digests.",
+  "public_code_commit": "65e562c67d0adfd1573c99dca722082b231c03a2",
+  "active_workload_kind": null,
+  "public_identifier_redactions": {
+    "archive_keys_withheld": 5,
+    "replacement": "Object filename plus original-key SHA256; scientific facts and original private evidence digests preserved."
+  }
 }

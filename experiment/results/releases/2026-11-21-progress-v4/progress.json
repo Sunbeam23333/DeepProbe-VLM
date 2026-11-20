@@ -1,0 +1,331 @@
+{
+  "schema_version": 1,
+  "release_id": "2026-11-21-progress-v4",
+  "snapshot_observed_at_utc": "2026-11-20T20:36:26.404126+00:00",
+  "snapshot_basis": "The repaired v6 full185 attempt-2 worker is confirmed Failed at 2026-11-20T20:36:26.404126+00:00, with the same Job UID as its successful one-shot submission, exit 1 and zero restarts. Its eight-device hardware report passed, including BF16 attention forward/backward and all-reduce. The new controller startup acceptance receipt is present. The first engineering gpu_gate task was claimed, then failed during Triton cuda_utils initialization because its default /.triton cache directory was not writable. The intended numerical kernel had not launched; this is not a CUDA numerical discrepancy. No training/evaluation claim, scientific completion or new optimizer update is observed. An explicit task-owned cache-directory repair is being prepared. The original worker remains Failed; its small failure archive is accepted. Both F8 caches remain READY; F4/F16 CPU recovery is active but none of its four READY descriptors has been observed. Accepted a6 alignment/archive/history and R1/R2 quality results are unchanged.",
+  "new_held_out_results": false,
+  "plan": {
+    "models": 18,
+    "training_stages": 34,
+    "model_benchmark_evaluations": 36,
+    "latency_runs": 15,
+    "latency_comparisons": 12,
+    "operational_tasks": 185
+  },
+  "acceptance_counts": {
+    "complete_two_stage_models": 2,
+    "independently_accepted_training_stages": 6,
+    "completed_model_benchmark_evaluations": 4,
+    "completed_full_model_latency_runs": 0
+  },
+  "remaining_model_work": {
+    "new_training_stages": 27,
+    "r4_sft_resume_updates": 118,
+    "new_model_benchmark_evaluations": 32,
+    "full_model_latency_runs": 15,
+    "latency_comparisons": 12
+  },
+  "smollm2_a6": {
+    "training_status": "formal_training_complete",
+    "optimizer_step": 718,
+    "new_optimizer_updates": 368,
+    "original_job_status": "Failed",
+    "two_stage_training_complete": false,
+    "new_held_out_result": null,
+    "archive_recovered_after_controller_failure": true,
+    "archive_independently_accepted": true,
+    "archive_objects": 240,
+    "archive_bytes": 18149863235,
+    "supplement_uploaded_objects": 158,
+    "supplement_uploaded_bytes": 17233643424,
+    "all_archive_objects_full_get_sha_verified": true,
+    "final_checkpoint_files": 18,
+    "final_checkpoint_bytes": 8589657473,
+    "final_checkpoint_inventory_sha256": "d23711cbc2d703821c212ee6590ee3ed2bbe57cd7fa63f38762181b42b8c8098",
+    "native_history_import_accepted": true,
+    "native_ARCHIVED_receipt_fabricated": false,
+    "alignment_updates_must_not_repeat": true,
+    "evidence": {
+      "archive_recovery_execution": {
+        "bytes": 302900,
+        "sha256": "d93815596861714d30364d1ac883fad2093618b615bc26ade2c31266b27b5282",
+        "available_in_github": false
+      },
+      "archive_recovery_independent_audit": {
+        "bytes": 266301,
+        "sha256": "4d6865ecaaefa8c6caee67ff8be65f14153d598552fc4503127147070f970414",
+        "available_in_github": false
+      },
+      "archive_recovery_acceptance": {
+        "bytes": 2480,
+        "sha256": "b4551ba06ad9a57dd022e3c6e8ac233814c23003a37030722585a4b1272fab52",
+        "available_in_github": false
+      },
+      "native_history_acceptance": {
+        "bytes": 2780,
+        "sha256": "ea0b5938c118f4f790525594b64ae48e7785a9f8878839110033aae9d3c6922e",
+        "available_in_github": false
+      },
+      "native_history_import_result": {
+        "bytes": 4440,
+        "sha256": "9621d81db1eaec4ba61a5b1a2291f0060e29ea43259cf00ec00e13b97ced3356",
+        "available_in_github": false
+      }
+    }
+  },
+  "r4_sft": {
+    "checkpoint_step": 600,
+    "remaining_optimizer_updates": 118,
+    "archive_full_get_sha_verified": true,
+    "native_metadata_verified": true,
+    "runtime_resume_verified": false
+  },
+  "suite_execution": {
+    "status": "FULL185_V6_ATTEMPT2_FAILED_TRITON_CACHE_PERMISSION",
+    "public_code_commit": "65e562c67d0adfd1573c99dca722082b231c03a2",
+    "source_manifest_sha256": "4d8dfbaeed162d770ef7086e28e6d04c41d94da9c9f0f8e79645df7858fb18c5",
+    "cpu_admission": {
+      "status": "SUITE_CPU_PROGRESSIVE_ADMITTED",
+      "observed_at_utc": "2026-11-20T20:25:13.864485+00:00",
+      "passed_checks": 68,
+      "deferred_benchmark_shapes": 4,
+      "failures": 0,
+      "completed": true,
+      "passed": true,
+      "candidate_sha256": "3ec1ba7b0f9c120278c13145f4d7e650d4fa5eaf04cdfd5cb91979b4a9cfd598",
+      "dag_tasks": 185,
+      "gpu_submitted_by_cpu_admission": false,
+      "training_waits_for_all_evaluation_caches": false,
+      "evaluation_requires_own_ready_receipt": true,
+      "server_dry_run_passed": true,
+      "exact_empty_archive_prefixes": 52,
+      "duplicate_job_uids": 0,
+      "independent_admission_passed": true,
+      "fresh_worst_home_bytes": 142546098993,
+      "home_limit_bytes": 150000000000,
+      "remaining_headroom_bytes": 7453901007,
+      "evidence": {
+        "cpu_preflight": {
+          "bytes": 4825277,
+          "sha256": "1f2b4de0ff65cdf2677b9d28423f1b81cb5adc9ae83a1b8def8e491559983796",
+          "available_in_github": false
+        },
+        "workflow_prepared": {
+          "bytes": 3469,
+          "sha256": "0403442ac8d67a43f4a33a039e866d463e634d71b7ec58c01057721ba05cfc93",
+          "available_in_github": false
+        },
+        "server_dryrun": {
+          "bytes": 16212,
+          "sha256": "b043c036fa7c2fb6c87acd33b482806ca19f47206af6f463ceacfe1151aff757",
+          "available_in_github": false
+        },
+        "independent_admission": {
+          "bytes": 2283,
+          "sha256": "b5492f7a82d30e8e91460b734bfcfa74711843dc20a051439f8ad6bb351000d4",
+          "available_in_github": false
+        },
+        "root_crosscheck": {
+          "bytes": 819,
+          "sha256": "a2fdf3783b531414fb5dd83a08b99e2deef221506146d9369ce79f27bb9253ed",
+          "available_in_github": false
+        }
+      }
+    },
+    "submission": {
+      "status": "EXACT_FLEET_JOBS_OBSERVED",
+      "process_returncode": 0,
+      "actual_jobs_observed": 1,
+      "job_status": "Failed",
+      "pod_status": "Failed",
+      "job_terminal": true,
+      "job_terminating": false,
+      "observed_at_utc": "2026-11-20T20:36:26.404126+00:00",
+      "created_at_utc": "2026-11-20T20:32:25Z",
+      "container_started_at_utc": "2026-11-20T20:32:31Z",
+      "container_finished_at_utc": "2026-11-20T20:35:21Z",
+      "container_exit_code": 1,
+      "restart_count": 0,
+      "allocated_gpus": 8,
+      "exact_submitted_job_uid_matched": true,
+      "job_uid": "withheld_from_public_status",
+      "automatic_resubmit": false,
+      "hardware_report_passed": true,
+      "startup_acceptance_receipt_observed": true,
+      "claims_observed": 1,
+      "engineering_gate_claims_observed": 1,
+      "scientific_train_eval_claims_observed": 0,
+      "completed_tasks_observed": 0,
+      "training_optimizer_updates_observed": false,
+      "invocation_artifact_files_observed": 6,
+      "evidence": {
+        "submit_result": {
+          "bytes": 1551,
+          "sha256": "8e90bcf1ac4248140a613272dde85693efae07f926b8b588515df412bc3a0fd5",
+          "available_in_github": false
+        },
+        "terminal_observation": {
+          "bytes": 27205,
+          "sha256": "7966f4d9affaafd5453fb5b94a5c64087cd5be4b7e6d3d5e8bc84f6c416652e7",
+          "available_in_github": false
+        },
+        "hardware_report": {
+          "bytes": 4983,
+          "sha256": "923a1dd695123c692da794fbf1b72f966e108eec9e3bac868ccf429bc32c4168",
+          "available_in_github": false
+        },
+        "gpu_gate_stderr": {
+          "bytes": 4019,
+          "sha256": "6ede7a55f135d254a93fa22ecc3ffc27ae3038f1af51184c67c259c00957fa71",
+          "available_in_github": false
+        },
+        "startup_acceptance": {
+          "bytes": 316,
+          "sha256": "1c7293e536872b4e97e0d8ad2b88d87dfd48fe1ff9f1fcf4593c8a5d41a665b1",
+          "available_in_github": false
+        }
+      }
+    },
+    "worker_plan": {
+      "workers": 1,
+      "priority": "normal",
+      "nodes_per_worker": 1,
+      "gpus_per_worker": 8,
+      "restart_policy": "Never",
+      "home_limit_bytes": 150000000000,
+      "current_capacity_supports_four_workers": false,
+      "fresh_capacity_and_gpu_admission_required": true,
+      "gpu_submitted": true,
+      "status": "ATTEMPT2_FAILED_CACHE_REPAIR_PENDING",
+      "fresh_per_task_capacity_required": true
+    },
+    "query_repair": {
+      "public_code_commit": "65e562c67d0adfd1573c99dca722082b231c03a2",
+      "metadata_mode": "server_partial_object_metadata",
+      "pagination_and_owner_closure_verified": true,
+      "pagination_snapshot_resource_version_and_exact_uid_changes_fail_closed": true,
+      "bounded_read_retries_only": true,
+      "create_not_automatically_retried": true,
+      "real_readonly_census_seconds": 6.934634253382683,
+      "evidence": {
+        "bytes": 3060,
+        "sha256": "8ffb829e3a8c6ca4a2fea180db6a3bcf6ff015df9524c1168be0dfae49cc55cc",
+        "available_in_github": false
+      }
+    },
+    "previous_worker_failure": {
+      "status": "STOPPED_BEFORE_FIRST_SCIENTIFIC_TASK",
+      "stopped_at_utc": "2026-11-20T19:52:38.789313+00:00",
+      "error_type": "TimeoutExpired",
+      "failed_operation": "_fleet_live cluster inventory query",
+      "timeout_seconds": 40,
+      "task_claims": 0,
+      "completed_scientific_tasks": 0,
+      "optimizer_updates": 0,
+      "training_checkpoints_produced": 0,
+      "automatic_retry": false,
+      "automatic_requeue": false,
+      "repair_status": "PENDING",
+      "evidence": {
+        "stopped": {
+          "bytes": 450,
+          "sha256": "307038deb1ae8acb39251ac4ce0fffd4d2fb7a1926f528558d2240834acdcee1",
+          "available_in_github": false
+        },
+        "terminal_job_and_trace": {
+          "bytes": 27338,
+          "sha256": "51ef56d22f27ca2708b4eecaaa8558c92ccb7296e4e2ef13dc20402a1655a0dd",
+          "available_in_github": false
+        }
+      },
+      "followup": {
+        "repair": "Separate v6 metadata-query implementation deployed and CPU/server admitted.",
+        "original_job_status_unchanged": true,
+        "original_source_preserved": true,
+        "archive_full_get_sha_verified": true,
+        "archive_objects": 18,
+        "archive_bytes": 103783,
+        "archive_evidence": {
+          "bytes": 5109,
+          "sha256": "6b7e43bc45c272ee4ef703e9ef9168fd7240b4a83234db8c00e66ce21636184e",
+          "available_in_github": false
+        }
+      },
+      "scope": "Historical first-worker failure; original PENDING repair status is retained as observed then. See followup and attempt2_gpu_gate_failure for newer events."
+    },
+    "attempt2_gpu_gate_failure": {
+      "failed_at_utc": "2026-11-20T20:35:19.091753+00:00",
+      "task_id": "gpu_gate",
+      "error": "Triton cache initialization PermissionError: /.triton is not writable",
+      "intended_numerical_kernel_launched": false,
+      "cuda_numerical_discrepancy_established": false,
+      "training_or_evaluation_started": false,
+      "optimizer_updates": 0,
+      "repair_status": "Explicit task-owned cache directories being prepared; no replacement execution claimed by this snapshot.",
+      "evidence": {
+        "task_failure": {
+          "bytes": 202,
+          "sha256": "23705c726de1314f4bc05c28ad98c57a4844d2c2c736587c1e950134c7a8137e",
+          "available_in_github": false
+        },
+        "stderr": {
+          "bytes": 4019,
+          "sha256": "6ede7a55f135d254a93fa22ecc3ffc27ae3038f1af51184c67c259c00957fa71",
+          "available_in_github": false
+        },
+        "terminal": {
+          "bytes": 27205,
+          "sha256": "7966f4d9affaafd5453fb5b94a5c64087cd5be4b7e6d3d5e8bc84f6c416652e7",
+          "available_in_github": false
+        }
+      }
+    }
+  },
+  "benchmark_cache_preparation": {
+    "observed_at_utc": "2026-11-20T20:34:38.916499+00:00",
+    "readiness": {
+      "videomme899_f8": {
+        "status": "SUITE_BENCHMARK_CACHE_READY",
+        "ready_receipt_bytes": 2156008,
+        "ready_receipt_sha256": "8c52ccb524a602cb9db44a51968bb8c3a68233ddfc41bce9fd301ada878c190e"
+      },
+      "tempcompass_mc_f8": {
+        "status": "SUITE_BENCHMARK_CACHE_READY",
+        "ready_receipt_bytes": 869971,
+        "ready_receipt_sha256": "7c5850bd73aea6c4ef09f624a68eb0e2d0f62d34b0a410a5a4a4653bbab1949e"
+      },
+      "f4_f16": {
+        "status": "CPU_RECOVERY_ACTIVE_READY_PENDING",
+        "all_requested_shapes_complete": false,
+        "ready_descriptors_observed": 0
+      }
+    },
+    "scope": "F4/F16 decoder and publisher were restarted under a new controlled recovery. Both F8 READY receipts are preserved; all four new shapes still require their own READY. Prior failures remain in history.",
+    "evidence": {
+      "bytes": 16309,
+      "sha256": "c7e387ab9102ea1c32c13f528b08147d5e757e5c6f4a02e615735856cbe006b0",
+      "available_in_github": false
+    }
+  },
+  "checkpoint_retention": {
+    "home_limit_bytes": 150000000000,
+    "oss_limit_bytes": null,
+    "fresh_worst_home_bytes": 142546098993,
+    "cleanup_requires": [
+      "verified durable archive",
+      "all evaluation/latency/other consumers complete"
+    ],
+    "scientific_dag_preserved": true
+  },
+  "baseline_results": "https://github.com/Sunbeam23333/DeepProbe-VLM/tree/main/experiment/results/releases/2026-11-19",
+  "claim_limits": [
+    "Attempt 2 passed hardware/startup and then failed at its first engineering gpu_gate due to an unwritable Triton cache directory. One engineering claim is not a training/evaluation completion. No optimizer update or model checkpoint was produced.",
+    "The first worker and original a6 scheduler failures remain unchanged; separately accepted archive recovery does not rewrite them.",
+    "No new Smol SFT completion, held-out score or full-model latency result is claimed.",
+    "Existing CUDA ratios measure synthetic pooling only; the attempt-2 cache initialization error is not a numerical discrepancy.",
+    "The 185 operational tasks are not a scientific completion percentage.",
+    "Conditional research work, including MVBench media/scope and matched hardware, is not claimed complete."
+  ],
+  "previous_published_progress_release": "2026-11-21-progress-v1",
+  "public_identifier_policy": "Private home paths, exact object-storage prefixes and internal Job UIDs are withheld; original raw evidence remains private and is bound by opaque SHA256 digests."
+}
