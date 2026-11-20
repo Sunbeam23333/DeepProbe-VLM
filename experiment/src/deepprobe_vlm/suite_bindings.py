@@ -333,6 +333,9 @@ def validate_environment(environment, plan):
         require(not (binding["mode"] == "resume" and tasks[task_id]["kind"] != "train"),
                 "historical resume applies to training only")
         validate_history_shape(tasks[task_id], binding)
+    if 'benchmark_preparations' in environment:
+        from .suite_progressive import validate_declarations
+        validate_declarations(environment, plan)
     reserves = environment["task_reserve_bytes"]
     require(isinstance(reserves, dict) and set(reserves) == RESERVE_KEYS
             and all(type(value) is int and value >= 0 for value in reserves.values()),

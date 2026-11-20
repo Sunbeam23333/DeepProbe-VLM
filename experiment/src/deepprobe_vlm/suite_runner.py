@@ -774,7 +774,10 @@ def run_fleet_worker(plan, binding, *, plan_sha256, binding_sha256, state_root, 
             def reserve(task, owner):
                 command = binding['tasks'][task['id']]
                 return budget.reserve(owner, command.get('reserve_bytes', 0), command.get('oss_reserve_bytes', 0))
-            selected = fleet.claim(worker_id, startup_value['job_uid'], reserve)
+            def readiness(task):
+                from .suite_progressive import task_readiness
+                return task_readiness(environment, plan, task)
+            selected = fleet.claim(worker_id, startup_value['job_uid'], reserve, readiness=readiness)
             if selected['status'] == 'complete':
                 result = fleet.complete(worker_id)
                 write_once(invocation / 'COMPLETE.json', result)

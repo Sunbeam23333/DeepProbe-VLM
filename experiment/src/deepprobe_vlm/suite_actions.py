@@ -702,7 +702,22 @@ class Actions:
 
     @contextmanager
     def benchmark_asset(self, task):
-        data = self.env['assets']['benchmarks'][task['benchmark']][str(task['frames'])]
+        if 'benchmark_preparations' in self.env:
+            from .suite_progressive import resolve_ready
+            claim = read(self.state / 'tasks' / task['id'] / 'CLAIM.json')
+            intent = read(safe(claim['attempt']) / 'TASK_INTENT.json')
+            require(intent['claim'] == claim and intent['task_id'] == task['id']
+                    and claim['task_id'] == task['id'] and claim['task_sha256'] == digest(task),
+                    'Progressive evaluation must retain its exact fleet claim')
+            readiness = claim.get('asset_readiness')
+            require(isinstance(readiness, dict) and set(readiness) == {
+                'ready_pin', 'contract_sha256', 'cache_binding_sha256'}, 'Claimed cache readiness is missing')
+            ready = resolve_ready(self.env, task['benchmark'], task['frames'], expected_pin=readiness['ready_pin'])
+            require(ready is not None and {k: v for k, v in ready.items() if k != 'asset'} == readiness,
+                    'Claimed cache readiness changed before evaluation')
+            data = ready['asset']
+        else:
+            data = self.env['assets']['benchmarks'][task['benchmark']][str(task['frames'])]
         if 'cache' not in data:
             yield {'data': data, 'release_receipt': None}
             return
@@ -750,6 +765,24 @@ class Actions:
                     raise ValueError('Benchmark readers are not quiescent; cache and reader lease preserved')
 
     def evaluate(self, task):
+        history = self.env.get('history', {}).get(task['id'])
+        if history is not None:
+            from .suite_bindings import verify_history_binding
+            verify_history_binding(self.plan, task, history, verify_files=True)
+            parent = self.completed(task['checkpoint_task_id'])
+            require(history['checkpoint_inventory_sha256'] == digest(parent['checkpoint_files']),
+                    'Historical evaluation belongs to a different parent checkpoint')
+            result = verify_pin(history['evaluation'])
+            reuse = save(self.task_dir(task['id']) / 'HISTORICAL_EVALUATION_REUSE.json', {
+                'status': 'SUITE_HISTORICAL_EVALUATION_REUSED', 'task_id': task['id'],
+                'task_sha256': digest(task), 'evaluation': result,
+                'history_acceptance': history['acceptance'],
+                'parent_training_complete': parent['training_complete'],
+                'checkpoint_inventory_sha256': digest(parent['checkpoint_files']),
+                'inference_executed': False, 'benchmark_cache_hydrated': False,
+                'new_quality_measurement': False})
+            return {'outputs': [result, reuse, history['acceptance']], 'evaluation': result,
+                    'consumer_receipts': [self.consume(task['checkpoint_task_id'], task, [result, reuse])]}
         with self.benchmark_asset(task) as asset:
             result = self.evaluate_with_data(task, asset['data'])
         if asset['release_receipt']:

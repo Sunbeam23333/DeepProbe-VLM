@@ -242,10 +242,25 @@ def prepare_workflow(plan, candidate, output, *, prepare_assets=False, resume_as
         save(attempt / "WORKFLOW_GATED.json", result)
         return result
     cache_results = []
-    for request in candidate.get("benchmark_preparations", []):
-        asset, complete = prepare_benchmark(env, request, resume=resume_assets)
-        env["assets"]["benchmarks"].setdefault(request["benchmark"], {})[str(request["frames"])] = asset
-        cache_results.append(complete)
+    if candidate.get('benchmark_preparation_mode') == 'external_progressive':
+        from .suite_progressive import validate_declarations, key
+        declarations = validate_declarations(env, plan)
+        requests = candidate.get('benchmark_preparations', [])
+        runner.require(len(requests) == len(declarations) and {
+            key(r['benchmark'], r['frames']): r for r in requests} == {
+            name: item['contract']['request'] for name, item in declarations.items()},
+            'External progressive requests differ from frozen cache declarations')
+        cache_results = [{'status': 'EXTERNAL_CPU_PREPARATION_DECLARED',
+                          'contract_sha256': item['contract_sha256'], 'ready_path': item['ready_path']}
+                         for item in declarations.values()]
+    else:
+        runner.require(candidate.get('benchmark_preparation_mode', 'eager') == 'eager'
+                       and 'benchmark_preparations' not in env,
+                       'Progressive declarations require explicit external preparation mode')
+        for request in candidate.get("benchmark_preparations", []):
+            asset, complete = prepare_benchmark(env, request, resume=resume_assets)
+            env["assets"]["benchmarks"].setdefault(request["benchmark"], {})[str(request["frames"])] = asset
+            cache_results.append(complete)
     # Freeze the source actually used for new work. Resumed historical work
     # keeps its independently pinned old source and recipe in the history entry.
     from .formal_integrity import source_inventory
@@ -275,7 +290,8 @@ def prepare_workflow(plan, candidate, output, *, prepare_assets=False, resume_as
         from .suite_preflight import inspect
         preflight = inspect(plan, binding, env, plan_sha256=plan_pin["sha256"], binding_sha256=binding_pin["sha256"],
             environment_sha256=environment_pin["sha256"], state_root=candidate["state_root"], prepare_media=False)
-        result.update(preflight=save(attempt / "CPU_PREFLIGHT.json", preflight), cpu_admitted=preflight["status"] == "SUITE_CPU_ADMITTED")
+        result.update(preflight=save(attempt / "CPU_PREFLIGHT.json", preflight),
+                      cpu_admitted=preflight["status"] in {"SUITE_CPU_ADMITTED", "SUITE_CPU_PROGRESSIVE_ADMITTED"})
     template_pin = candidate.get("job_template")
     if "job_template_document" in candidate:
         runner.require(not template_pin, "Choose one pinned worker template source")

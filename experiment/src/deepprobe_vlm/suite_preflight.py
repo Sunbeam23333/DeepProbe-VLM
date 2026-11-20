@@ -436,7 +436,8 @@ def _initial_storage_gate(plan, binding, environment, estimates):
 
 def inspect(plan, binding, environment, *, plan_sha256, binding_sha256, environment_sha256,
             state_root, prepare_media=False):
-    checks, failures, outputs, estimates = [], [], [], {}
+    checks, failures, outputs, estimates, deferred = [], [], [], {}, []
+    progressive = 'benchmark_preparations' in environment
     def check(name, callback):
         try:
             value = callback()
@@ -449,11 +450,14 @@ def inspect(plan, binding, environment, *, plan_sha256, binding_sha256, environm
             failures.append({'check': name, 'error_type': type(exc).__name__, 'error': detail})
             return None
     def result():
-        return {'schema_version': 1, 'status': 'SUITE_CPU_GATED' if failures else 'SUITE_CPU_ADMITTED',
+        return {'schema_version': 1, 'status': 'SUITE_CPU_GATED' if failures else (
+                'SUITE_CPU_PROGRESSIVE_ADMITTED' if progressive else 'SUITE_CPU_ADMITTED'),
             'generated_utc': runner.utc(), 'plan_sha256': plan_sha256, 'binding_sha256': binding_sha256,
             'environment_sha256': environment_sha256,
             'source_identity_sha256': runner.source_identity(binding) if isinstance(binding, dict) and 'source_files' in binding else None,
             'failures': failures, 'checks': checks, 'outputs': outputs, 'training_peak_estimates': estimates,
+            'benchmark_preparation_mode': 'external_progressive' if progressive else 'eager',
+            'deferred_benchmarks': deferred,
             'gpu_used': False, 'media_hydration_requested': prepare_media, 'future_capacity_rechecked_per_task': True,
             'remote_checkpoint_fresh_payload_check_deferred_to_restore': True,
             'scheduler_admission_still_required': True}
@@ -517,12 +521,25 @@ def inspect(plan, binding, environment, *, plan_sha256, binding_sha256, environm
     for benchmark in ('videomme899', 'tempcompass_mc'):
         for frames in (4, 8, 16):
             def benchmark_gate(b=benchmark, f=frames):
+                if progressive:
+                    from .suite_progressive import key, resolve_ready
+                    require(not prepare_media, 'Progressive CPU admission never hydrates GPU worker media')
+                    declaration = environment['benchmark_preparations'][key(b, f)]
+                    ready = resolve_ready(environment, b, f)
+                    if ready is None:
+                        return {'status': 'DEFERRED_BENCHMARK', 'benchmark': b, 'frames': f,
+                                'contract_sha256': declaration['contract_sha256'], 'ready_path': declaration['ready_path']}
+                    return {k: v for k, v in ready.items() if k != 'asset'}
                 require(not prepare_media or hydration_permitted, 'Upstream input failures prevent media hydration')
                 return _benchmark_gate(environment['assets']['benchmarks'][b][str(f)], b, f, environment,
                                        prepare_media=prepare_media)
             proof = check('benchmark/' + benchmark + '/' + str(frames), benchmark_gate)
             if proof:
-                outputs.append(proof['acceptance'])
+                if proof.get('status') == 'DEFERRED_BENCHMARK':
+                    checks[-1]['status'] = 'deferred'
+                    deferred.append(proof)
+                else:
+                    outputs.append(proof['ready_pin'] if progressive else proof['acceptance'])
     check('development_latency_inputs', lambda: _development_gate(environment))
     check('initial_storage', lambda: _initial_storage_gate(plan, binding, environment, estimates))
     return result()
@@ -544,7 +561,7 @@ def main(argv=None):
                     environment_sha256=args.environment_sha256, state_root=args.state_root, prepare_media=args.prepare_media)
     save(args.output, value)
     print(json.dumps({'status': value['status'], 'failures': value['failures']}, indent=2))
-    return 0 if value['status'] == 'SUITE_CPU_ADMITTED' else 1
+    return 0 if value['status'] in {'SUITE_CPU_ADMITTED', 'SUITE_CPU_PROGRESSIVE_ADMITTED'} else 1
 
 
 if __name__ == '__main__':

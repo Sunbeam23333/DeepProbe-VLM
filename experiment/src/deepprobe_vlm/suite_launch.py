@@ -220,7 +220,12 @@ class SuiteLauncher:
                                                     resume=self.resume, relocation_pin=self.relocation_pin, worker_id=getattr(self, "worker_id", None)),
                      worker_id=getattr(self, "worker_id", None), binding_sha256=self.pins["binding"]["sha256"])
         preflight = read(self.pins['preflight']['path'])
-        require(preflight.get('status') == 'SUITE_CPU_ADMITTED' and preflight.get('failures') == []
+        progressive = 'benchmark_preparations' in self.env
+        if progressive:
+            from .suite_progressive import validate_admission
+            validate_admission(preflight, self.env, self.plan)
+        require(preflight.get('status') == ('SUITE_CPU_PROGRESSIVE_ADMITTED' if progressive else 'SUITE_CPU_ADMITTED')
+                and preflight.get('failures') == []
                 and preflight.get('source_identity_sha256') == source
                 and all(preflight.get(key + '_sha256') == self.pins[key]['sha256']
                         for key in ('plan', 'binding', 'environment')), 'CPU admission does not attest these exact inputs')

@@ -267,10 +267,12 @@ class FleetState:
                 completed[task['id']] = value
         return completed
 
-    def claim(self, worker_id, job_uid, reserve):
+    def claim(self, worker_id, job_uid, reserve, readiness=None):
         """reserve(task, owner) atomically admits a shared budget or raises StorageError."""
         from .suite_storage import StorageError
         with project_transaction(self.binding['storage']):
+            require(not list((self.state / 'invocations').glob('*/STOPPED.json')),
+                    'Fleet stopped after a worker failure; explicit recovery required')
             failures = list((self.state / 'tasks').glob('*/FAILED.json'))
             require(not failures, 'Fleet stopped after a failed task; explicit recovery required')
             completed = self.completions()
@@ -282,8 +284,13 @@ class FleetState:
             # Free accepted checkpoints promptly; keep original scientific order within each class.
             order = {'cleanup': 0, 'archive': 1, 'evaluate': 2, 'latency': 2, 'compare_latency': 2}
             ready.sort(key=lambda t: order.get(t['kind'], 3))
-            blocked = []
+            blocked, asset_pending = [], []
             for task in ready:
+                asset_readiness = readiness(task) if readiness is not None else {}
+                if asset_readiness is None:
+                    asset_pending.append(task['id'])
+                    continue
+                require(isinstance(asset_readiness, dict), 'Invalid task asset readiness evidence')
                 owner = {'fleet_id': self.profile['fleet_id'], 'worker_id': worker_id, 'task_id': task['id'],
                          'claim_id': uuid.uuid4().hex, 'job_uid': job_uid}
                 try:
@@ -297,11 +304,14 @@ class FleetState:
                 attempt = runner._new_numbered(root / 'attempts', 'attempt-')
                 claim = {'owner': owner, 'task_id': task['id'], 'task_sha256': runner.digest(task),
                          'attempt': str(attempt), 'storage_token': token, 'utc': runner.utc(), 'automatic_expiry': False}
+                if asset_readiness:
+                    claim['asset_readiness'] = asset_readiness
                 runner.write_once(root / 'CLAIM.json', claim)
                 runner._journal(self.state, {'event': 'TASK_CLAIMED', 'task_id': task['id'], 'owner': owner})
                 return {'status': 'claimed', 'task': task, 'claim': claim, 'completed': completed}
-            require(active, 'No runnable task; dependency or storage admission failed: ' + str(blocked))
-            return {'status': 'wait', 'active_task_ids': [t['id'] for t in active], 'storage_blocked': blocked}
+            require(active or asset_pending, 'No runnable task; dependency or storage admission failed: ' + str(blocked))
+            return {'status': 'wait', 'active_task_ids': [t['id'] for t in active],
+                    'storage_blocked': blocked, 'asset_pending_task_ids': asset_pending}
 
     def finish(self, task, claim, completion):
         with project_transaction(self.binding['storage']):

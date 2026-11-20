@@ -181,6 +181,26 @@ this allows metadata admission without hydrating large weights prematurely.
 
 ## Frame caches and storage
 
+Fleet candidates may explicitly select `benchmark_preparation_mode:
+external_progressive`. The environment then freezes all six benchmark/frame
+requests and their exact producer source and READY paths. CPU admission checks
+every training input and records unfinished benchmark caches as deferred. It
+uses `SUITE_CPU_PROGRESSIVE_ADMITTED`; this is not an assertion that those
+benchmarks are ready or evaluated.
+
+`publish_experiment_suite_caches.py` verifies a completed cache with full PNG
+GET/SHA/RGB checks before atomically publishing its READY receipt. A worker
+can claim an evaluation only after its own cache is ready, pins that receipt
+in the task claim, and checks it again before hydration. Independent training
+continues while other cache shapes are being prepared. Invalid readiness
+evidence fails closed. The scientific DAG and all 36 evaluations remain intact.
+
+An independently accepted historical evaluation is reused after checking its
+complete scored rows, protocol, evidence hashes and the current parent
+checkpoint inventory. The adapter emits a reuse receipt and the normal
+checkpoint-consumer receipt without inference or cache hydration. These reused
+results are not new quality measurements.
+
 F4/F8/F16 cache preparation decodes the SHA-bound original videos. It does not
 resample an F8 cache to make F4 or F16. Video-MME legacy archive references are
 resolved through the exact pinned original archive audit, SHA, filename, ETag
