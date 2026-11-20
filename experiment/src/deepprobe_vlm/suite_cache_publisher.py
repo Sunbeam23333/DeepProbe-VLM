@@ -52,6 +52,8 @@ def producer_outcome(start_pin, declarations):
     candidate = runner.read(start['candidate']['path'])
     for declaration in declarations.values():
         contract = declaration['contract']
+        if 'legacy_reuse' in contract['request']:
+            continue  # The read-only reuse publisher owns this shape, not the decoder.
         runner.require(contract['producer']['source_manifest'] == start['source_manifest']
                        and contract['producer']['source_root'] == candidate['environment']['experiment_root']
                        and contract['request'] in candidate['benchmark_preparations'],
@@ -76,6 +78,22 @@ def publish_prepared(environment, declaration):
     existing = progressive.resolve_ready(environment, request['benchmark'], request['frames'])
     if existing is not None:
         return existing
+    if 'legacy_reuse' in request:
+        from .suite_legacy_cache import prepare_asset
+        budget = budget_for(environment)
+        owner = {'suite_id': environment['suite_id'], 'operation': 'legacy-f8-cache-publication',
+                 'contract_sha256': declaration['contract_sha256']}
+        with budget.asset_lock(owner):
+            existing = progressive.resolve_ready(environment, request['benchmark'], request['frames'])
+            if existing is not None:
+                return existing
+            token = budget.reserve(owner, 2 * request['metadata_reserve_bytes'] + PUBLICATION_RESERVE_BYTES, 0)
+            try:
+                asset = prepare_asset(environment, request)
+                return progressive.publish_ready(environment, declaration, asset)
+            finally:
+                budget.release(token, quiescent=lambda observed: {
+                    'owner': observed, 'active_writers': [], 'active_uploads': []})
     try:
         prepared_path.stat()
     except FileNotFoundError:
@@ -117,6 +135,16 @@ def publish_prepared(environment, declaration):
 
 def publish_available(environment, plan, *, producer_start=None):
     declarations = progressive.validate_declarations(environment, plan)
+    # Reuse is independent of the decoder's lifecycle. In particular, an F4
+    # decoder failure must not mark accepted F8 inputs failed before they can
+    # publish their own complete remote verification.
+    for declaration in declarations.values():
+        if 'legacy_reuse' in declaration.get('contract', {}).get('request', {}):
+            try:
+                publish_prepared(environment, declaration)
+            except Exception as exc:
+                record_failure(environment, declaration, exc)
+                raise
     try:
         outcome = producer_outcome(producer_start, declarations)
     except Exception as exc:
@@ -127,7 +155,8 @@ def publish_available(environment, plan, *, producer_start=None):
         # every missing shape before raising: DAG-ready F8 consumers must not
         # wait forever merely because the first declared failure was F4.
         missing = [declaration for declaration in declarations.values()
-                   if not runner.safe(declaration['ready_path']).exists()
+                   if 'legacy_reuse' not in declaration['contract']['request']
+                   and not runner.safe(declaration['ready_path']).exists()
                    and not runner.safe(declaration['ready_path']).with_name('PREPARED_ASSET.json').exists()]
         if missing:
             error = ValueError('CPU cache producer exited ' + ('without every descriptor' if outcome['successful']

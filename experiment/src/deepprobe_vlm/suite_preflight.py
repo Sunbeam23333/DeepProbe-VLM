@@ -341,6 +341,10 @@ def _remote_benchmark_gate(data, benchmark, frames, environment, *, store=None):
     store = store or media.OSSStore(environment['tools']['oss_config'], allowed_prefix=media.PROJECT_PREFIX + 'suite-media-readonly/')
     for archive in binding['archives']:
         media.verify_archive(store, archive)
+    legacy_snapshot = None
+    if data['cache'].get('legacy_request'):
+        from .suite_legacy_cache import verify_remote_inventory
+        legacy_snapshot = verify_remote_inventory(data['cache'], store)
     if data['cache']['kind'] == 'suite':
         prefix = data['cache']['prefix']
         metadata = (('plan', 'BUILD_PLAN.json'), ('manifest', 'manifest.jsonl'),
@@ -361,11 +365,18 @@ def _remote_benchmark_gate(data, benchmark, frames, environment, *, store=None):
             require(media.digest(image.tobytes()) == item['rgb_sha256'], 'Remote decoded RGB SHA differs')
     for key in keys:
         require(media._read_pin(data['cache'][key]) == raw[key], 'Cache metadata changed during remote readback')
-    return {'qa': len(rows), 'frames': frames, 'acceptance': data['cache'].get('complete', data['cache']['receipt']),
+    if legacy_snapshot is not None:
+        require(verify_remote_inventory(data['cache'], store, metadata=False) == legacy_snapshot,
+                'Legacy cache changed during full remote readback')
+    result = {'qa': len(rows), 'frames': frames, 'acceptance': data['cache'].get('complete', data['cache']['receipt']),
         'cache_binding_sha256': runner.digest(data['cache']), 'frame_objects': len(inventory),
         'frame_bytes': sum(item['bytes'] for item in inventory), 'all_png_full_get_and_rgb_verified': True,
         'local_media_created': False, 'local_hydration_still_required_before_evaluation': True,
         'formal_evaluation_completed': False, 'network_or_hydration_requested': True}
+    if legacy_snapshot is not None:
+        result.update(cache_preparation='accepted_legacy_f8_reuse', original_videos_decoded=False,
+                      new_pngs_uploaded=False, exact_legacy_prefix_verified=True)
+    return result
 
 
 def _benchmark_gate(data, benchmark, frames, environment, *, prepare_media=False):

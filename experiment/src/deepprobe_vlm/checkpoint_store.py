@@ -22,6 +22,8 @@ import uuid
 from .checkpoint_retention import (check_pin, digest, file_pin, require, safe,
                                    write_once)
 
+STREAM_ENDPOINT = "https://oss-cn-wulanchabu-internal.aliyuncs.com"
+
 
 def _field(document, name):
     """ossutil API JSON is XML-shaped; response headers may be one-item arrays."""
@@ -76,7 +78,8 @@ class OssutilStore:
         return "ss-devbox-stream", uri.removeprefix("oss://ss-devbox-stream/")
 
     def _argv(self, args):
-        return [str(self.executable), *args, "-c", str(self.config_file), "--retry-times", "0"]
+        return [str(self.executable), *args, "-c", str(self.config_file),
+                "--endpoint", STREAM_ENDPOINT, "--retry-times", "0"]
 
     def _json(self, args):
         operation = self.state_dir / "requests" / uuid.uuid4().hex

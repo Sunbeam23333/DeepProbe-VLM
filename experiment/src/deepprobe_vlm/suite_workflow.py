@@ -92,10 +92,15 @@ def benchmark_resume_mode(output, prefix, store, *, resume_requested):
     return False
 
 
-def prepare_benchmark(environment, request, *, resume=False):
+def prepare_benchmark(environment, request, *, resume=False, workers=1, max_inflight_bytes=None):
     """Build a real F4/F8/F16 cache and hand its receipt to lazy node hydration."""
     from . import suite_media as media
     from .suite_storage import budget_for
+    runner.require(type(workers) is int and 1 <= workers <= 8, 'Cache CPU workers must be an integer from1 to8')
+    if max_inflight_bytes is None:
+        max_inflight_bytes = media.DEFAULT_INFLIGHT_BYTES
+    runner.require(type(max_inflight_bytes) is int and max_inflight_bytes > 0,
+                   'Positive cache in-flight memory budget required')
     required = {"benchmark", "frames", "source_manifest", "accepted_decode_receipt", "output_dir", "oss_prefix",
                 "media_root", "max_png_bytes", "metadata_reserve_bytes"}
     runner.require(isinstance(request, dict) and required <= set(request) <= required | {"archive_audit"}, "Invalid benchmark preparation request")
@@ -140,7 +145,8 @@ def prepare_benchmark(environment, request, *, resume=False):
                 return store.put_verified(key, raw)
         completed = media.build_frame_cache(request["source_manifest"]["path"], source,
             frames=request["frames"], output_dir_new=output, oss_prefix_new=request["oss_prefix"],
-            max_bytes=request["max_png_bytes"], store=LimitedStore(), resume=cache_resume)
+            max_bytes=request["max_png_bytes"], store=LimitedStore(), resume=cache_resume,
+            workers=workers, max_inflight_bytes=max_inflight_bytes)
         runner.require(sum(p.stat().st_size for root in (inputs, output) for p in root.iterdir() if p.is_file()) <= 2 * cap,
                        "Cache metadata exceeds reserved home bytes")
         asset = media.cache_asset_binding(output, source_manifest=request["source_manifest"]["path"],

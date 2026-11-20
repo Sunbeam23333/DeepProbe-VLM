@@ -55,12 +55,19 @@ def _request(environment, request):
     from .suite_media import _key, PROJECT_PREFIX
     fields = {'benchmark', 'frames', 'source_manifest', 'accepted_decode_receipt', 'output_dir', 'oss_prefix',
               'media_root', 'max_png_bytes', 'metadata_reserve_bytes'}
-    runner.require(isinstance(request, dict) and fields <= set(request) <= fields | {'archive_audit'},
+    runner.require(isinstance(request, dict) and fields <= set(request) <= fields | {'archive_audit', 'legacy_reuse'},
                    'Invalid progressive benchmark request')
     identity = key(request['benchmark'], request['frames'])
     for name in ('source_manifest', 'accepted_decode_receipt', 'archive_audit'):
         if name in request:
             _metadata_pin(environment, request[name])
+    if 'legacy_reuse' in request:
+        from .suite_legacy_cache import input_inventory
+        runner.require(isinstance(request['legacy_reuse'], dict)
+                       and set(request['legacy_reuse']) == {'inventory', 'acceptance'}, 'Invalid legacy reuse evidence')
+        for pin in request['legacy_reuse'].values():
+            _metadata_pin(environment, pin)
+        input_inventory(request)
     runner.require(type(request['max_png_bytes']) is int and request['max_png_bytes'] > 0
                    and type(request['metadata_reserve_bytes']) is int
                    and request['metadata_reserve_bytes'] >= 64 * 1024 * 1024, 'Invalid progressive cache byte reserves')
@@ -105,6 +112,9 @@ def _declaration(environment, declaration):
                    and declaration['contract_sha256'] == runner.digest(contract), 'Progressive cache contract differs')
     identity = _request(environment, contract['request'])
     _producer(environment, contract['producer'])
+    if 'legacy_reuse' in contract['request']:
+        runner.require(contract['producer']['source_root'] == environment['experiment_root'],
+                       'Legacy reuse must bind the current publisher source, not the old decoder')
     ready = _accounted(environment, declaration['ready_path'])
     request = contract['request']
     output = Path(request['output_dir'])
@@ -210,6 +220,11 @@ def _asset(environment, declaration, asset):
     runner.require(isinstance(asset, dict) and set(asset) == {'cache', 'media_root', 'max_bytes'}
                    and asset['media_root'] == request['media_root'] and type(asset['max_bytes']) is int
                    and asset['max_bytes'] == request['max_png_bytes'], 'READY asset differs from frozen request')
+    if 'legacy_reuse' in request:
+        from .suite_legacy_cache import validate_asset
+        for name in ('source_manifest', 'source_binding', 'manifest', 'receipt'):
+            _metadata_pin(environment, asset['cache'][name])
+        return validate_asset(request, asset)
     cache = asset['cache']
     runner.require(isinstance(cache, dict) and set(cache) == {'kind', 'source_manifest', 'source_binding', 'manifest',
                    'receipt', 'complete', 'plan', 'prefix'} and cache['kind'] == 'suite'
@@ -253,11 +268,16 @@ def _asset(environment, declaration, asset):
 
 
 def _remote_result(asset, declaration, rows, inventory):
-    return {'qa': len(rows), 'frames': declaration['contract']['request']['frames'], 'acceptance': asset['cache']['complete'],
+    result = {'qa': len(rows), 'frames': declaration['contract']['request']['frames'],
+        'acceptance': asset['cache'].get('complete', asset['cache']['receipt']),
         'cache_binding_sha256': runner.digest(asset['cache']), 'frame_objects': len(inventory),
         'frame_bytes': sum(item['bytes'] for item in inventory), 'all_png_full_get_and_rgb_verified': True,
         'local_media_created': False, 'local_hydration_still_required_before_evaluation': True,
         'formal_evaluation_completed': False, 'network_or_hydration_requested': True}
+    if 'legacy_reuse' in declaration['contract']['request']:
+        result.update(cache_preparation='accepted_legacy_f8_reuse', original_videos_decoded=False,
+                      new_pngs_uploaded=False, exact_legacy_prefix_verified=True)
+    return result
 
 
 def _registered(environment, declaration):

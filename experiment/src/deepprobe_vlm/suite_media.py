@@ -8,6 +8,8 @@ speed and concat variants), never their underlying unprocessed source videos.
 from __future__ import annotations
 
 import argparse
+from collections import deque
+from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 import configparser
 import hashlib
@@ -26,13 +28,14 @@ from .data import uniform_indices
 from .manifest import safe_relative_path, validate_records
 
 BUCKET = "ss-devbox-stream"
-ENDPOINT = "https://oss-cn-wulanchabu.aliyuncs.com"
+ENDPOINT = "https://oss-cn-wulanchabu-internal.aliyuncs.com"
 PROJECT_PREFIX = "jinhaopeng/Paper/DeepProbe-VLM/benchmark-cache/"
 BLOCK = 8 * 1024 * 1024
 MAX_MEMBER_BYTES = 1_000_000_000
 MAX_FRAME_PIXELS = 3840 * 2160
 MAX_PNG_BYTES = 32 * 1024 * 1024
 MAX_METADATA_BYTES = 64 * 1024 * 1024
+DEFAULT_INFLIGHT_BYTES = 4 * 1024 * 1024 * 1024
 SAMPLING = "deepprobe_vlm.data.uniform_indices"
 
 
@@ -224,6 +227,32 @@ class OSSStore:
             marker = page.next_marker
             require(marker and marker not in seen, "OSS listing pagination stalled")
             seen.add(marker)
+
+    def list_metadata(self, prefix):
+        """Return one exact, duplicate-free paginated key/size/ETag mapping."""
+        prefix = _key(prefix)
+        require(prefix.endswith('/'), "metadata listing needs an exact directory prefix")
+        marker, result = "", {}
+        while True:
+            page = self.bucket.list_objects(prefix=prefix, marker=marker, max_keys=1000)
+            rows = page.object_list
+            require(len(rows) <= 1000, "OSS metadata listing exceeded its page bound")
+            last = marker
+            for row in rows:
+                key = _key(row.key)
+                require(key.startswith(prefix) and key not in result and key > last,
+                        "OSS metadata listing escaped prefix, repeated a key or moved backwards")
+                require(type(row.size) is int and row.size >= 0
+                        and isinstance(row.etag, str) and row.etag.strip('"'),
+                        "OSS metadata listing lacks exact size/ETag")
+                result[key] = {"size_bytes": row.size, "etag": row.etag.strip('"')}
+                last = key
+            if not page.is_truncated:
+                return result
+            next_marker = page.next_marker
+            require(rows and isinstance(next_marker, str) and next_marker == last and next_marker > marker,
+                    "OSS metadata listing pagination did not advance at the last returned key")
+            marker = next_marker
 
 
 class RangeReader(io.RawIOBase):
@@ -456,8 +485,136 @@ def create_source_binding(manifest_raw, accepted_frame_receipt_raw, archive_cata
     return binding
 
 
+def frame_build_memory_bound(source, frames):
+    """Conservative payload admission credit, including completed PNG results.
+
+    The original BytesIO may transiently grow to twice its size. Selected PIL
+    RGB images use four bytes/pixel internally; allow every requested slot,
+    encoded PNGs, one conversion/buffer copy, range buffers and 512 MiB for
+    codec work. This bounds admitted payloads, not arbitrary native allocator
+    RSS; the caller still needs sufficient host memory for Python/FFmpeg.
+    """
+    return (2 * source['member']['size_bytes']
+            + frames * (4 * MAX_FRAME_PIXELS + MAX_PNG_BYTES)
+            + 3 * MAX_FRAME_PIXELS + 2 * MAX_PNG_BYTES + 4 * BLOCK + 512 * 1024**2)
+
+
+def _read_cached_entry(identity, source, paths, *, frames, plan_sha, prefix, max_bytes, store, resume):
+    """Coordinator-only verification of immutable entries and every PNG GET."""
+    prior_raw = store.get(prefix + 'entries/' + digest(identity.encode()) + '.json') if resume else None
+    if prior_raw is not None:
+        entry = json.loads(prior_raw)
+        require(entry.get('source_binding') == source and entry.get('plan_sha256') == plan_sha
+                and entry.get('decode_complete') is True and entry.get('full_decode_passes') == 2
+                and entry.get('image_paths') == paths, 'resumed source binding differs')
+        count = entry.get('decoded_frame_count')
+        require(_positive(count) and entry.get('selected_indices') == uniform_indices(count, frames)
+                and len(entry.get('frames', [])) == frames, 'resumed sampling differs')
+        size = 0
+        for slot, item in enumerate(entry['frames']):
+            require(item.get('relative_path') == paths[slot]
+                    and item.get('eligible_frame_index') == entry['selected_indices'][slot]
+                    and _positive(item.get('size_bytes')) and item['size_bytes'] <= MAX_PNG_BYTES
+                    and _sha(item.get('sha256')), 'resumed frame metadata differs')
+            raw = store.get(prefix + item['relative_path'], item['size_bytes'])
+            require(raw is not None and len(raw) == item['size_bytes'] and digest(raw) == item['sha256'],
+                    'resumed frame full GET SHA differs')
+            size += len(raw)
+            require(size <= max_bytes, 'total PNG cache byte cap exceeded')
+        return entry, None, size
+    return None
+
+
+def _prepared_cache_entry(identity, source, paths, *, frames, plan_sha, max_bytes, decoder, original):
+    """Worker-only CPU decode/encoding; the original is already CRC/SHA verified."""
+    with original:
+        decoded = decoder(original, frames, start_seconds=source.get('start_seconds'),
+                          end_seconds=source.get('end_seconds'))
+    try:
+        count, indices = decoded['decoded_frame_count'], decoded['selected_indices']
+        require(_positive(count) and indices == uniform_indices(count, frames)
+                and decoded['full_decode_passes'] == 2, 'decoder sampling or full-pass contract differs')
+        frame_rows, payloads, size = [], [], 0
+        for slot, index in enumerate(indices):
+            selected = decoded['selected'][index]
+            image = selected['image']
+            require(image.mode == 'RGB' and 0 < image.width * image.height <= MAX_FRAME_PIXELS,
+                    'selected image shape or color mode differs')
+            with io.BytesIO() as buffer:
+                image.save(buffer, format='PNG', optimize=False)
+                raw = buffer.getvalue()
+            size += len(raw)
+            require(0 < len(raw) <= MAX_PNG_BYTES and size <= max_bytes,
+                    'per-frame or total PNG cache byte cap exceeded')
+            frame_rows.append({'relative_path': paths[slot], 'size_bytes': len(raw), 'sha256': digest(raw),
+                'rgb_sha256': digest(image.tobytes()), 'width': image.width, 'height': image.height,
+                'eligible_frame_index': index, 'source_frame_index': selected['source_frame_index'],
+                'timestamp_seconds': selected['timestamp_seconds']})
+            payloads.append(raw)
+        entry = {'media_identity': identity, 'source_binding': source, 'plan_sha256': plan_sha,
+                 'decode_complete': True, 'full_decode_passes': 2, 'decoded_frame_count': count,
+                 'original_stream_frame_count': decoded['original_stream_frame_count'],
+                 'timeline_sha256': decoded['timeline_sha256'], 'selected_indices': indices,
+                 'image_paths': paths, 'frames': frame_rows}
+        return entry, payloads, size
+    finally:
+        # Repeated selected indices share the same owned image. Closing once
+        # releases native pixel buffers even when encoding/validation raises.
+        images = {id(item['image']): item['image'] for item in decoded.get('selected', {}).values()}
+        for image in images.values():
+            image.close()
+
+
+def _bounded_prepared_entries(jobs, prepare, *, workers, max_inflight_bytes,
+                              load=lambda job: job, release=lambda job: None):
+    """Keep at most workers admitted videos/results; commit in source order."""
+    if workers == 1:
+        for job, _ in jobs:
+            loaded = load(job)
+            try:
+                yield prepare(loaded)
+            finally:
+                release(loaded)
+        return
+    pending, index, reserved = deque(), 0, 0
+    executor = ThreadPoolExecutor(max_workers=workers, thread_name_prefix='suite-frame-cache')
+    try:
+        while pending or index < len(jobs):
+            while index < len(jobs) and len(pending) < workers:
+                job, bound = jobs[index]
+                if reserved + bound > max_inflight_bytes:
+                    break
+                loaded = load(job)
+                try:
+                    future = executor.submit(prepare, loaded)
+                except BaseException:
+                    release(loaded)
+                    raise
+                pending.append((future, bound, loaded))
+                reserved += bound
+                index += 1
+            require(pending, 'no video fits the configured in-flight memory budget')
+            future, bound, loaded = pending[0]
+            prepared = future.result()
+            yield prepared
+            pending.popleft()
+            reserved -= bound
+            release(loaded)
+            del prepared, future, loaded
+    finally:
+        for future, _, _ in pending:
+            future.cancel()
+        # Running workers have no store/SDK handle. Wait for every decoder
+        # before closing its input; no worker outlives the owned attempt.
+        executor.shutdown(wait=True, cancel_futures=True)
+        for _, _, loaded in pending:
+            release(loaded)
+        pending.clear()
+
+
 def build_frame_cache(source_manifest, source_binding, *, frames, output_dir_new,
-                      oss_prefix_new, max_bytes, store, resume=False, decoder=decode_selected):
+                      oss_prefix_new, max_bytes, store, resume=False, decoder=decode_selected,
+                      workers=1, max_inflight_bytes=DEFAULT_INFLIGHT_BYTES):
     """Upload a genuine cache and emit local metadata; exact partial resume is explicit.
 
     Resume never trusts a prior completion flag: every source receipt and every
@@ -469,6 +626,11 @@ def build_frame_cache(source_manifest, source_binding, *, frames, output_dir_new
     binding = deepcopy(source_binding)
     rows, archives, sources = validate_binding(binding, manifest_raw)
     plan = cache_plan(binding, manifest_raw, frames=frames, oss_prefix=oss_prefix_new, max_bytes=max_bytes)
+    require(type(workers) is int and 1 <= workers <= 8, 'cache CPU workers must be an integer from1 to8')
+    require(_positive(max_inflight_bytes), 'positive in-flight memory budget required')
+    jobs = [(identity, frame_build_memory_bound(source, frames)) for identity, source in sources.items()]
+    require(all(bound <= max_inflight_bytes for _, bound in jobs),
+            'one video exceeds the configured in-flight memory budget')
     prefix, output = plan["prefix"], safe(output_dir_new)
     plan_raw = encode(plan)
     expected_keys = {prefix + name for name in ("BUILD_PLAN.json", "manifest.jsonl", "FRAME_CACHE_RECEIPT.json",
@@ -494,62 +656,38 @@ def build_frame_cache(source_manifest, source_binding, *, frames, output_dir_new
         _write_once(output / "BUILD_PLAN.json", plan_raw)
         store.put_verified(prefix + "BUILD_PLAN.json", plan_raw)
     entries, total_bytes = [], 0
-    for identity, source in sources.items():
-        token, archive, member = digest(identity.encode()), archives[source["archive_key"]], source["member"]
-        entry_key = prefix + f"entries/{token}.json"
-        prior_raw = store.get(entry_key) if resume else None
-        if prior_raw is not None:
-            entry = json.loads(prior_raw)
-            require(entry.get("source_binding") == source and entry.get("plan_sha256") == digest(plan_raw)
-                    and entry.get("decode_complete") is True and entry.get("full_decode_passes") == 2
-                    and entry.get("image_paths") == paths[identity], "resumed source binding differs")
-            count = entry.get("decoded_frame_count")
-            require(_positive(count) and entry.get("selected_indices") == uniform_indices(count, frames)
-                    and len(entry.get("frames", [])) == frames, "resumed sampling differs")
-            for slot, item in enumerate(entry["frames"]):
-                require(item.get("relative_path") == paths[identity][slot]
-                        and item.get("eligible_frame_index") == entry["selected_indices"][slot]
-                        and _positive(item.get("size_bytes")) and item["size_bytes"] <= MAX_PNG_BYTES
-                        and _sha(item.get("sha256")), "resumed frame metadata differs")
-                raw = store.get(prefix + item["relative_path"], item["size_bytes"])
-                require(raw is not None and len(raw) == item["size_bytes"] and digest(raw) == item["sha256"],
-                        "resumed frame full GET SHA differs")
-                total_bytes += len(raw)
-                require(total_bytes <= max_bytes, "total PNG cache byte cap exceeded")
+    def load(identity):
+        source = sources[identity]
+        prior = _read_cached_entry(identity, source, paths[identity], frames=frames, plan_sha=digest(plan_raw),
+            prefix=prefix, max_bytes=max_bytes, store=store, resume=resume)
+        return {'identity': identity, 'prior': prior,
+                'original': None if prior is not None else extract_member(store, archives[source['archive_key']], source['member'])}
+    def prepare(loaded):
+        identity = loaded['identity']
+        return loaded['prior'] if loaded['prior'] is not None else _prepared_cache_entry(
+            identity, sources[identity], paths[identity], frames=frames, plan_sha=digest(plan_raw),
+            max_bytes=max_bytes, decoder=decoder, original=loaded['original'])
+    def release(loaded):
+        if loaded['original'] is not None:
+            loaded['original'].close()
+    prepared = _bounded_prepared_entries(jobs, prepare, workers=workers, max_inflight_bytes=max_inflight_bytes,
+                                         load=load, release=release)
+    try:
+        for entry, payloads, size in prepared:
+            # Only this thread consumes the shared total and writes outputs.
+            # Admit the whole clip before its first PNG; a worker cannot race
+            # another worker's byte accounting or publish a completion marker.
+            require(total_bytes + size <= max_bytes, 'total PNG cache byte cap exceeded')
+            if payloads is not None:
+                for row, raw in zip(entry['frames'], payloads):
+                    store.put_verified(prefix + row['relative_path'], raw)
+                store.put_verified(prefix + 'entries/' + digest(entry['media_identity'].encode()) + '.json', encode(entry))
+                del raw
+            total_bytes += size
             entries.append(entry)
-            continue
-        with extract_member(store, archive, member) as original:
-            decoded = decoder(original, frames, start_seconds=source.get("start_seconds"),
-                              end_seconds=source.get("end_seconds"))
-        count, indices = decoded["decoded_frame_count"], decoded["selected_indices"]
-        require(_positive(count) and indices == uniform_indices(count, frames)
-                and decoded["full_decode_passes"] == 2, "decoder sampling or full-pass contract differs")
-        frame_rows = []
-        for slot, index in enumerate(indices):
-            selected = decoded["selected"][index]
-            image = selected["image"]
-            require(image.mode == "RGB" and 0 < image.width * image.height <= MAX_FRAME_PIXELS,
-                    "selected image shape or color mode differs")
-            buffer = io.BytesIO()
-            image.save(buffer, format="PNG", optimize=False)
-            raw = buffer.getvalue()
-            require(0 < len(raw) <= MAX_PNG_BYTES and total_bytes + len(raw) <= max_bytes,
-                    "per-frame or total PNG cache byte cap exceeded")
-            frame_row = {"relative_path": paths[identity][slot], "size_bytes": len(raw), "sha256": digest(raw),
-                         "rgb_sha256": digest(image.tobytes()), "width": image.width, "height": image.height,
-                         "eligible_frame_index": index, "source_frame_index": selected["source_frame_index"],
-                         "timestamp_seconds": selected["timestamp_seconds"]}
-            store.put_verified(prefix + frame_row["relative_path"], raw)
-            total_bytes += len(raw)
-            frame_rows.append(frame_row)
-        entry = {"media_identity": identity, "source_binding": source, "plan_sha256": digest(plan_raw),
-                 "decode_complete": True, "full_decode_passes": 2, "decoded_frame_count": count,
-                 "original_stream_frame_count": decoded["original_stream_frame_count"],
-                 "timeline_sha256": decoded["timeline_sha256"], "selected_indices": indices,
-                 "image_paths": paths[identity], "frames": frame_rows}
-        store.put_verified(entry_key, encode(entry))
-        entries.append(entry)
-        del decoded
+            del payloads
+    finally:
+        prepared.close()
     for archive in archives.values():
         verify_archive(store, archive)
     transformed = deepcopy(rows)
@@ -743,6 +881,10 @@ def hydrate_frame_cache(cache, *, media_root, max_bytes, store, resume=False):
         require(root.parent.is_dir(), "owned media directory parent is missing")
     for archive in binding["archives"]:
         verify_archive(store, archive)
+    legacy_snapshot = None
+    if cache.get("legacy_request"):
+        from .suite_legacy_cache import verify_remote_inventory
+        legacy_snapshot = verify_remote_inventory(cache, store)
     if cache["kind"] == "suite":
         prefix = cache["prefix"]
         for key, name in (("plan", "BUILD_PLAN.json"), ("manifest", "manifest.jsonl"),
@@ -788,6 +930,9 @@ def hydrate_frame_cache(cache, *, media_root, max_bytes, store, resume=False):
                 "final local cache byte/SHA identity differs")
     for key in evidence_keys:
         require(_read_pin(cache[key]) == raw[key], "source evidence changed during hydration")
+    if legacy_snapshot is not None:
+        require(verify_remote_inventory(cache, store, metadata=False) == legacy_snapshot,
+                "Legacy cache changed during hydration")
     # Small evidence remains separate from the owned frame payload directory.
     metadata = safe(root.parent / (root.name + ".acceptance"))
     metadata.mkdir(exist_ok=True)
@@ -883,6 +1028,10 @@ def main(argv=None):
     parser.add_argument("--output-dir", required=True, type=Path)
     parser.add_argument("--oss-prefix", required=True, help="key prefix within ss-devbox-stream")
     parser.add_argument("--max-png-bytes", required=True, type=int)
+    parser.add_argument("--workers", type=int, choices=range(1, 9), default=1,
+                        help="bounded cross-video CPU parallelism; each video still decodes twice")
+    parser.add_argument("--max-inflight-bytes", type=int, default=DEFAULT_INFLIGHT_BYTES,
+                        help="payload memory admission budget including pending encoded results")
     parser.add_argument("--oss-config", type=Path, default=Path("/home/jinhaopeng/.ossutilconfig"))
     parser.add_argument("--resume", action="store_true", help="reverify one exact owned partial cache")
     parser.add_argument("--execute", action="store_true")
@@ -894,14 +1043,19 @@ def main(argv=None):
         binding = json.loads(raw)
         plan = cache_plan(binding, safe(args.source_manifest).read_bytes(), frames=args.num_frames,
                           oss_prefix=args.oss_prefix, max_bytes=args.max_png_bytes)
+        require(_positive(args.max_inflight_bytes), 'positive in-flight memory budget required')
+        require(all(frame_build_memory_bound(source, args.num_frames) <= args.max_inflight_bytes
+                    for source in binding['sources']), 'one video exceeds the configured in-flight memory budget')
+        execution = {'workers': args.workers, 'max_inflight_bytes': args.max_inflight_bytes,
+                     'maximum_pending_videos': args.workers, 'writes_on_coordinator_only': True}
         if not args.execute:
-            print(json.dumps({"status": "PREPARED_NOT_EXECUTED", "plan": plan}, sort_keys=True))
+            print(json.dumps({"status": "PREPARED_NOT_EXECUTED", "plan": plan, "execution": execution}, sort_keys=True))
             return 0
         store = OSSStore(args.oss_config, allowed_prefix=args.oss_prefix)
         result = build_frame_cache(args.source_manifest, binding, frames=args.num_frames,
                     output_dir_new=args.output_dir, oss_prefix_new=args.oss_prefix, max_bytes=args.max_png_bytes,
-                    store=store, resume=args.resume)
-        print(json.dumps(result, sort_keys=True))
+                    store=store, resume=args.resume, workers=args.workers, max_inflight_bytes=args.max_inflight_bytes)
+        print(json.dumps({**result, 'execution': execution}, sort_keys=True))
         return 0
     except Exception as error:
         # SDK exceptions can contain signed request details; report only type.
