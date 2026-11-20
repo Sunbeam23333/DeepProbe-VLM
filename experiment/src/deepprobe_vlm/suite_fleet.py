@@ -20,9 +20,13 @@ require, safe, read = runner.require, runner.safe, runner.read
 
 
 def validate_execution_profile(profile, suite_id=None):
-    require(isinstance(profile, dict) and set(profile) == {
-        'schema_version', 'fleet_id', 'priority', 'gpu_product', 'node_selector', 'workers'}, 'Invalid execution profile fields')
-    require(type(profile['schema_version']) is int and profile['schema_version'] == 2, 'Unsupported execution profile')
+    require(isinstance(profile, dict), 'Invalid execution profile fields')
+    fields = {'schema_version', 'fleet_id', 'priority', 'gpu_product', 'node_selector', 'workers'}
+    require(type(profile.get('schema_version')) is int and profile['schema_version'] in {2, 3}, 'Unsupported execution profile')
+    require(set(profile) == fields | ({'scratch'} if profile['schema_version'] == 3 else set()), 'Invalid execution profile fields')
+    if profile['schema_version'] == 3:
+        from .suite_scratch import validate_scratch
+        validate_scratch(profile['scratch'])
     require(isinstance(profile['fleet_id'], str) and runner.ID.fullmatch(profile['fleet_id']), 'Invalid fleet identity')
     require(suite_id is None or profile['fleet_id'] == suite_id, 'Execution profile belongs to another suite')
     require(profile['priority'] in {'normal', 'low'}, 'Only reviewed normal or low priority is supported')
@@ -73,6 +77,9 @@ def allocation_contract(job, profile):
     resources = pod['containers'][0].get('resources', {})
     require(str(resources.get('limits', {}).get('nvidia.com/gpu')) == '8'
             and str(resources.get('requests', {}).get('nvidia.com/gpu')) == '8', 'Each worker requires eight GPUs')
+    if profile['schema_version'] == 3:
+        from .suite_scratch import validate_scratch_pod
+        validate_scratch_pod(pod, profile)
     return profile_allocation(profile)
 
 
@@ -160,6 +167,7 @@ def audit_fleet_jobs(profile, document, state_root, current_worker_id=None, *, b
             pod = row['pods'][0]
             current = {'job_uid': uid, 'pod_uid': pod['metadata']['uid'], 'node': pod['spec']['nodeName'],
                        'worker_id': current_worker_id, 'other_active_project_jobs': [],
+                       'binding_sha256': binding_sha256,
                        'authorized_fleet_job_uids': sorted(verified)}
     require(not require_current or current is not None, 'Current exact fleet worker is not live')
     return current if current is not None else {'status': 'ONLY_FROZEN_FLEET_WORKLOADS', 'job_uids': sorted(verified)}
@@ -258,10 +266,17 @@ class FleetState:
             return True
 
     def completions(self):
+        if (self.state / 'task-import-groups').exists():
+            from .suite_task_import import verify_import_publications
+            verify_import_publications(self.state)
         completed = {}
         for task in self.plan['tasks']:
-            if (self.state / 'tasks' / task['id'] / 'COMPLETED.json').exists():
+            if runner.completion_path(self.state, task['id']).exists():
                 value = runner.completion_for(self.state, task['id'])
+                if value.get('status') == 'SUITE_ACCEPTED_TASK_IMPORTED':
+                    from .suite_task_import import get_task_import
+                    value = get_task_import(self.state, task['id'], plan=self.plan,
+                        target_identity=self.identity, environment=runner.machine_environment(self.binding))
                 require(value['plan_sha256'] == self.plan_sha and value['binding_sha256'] == self.binding_sha,
                         'Accepted task belongs to another exact plan/binding')
                 completed[task['id']] = value
@@ -282,14 +297,27 @@ class FleetState:
             active = [t for t in pending if (self.state / 'tasks' / t['id'] / 'CLAIM.json').exists()]
             ready = [t for t in pending if t not in active and set(t['dependencies']) <= completed.keys()]
             from .suite_chains import training_window
-            chain = training_window(self.plan, completed,
-                [task['id'] for task in self.plan['tasks']
-                 if (self.state / 'tasks' / task['id'] / 'CLAIM.json').exists()], active)
+            started = [task['id'] for task in self.plan['tasks']
+                       if (self.state / 'tasks' / task['id'] / 'CLAIM.json').exists()]
+            private = self.profile.get('schema_version') == 3
+            affinity = None
+            if private:
+                from . import suite_affinity
+                require(not any(read(self.state / 'tasks' / t['id'] / 'CLAIM.json')['owner']['worker_id'] == worker_id
+                                for t in active), 'A private worker already has an unfinished task claim')
+                affinity = suite_affinity.window(self.state, self.identity, self.plan, self.profile,
+                                                completed, started, active, worker_id, job_uid)
+                chain = None
+            else:
+                chain = training_window(self.plan, completed, started, active)
             # Free accepted checkpoints promptly; keep original scientific order within each class.
             order = {'cleanup': 0, 'archive': 1, 'evaluate': 2, 'latency': 2, 'compare_latency': 2}
             ready.sort(key=lambda t: order.get(t['kind'], 3))
             blocked, asset_pending, chain_pending = [], [], []
             for task in ready:
+                if affinity is not None and not suite_affinity.eligible(task, affinity):
+                    chain_pending.append(task['id'])
+                    continue
                 if task['kind'] == 'train' and chain is not None and (
                         task['id'] not in chain['training_task_ids'] or chain['active_training_task_ids']
                         or chain['completed_training_awaiting_archive']):
@@ -307,6 +335,8 @@ class FleetState:
                 except StorageError as exc:
                     blocked.append({'task_id': task['id'], 'error': str(exc)})
                     continue
+                if affinity is not None:
+                    suite_affinity.assign(self.state, self.identity, task, affinity)
                 root = self.state / 'tasks' / task['id']
                 root.mkdir(exist_ok=True)
                 require(not (root / 'attempts').exists(), 'An unfinished task cannot restart without verified recovery')
@@ -318,7 +348,8 @@ class FleetState:
                 runner.write_once(root / 'CLAIM.json', claim)
                 runner._journal(self.state, {'event': 'TASK_CLAIMED', 'task_id': task['id'], 'owner': owner})
                 return {'status': 'claimed', 'task': task, 'claim': claim, 'completed': completed}
-            require(active or asset_pending, 'No runnable task; dependency or storage admission failed: ' + str(blocked))
+            require(active or asset_pending or (affinity is not None and chain_pending),
+                    'No runnable task; dependency or storage admission failed: ' + str(blocked))
             return {'status': 'wait', 'active_task_ids': [t['id'] for t in active],
                     'storage_blocked': blocked, 'asset_pending_task_ids': asset_pending,
                     'chain_pending_task_ids': chain_pending, 'training_chain': chain}
@@ -342,7 +373,7 @@ class FleetState:
             require(len(completed) == len(self.plan['tasks']), 'Cannot complete an unfinished fleet')
             result = {'status': 'EXPERIMENT_SUITE_COMPLETE', 'identity': self.identity, 'utc': runner.utc(),
                       'completed_tasks': len(completed), 'completion_inventory': [
-                          runner.artifact(self.state / 'tasks' / t['id'] / 'COMPLETED.json') for t in self.plan['tasks']],
+                          runner.artifact(runner.completion_path(self.state, t['id'])) for t in self.plan['tasks']],
                       'model_quality_or_speedup_claim': False}
             if not (self.state / 'COMPLETE.json').exists():
                 runner.write_once(self.state / 'COMPLETE.json', result)

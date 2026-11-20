@@ -266,7 +266,7 @@ def remaining_summary(plan, environment):
 def validate_environment(environment, plan):
     require = runner.require
     require(isinstance(environment, dict) and REQUIRED_ENVIRONMENT_FIELDS <= set(environment)
-            and set(environment) <= REQUIRED_ENVIRONMENT_FIELDS | {"task_reserve_by_id", "execution_profile", "benchmark_preparations", "modelscope_token_file", "machine_identity"},
+            and set(environment) <= REQUIRED_ENVIRONMENT_FIELDS | {"task_reserve_by_id", "execution_profile", "benchmark_preparations", "modelscope_token_file", "machine_identity", "legacy_private_resume"},
             "invalid suite machine environment fields")
     require(type(environment["schema_version"]) is int and environment["schema_version"] == 1,
             "unsupported suite environment")
@@ -282,6 +282,11 @@ def validate_environment(environment, plan):
     if "execution_profile" in environment:
         from .suite_fleet import validate_execution_profile
         validate_execution_profile(environment["execution_profile"], suite_id=environment["suite_id"])
+    if 'legacy_private_resume' in environment:
+        _pin_shape(environment['legacy_private_resume'])
+        require(environment.get('execution_profile', {}).get('schema_version') == 3
+                and environment.get('history', {}).get('train__ouro_r4_s17__sft', {}).get('mode') == 'resume',
+                'Legacy private bridge is restricted to the explicit R4 SFT resume')
     runner.executable_path(environment["python"])
     archive = environment["archive_root"]
     require(isinstance(archive, str)
@@ -298,7 +303,15 @@ def validate_environment(environment, plan):
         require(isinstance(storage, dict) and isinstance(storage.get("roots"), list)
                 and len(storage["roots"]) == 2, "two storage roots required for legacy storage v1")
     roots = [runner.safe(x) for x in storage["roots"]]
-    require(any(root != p and root.is_relative_to(p) for p in roots), "suite run root escapes accounted storage")
+    private_scratch = environment.get('execution_profile', {}).get('schema_version') == 3
+    if private_scratch:
+        mount = runner.safe(environment['execution_profile']['scratch']['mount_path'])
+        require(root == mount / 'runs' and all(not mount.is_relative_to(p) and not p.is_relative_to(mount) for p in roots),
+                'Private suite run root must be the declared emptyDir runs container outside shared home')
+        require(storage.get('schema_version') == 2 and storage['oss_limit_bytes'] is None,
+                'Private scratch requires shared home accounting and durable unlimited OSS retention')
+    else:
+        require(any(root != p and root.is_relative_to(p) for p in roots), "suite run root escapes accounted storage")
     allocation = environment["allocation_identity"]
     require(isinstance(allocation, dict) and set(allocation) == {"job_name", "namespace", "project_name_prefixes"},
             "allocation identity needs exact Job name, namespace and project prefixes")
@@ -333,6 +346,9 @@ def validate_environment(environment, plan):
         require(not (binding["mode"] == "resume" and tasks[task_id]["kind"] != "train"),
                 "historical resume applies to training only")
         validate_history_shape(tasks[task_id], binding)
+        if private_scratch and binding['mode'] == 'resume':
+            from .suite_checkpoint_resume import verify_private_resume
+            verify_private_resume(tasks[task_id], binding, environment, verify_files=False)
     if 'benchmark_preparations' in environment:
         from .suite_progressive import validate_declarations
         validate_declarations(environment, plan)
@@ -352,6 +368,8 @@ def reserve_for(task, environment):
     if task["id"] in override:
         return override[task["id"]]
     if environment["history"].get(task["id"], {}).get("mode") == "accepted":
+        if environment.get('execution_profile', {}).get('schema_version') == 3 and task['kind'] == 'train':
+            return sum(row['bytes'] for row in environment['history'][task['id']]['checkpoint']['files'])
         # Reuse itself is receipt verification. Any actual restore inside the
         # adapter must pass its separate exact-byte storage admission first.
         return 0

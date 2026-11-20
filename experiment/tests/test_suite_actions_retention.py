@@ -409,7 +409,8 @@ class ActionRetentionTest(unittest.TestCase):
         reserved = []
         self.worker.budget = lambda count: reserved.append(count) or {'synthetic': True}
         estimator = SimpleNamespace(estimate_stage_storage=lambda *args: {'required_additional_bytes': 1000})
-        with patch.object(actions, 'load_operation', return_value=estimator):
+        with patch.object(actions, 'load_operation', return_value=estimator), patch(
+                'deepprobe_vlm.suite_preflight._backbone_gate', return_value={'synthetic': 'backbones'}):
             result = self.worker.training_storage(task, output)
         self.assertEqual(result['owned_stage_resident_bytes'], 900)
         self.assertEqual(reserved, [1000])

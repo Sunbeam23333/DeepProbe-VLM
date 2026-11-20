@@ -206,6 +206,9 @@ def _history_gate(task, environment, plan=None):
         from .suite_bindings import verify_history_binding
         require(plan is not None, 'Scientific plan required for modern history acceptance')
         verify_history_binding(plan, task, h, verify_files=True)
+        if environment['execution_profile'].get('schema_version') == 3 and h['mode'] == 'resume':
+            from .suite_checkpoint_resume import verify_private_resume
+            verify_private_resume(task, h, environment)
         if task['kind'] == 'evaluate':
             return {'mode': 'accepted', 'evaluation': runner.verify_pin(h['evaluation']), 'production_evidence': True}
     require(h.get('mode') in {'accepted', 'resume'}, 'Unsupported historical reuse mode')
@@ -414,6 +417,8 @@ def _development_gate(environment):
 
 
 def _initial_storage_gate(plan, binding, environment, estimates):
+    if environment.get('execution_profile', {}).get('schema_version') == 3:
+        return _chain_storage_gate(plan, binding, environment, estimates)
     # The first accepted initializer remains resident while its first actual
     # training consumer runs. Never certify those separate costs independently.
     restored = 0
@@ -447,6 +452,12 @@ def _initial_storage_gate(plan, binding, environment, estimates):
 
 
 def _chain_storage_gate(plan, binding, environment, estimates):
+    if environment.get('execution_profile', {}).get('schema_version') == 3:
+        from .suite_chains import private_capacity_requirements
+        requirements = private_capacity_requirements(plan, binding, environment, estimates)
+        observed = runner.capacity(binding, requirements['shared_home_additional_bytes'])
+        return {**observed, **requirements, 'future_capacity_rechecked_per_task': True,
+                'private_node_storage_observed_on_coordinator': False}
     from .suite_chains import component_peak_plans
     components = component_peak_plans(plan, binding, environment, estimates)
     if not components:

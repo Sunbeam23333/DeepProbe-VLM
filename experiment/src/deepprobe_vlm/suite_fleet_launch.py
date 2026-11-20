@@ -68,6 +68,9 @@ def prepare_worker_jobs(template, environment, plan_pin, binding_pin, state_root
         container = spec['containers'][0]
         container.setdefault('resources', {}).setdefault('requests', {})['nvidia.com/gpu'] = 8
         container['resources'].setdefault('limits', {})['nvidia.com/gpu'] = 8
+        if profile['schema_version'] == 3:
+            from .suite_scratch import configure_scratch_pod
+            configure_scratch_pod(spec, profile, machine)
         argv = runner_argv(environment, plan_pin, binding_pin, state_root, worker_id=worker['worker_id'])
         container['command'], container['args'] = argv, []
         container['workingDir'] = environment['experiment_root']

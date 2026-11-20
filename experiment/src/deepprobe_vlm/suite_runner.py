@@ -530,9 +530,23 @@ def _new_numbered(parent, prefix):
     return path
 
 
+def completion_path(state_root, task_id):
+    """Keep a typed import distinct from a task executed by this fleet."""
+    require(isinstance(task_id, str) and ID.fullmatch(task_id), "unsafe task id")
+    root = safe(state_root)
+    executed = root / "tasks" / task_id / "COMPLETED.json"
+    imported = root / "task-imports" / (task_id + ".json")
+    require(not (executed.exists() and imported.exists()), "Task has conflicting executed/imported completion records")
+    return imported if imported.exists() else executed
+
+
 def completion_for(state_root, task_id):
     require(isinstance(task_id, str) and ID.fullmatch(task_id), "unsafe task id")
-    value = read(safe(state_root) / "tasks" / task_id / "COMPLETED.json")
+    path = completion_path(state_root, task_id)
+    if path == safe(state_root) / "task-imports" / (task_id + ".json"):
+        from .suite_task_import import get_task_import
+        return get_task_import(state_root, task_id)
+    value = read(path)
     require(value.get("status") == "TASK_ACCEPTED" and value.get("task_id") == task_id,
             "invalid task completion")
     for item in value["receipts"]:
@@ -686,7 +700,7 @@ def _fleet_live(environment, binding, state_root, worker_id):
     from .suite_cluster import list_workloads
     document = list_workloads(environment['tools'],
         project_name_prefixes=environment['allocation_identity']['project_name_prefixes'])
-    audit_fleet_jobs(binding['execution_profile'], document, state_root, worker_id,
+    live = audit_fleet_jobs(binding['execution_profile'], document, state_root, worker_id,
         project_name_prefixes=environment['allocation_identity']['project_name_prefixes'])
     from .suite_actions import terminal_job
     jobs = {item['metadata']['uid']: item for item in document['items'] if item.get('kind') == 'PyTorchJob'}
@@ -700,6 +714,7 @@ def _fleet_live(environment, binding, state_root, worker_id):
         owner = read(path)['owner']
         require(owner['job_uid'] in jobs and not terminal_job(jobs[owner['job_uid']]),
                 'An unfinished task owner exited; frozen claim requires explicit recovery')
+    return live
 
 
 def run_fleet_worker(plan, binding, *, plan_sha256, binding_sha256, state_root, worker_id,
@@ -732,22 +747,48 @@ def run_fleet_worker(plan, binding, *, plan_sha256, binding_sha256, state_root, 
     worker_environment = {'DP_SUITE_WORKER_ID': worker_id, 'DP_SUITE_FLEET_STATE': str(state_root),
         'DP_SUITE_INVOCATION_DIR': str(invocation), 'DP_SUITE_STORAGE_LEDGER': binding['storage']['ledger_root']}
     def execute(command, task_context, attempt, token):
+        tokens = ({'DP_SUITE_STORAGE_TOKEN': token['home'],
+                   **({'DP_SUITE_SCRATCH_TOKEN': token['scratch']} if token['scratch'] else {})}
+                  if isinstance(token, dict) else {'DP_SUITE_STORAGE_TOKEN': token})
         return run_command(command, binding, task_context, attempt,
-            extra_environment={**worker_environment, 'DP_SUITE_STORAGE_TOKEN': token},
+            extra_environment={**worker_environment, **tokens,
+                               **({'DP_SUITE_TASK_ID': task_context['task_id']} if 'task_id' in task_context else {})},
             storage_snapshot=budget.snapshot())
     released_tokens = set()
     def release_if_quiet(token, attempt):
-        if token in released_tokens:
+        token_key = digest(token) if isinstance(token, dict) else token
+        if token_key in released_tokens:
             return True
         path = attempt / 'COMMAND_EXIT.json'
         if path.is_file() and read(path).get('group_cleanup_verified') is True:
             budget.release(token, quiescent=lambda owner: {'owner': owner, 'active_writers': [],
                 'active_uploads': [], 'command_exit': artifact(path)})
-            released_tokens.add(token)
+            released_tokens.add(token_key)
             return True
         return False
     try:
         verify_sources(binding)
+        if binding['execution_profile'].get('schema_version') == 3:
+            from .suite_scratch import inspect_scratch, worker_run_root
+            from .suite_scratch_budget import PrivateScratchBudget, TieredTaskBudget
+            scratch_live = live_check()
+            scratch_proof = inspect_scratch(environment, scratch_live)
+            run_root = worker_run_root(binding['execution_profile'], worker_id)
+            safe(run_root.parent).mkdir(mode=0o700, exist_ok=True)
+            safe(run_root).mkdir(mode=0o700)
+            require(not any(run_root.iterdir()), 'A new private worker must have an empty run container')
+            _fsync_directory(run_root.parent)
+            write_once(state_root / 'workers' / worker_id / 'PRIVATE_SCRATCH_PREPARED.json', {
+                'live': scratch_live, 'inspection': scratch_proof, 'run_root': str(run_root),
+                'profile_sha256': digest(binding['execution_profile'])})
+            private_budget = PrivateScratchBudget(binding['execution_profile'], worker_id, scratch_live, state_root)
+            budget = TieredTaskBudget(budget, private_budget, {task['id']: task for task in plan['tasks']})
+            caches = safe(binding['execution_profile']['scratch']['mount_path']) / 'runtime-cache' / worker_id
+            for key, name in {'TMPDIR': 'tmp', 'CUDA_CACHE_PATH': 'cuda', 'TRITON_CACHE_DIR': 'triton',
+                              'TORCH_EXTENSIONS_DIR': 'torch-extensions'}.items():
+                path = safe(caches / name)
+                path.mkdir(parents=True, mode=0o700, exist_ok=True)
+                worker_environment[key] = str(path)
         startup = invocation / 'startup'
         startup.mkdir()
         startup_owner = {'fleet_id': binding['suite_id'], 'worker_id': worker_id, 'task_id': 'startup',
@@ -786,7 +827,7 @@ def run_fleet_worker(plan, binding, *, plan_sha256, binding_sha256, state_root, 
             attempt = safe(claim['attempt'])
             task_id, command = task['id'], binding['tasks'][task['id']]
             task_context = {**context, 'task_id': task_id, 'task_attempt_dir': str(attempt)}
-            dependency_pins = [artifact(state_root / 'tasks' / item / 'COMPLETED.json') for item in task['dependencies']]
+            dependency_pins = [artifact(completion_path(state_root, item)) for item in task['dependencies']]
             write_once(attempt / 'TASK_INTENT.json', {'schema_version': 2, 'utc': utc(), 'task_id': task_id,
                 'kind': task['kind'], 'plan_sha256': plan_sha256, 'binding_sha256': binding_sha256,
                 'dependencies': dependency_pins, 'mode': command['mode'], 'context': task_context,

@@ -87,6 +87,7 @@ def test_suite_subprocess_applies_environment_guards_after_overrides(tmp_path, m
     from deepprobe_vlm.suite_actions import Actions
     from deepprobe_vlm import suite_actions
     actions = Actions.__new__(Actions)
+    actions.private_scratch = False
     actions.root = tmp_path
     actions.env = {"runtime_environment": {"PET_STANDALONE": "1"}}
     monkeypatch.setenv("TORCH_DISABLE_SHARE_RDZV_TCP_STORE", "1")

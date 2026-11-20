@@ -272,6 +272,11 @@ class SuiteLauncher:
             if not (task['kind'] == 'train' or task['kind'] == 'archive' and task['archive_scope'] == 'results'):
                 continue
             run_id = self.env['suite_id'] + '--' + task['id']
+            if self.env.get('execution_profile', {}).get('schema_version') == 3 and task['kind'] == 'train':
+                savepoint_prefix = self.env['archive_root'].rstrip('/') + '/savepoints/runs/' + run_id + '/'
+                savepoint_store = self.store_factory(savepoint_prefix, self.output / 'oss-savepoint-audit' / task['id'])
+                require(not retention._listing(savepoint_store, savepoint_prefix),
+                        'Fresh private suite savepoint prefix is not empty: ' + savepoint_prefix)
             prefix = self.env['archive_root'].rstrip('/') + '/runs/' + run_id + '/'
             store = self.store_factory(prefix, self.output / 'oss-audit' / task['id'])
             listing = retention._listing(store, prefix)

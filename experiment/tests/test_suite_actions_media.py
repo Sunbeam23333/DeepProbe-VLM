@@ -37,6 +37,7 @@ class CacheReaderLifecycleTest(unittest.TestCase):
 
     def make_worker(self, task_id):
         worker = object.__new__(actions.Actions)
+        worker.private_scratch = False
         worker.root = self.root
         worker.state = self.root / task_id
         worker.tasks = {task_id: {'id': task_id, 'benchmark': 'videomme899', 'frames': 8}}

@@ -20,23 +20,204 @@ STATUS = 'SUITE_BENCHMARK_CACHE_READY'
 # These modules define the legacy frame protocol, normalization, pin checks,
 # complete remote readback and hydration. A new runtime may reuse a frozen
 # publisher only when their real bytes still implement that exact protocol.
+# Preflight/workflow also contain unrelated storage/resume admission: their
+# complete ASTs are compared after removing only the reviewed additions below.
 LEGACY_CACHE_SOURCE_MODULES = tuple('src/deepprobe_vlm/' + name + '.py' for name in (
     'suite_legacy_cache', 'suite_media', 'formal_integrity', 'manifest', 'data',
     'evaluate', 'checkpoint_retention', 'suite_workflow', 'suite_preflight'))
 
 
-def _cache_runner_identity(path):
-    """Retain every runner definition except the fleet observation body.
+def _function(tree, name):
+    values = [node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == name]
+    runner.require(len(values) == 1, 'Legacy cache source must retain one function: ' + name)
+    return values[0]
 
-    The bounded workload-query repair changes only this body. Hash/path/pin
-    primitives, constants, imports and all other definitions must remain the
-    same; a changed query signature or decorator is not exempted.
+
+def _normalize_exact(nodes, added, original=''):
+    """Undo an explicitly reviewed statement change, never an arbitrary body.
+
+    Everything not matched byte-for-byte at the AST level survives the full
+    module comparison, including signatures, imports, constants and surrounding
+    checks. An altered or duplicated private branch therefore still fails.
+    """
+    needle = ast.parse(added).body
+    replacements = ast.parse(original).body
+    expected = [ast.dump(node, include_attributes=False) for node in needle]
+    matches = [index for index in range(len(nodes) - len(needle) + 1)
+               if [ast.dump(node, include_attributes=False) for node in nodes[index:index + len(needle)]] == expected]
+    runner.require(len(matches) <= 1, 'Repeated private compatibility statements are not allowed')
+    if matches:
+        index = matches[0]
+        nodes[index:index + len(needle)] = replacements
+
+
+def _cache_preflight_identity(path):
+    """Keep all frame, pixel, identity and existing admission implementations."""
+    tree = ast.parse(Path(path).read_text(encoding='utf-8'))
+    _normalize_exact(tree.body, 'from .suite_run_root import inspect_run_root')
+    _normalize_exact(_function(tree, 'inspect').body, """
+check('run_root_directory', lambda: inspect_run_root(environment))
+if failures:
+    return result()
+""")
+    history = _function(tree, '_history_gate')
+    for node in history.body:
+        if isinstance(node, ast.If) and isinstance(node.test, ast.Name) and node.test.id == 'modern':
+            _normalize_exact(node.body, """
+verify_history_binding(plan, task, h, verify_files=True)
+if environment['execution_profile'].get('schema_version') == 3 and h['mode'] == 'resume':
+    from .suite_checkpoint_resume import verify_private_resume
+    verify_private_resume(task, h, environment)
+""", 'verify_history_binding(plan, task, h, verify_files=True)')
+    _normalize_exact(_function(tree, '_initial_storage_gate').body, """
+if environment.get('execution_profile', {}).get('schema_version') == 3:
+    return _chain_storage_gate(plan, binding, environment, estimates)
+""")
+    _normalize_exact(_function(tree, '_chain_storage_gate').body, """
+if environment.get('execution_profile', {}).get('schema_version') == 3:
+    from .suite_chains import private_capacity_requirements
+    requirements = private_capacity_requirements(plan, binding, environment, estimates)
+    observed = runner.capacity(binding, requirements['shared_home_additional_bytes'])
+    return {**observed, **requirements, 'future_capacity_rechecked_per_task': True,
+            'private_node_storage_observed_on_coordinator': False}
+""")
+    return ast.dump(tree, include_attributes=False)
+
+
+def _cache_workflow_identity(path):
+    """Exclude only reviewed run-container preparation, not cache preparation."""
+    tree = ast.parse(Path(path).read_text(encoding='utf-8'))
+    prepare = _function(tree, 'prepare_workflow')
+    _normalize_exact(prepare.body, """
+if env.get('run_root'):
+    declared_root = runner.safe(env['run_root'])
+    runner.require(output != declared_root and not output.is_relative_to(declared_root)
+                   and not declared_root.is_relative_to(output),
+                   'Workflow reports must be disjoint from the declared suite run root')
+""")
+    _normalize_exact(prepare.body, """
+from .suite_run_root import prepare_run_root, validate_run_root_location
+def run_root_failure(exc):
+    result = {'status': 'SUITE_WORKFLOW_RUN_ROOT_GATED', 'error_type': type(exc).__name__,
+              'error': str(exc), 'cpu_admitted': False, 'gpu_submitted': False,
+              'asset_preparation_started': False, 'automatic_deletion': False}
+    save(attempt / 'WORKFLOW_GATED.json', result)
+    return result
+try:
+    validate_run_root_location(env)
+except (ValueError, OSError, KeyError) as exc:
+    return run_root_failure(exc)
+""")
+    _normalize_exact(prepare.body, """
+try:
+    run_root = prepare_run_root(env)
+except (ValueError, OSError, KeyError) as exc:
+    return run_root_failure(exc)
+run_root_pin = save(attempt / 'RUN_ROOT_PREPARATION.json', run_root)
+""")
+    _normalize_exact(prepare.body, """
+result = {'status': 'SUITE_WORKFLOW_BOUND_NOT_ADMITTED', 'plan': plan_pin, 'environment': environment_pin,
+          'binding': binding_pin, 'cache_preparations': cache_results, 'gpu_submitted': False,
+          'state_root': candidate['state_root'], 'cpu_admitted': False,
+          'run_root_preparation': run_root_pin}
+""", """
+result = {'status': 'SUITE_WORKFLOW_BOUND_NOT_ADMITTED', 'plan': plan_pin, 'environment': environment_pin,
+          'binding': binding_pin, 'cache_preparations': cache_results, 'gpu_submitted': False,
+          'state_root': candidate['state_root'], 'cpu_admitted': False}
+""")
+    _normalize_exact(_function(tree, 'main').body, """
+unsuccessful = result.get('status') in {'SUITE_WORKFLOW_CAPACITY_GATED', 'SUITE_WORKFLOW_HISTORY_GATED',
+                                     'SUITE_WORKFLOW_RUN_ROOT_GATED'}
+""", """
+unsuccessful = result.get('status') in {'SUITE_WORKFLOW_CAPACITY_GATED', 'SUITE_WORKFLOW_HISTORY_GATED'}
+""")
+    return ast.dump(tree, include_attributes=False)
+
+
+def _cache_runner_identity(path):
+    """Retain the runner except reviewed workload and scratch plumbing.
+
+    Hash/path/pin primitives, constants, imports and all other definitions stay
+    exact. Even the private worker body remains protected: only the explicit
+    token routing and scratch initialization statements below are normalized.
     """
     tree = ast.parse(Path(path).read_text(encoding='utf-8'))
-    queries = [node for node in tree.body if isinstance(node, ast.FunctionDef)
-               and node.name == '_fleet_live']
-    runner.require(len(queries) == 1, 'Legacy cache runner must retain one fleet observation function')
-    queries[0].body = [ast.Pass()]
+    _normalize_exact(tree.body, '''
+def completion_path(state_root, task_id):
+    """Keep a typed import distinct from a task executed by this fleet."""
+    require(isinstance(task_id, str) and ID.fullmatch(task_id), "unsafe task id")
+    root = safe(state_root)
+    executed = root / "tasks" / task_id / "COMPLETED.json"
+    imported = root / "task-imports" / (task_id + ".json")
+    require(not (executed.exists() and imported.exists()), "Task has conflicting executed/imported completion records")
+    return imported if imported.exists() else executed
+''')
+    _normalize_exact(_function(tree, 'completion_for').body, '''
+path = completion_path(state_root, task_id)
+if path == safe(state_root) / "task-imports" / (task_id + ".json"):
+    from .suite_task_import import get_task_import
+    return get_task_import(state_root, task_id)
+value = read(path)
+''', 'value = read(safe(state_root) / "tasks" / task_id / "COMPLETED.json")')
+    _function(tree, '_fleet_live').body = [ast.Pass()]
+    worker = _function(tree, 'run_fleet_worker')
+    _normalize_exact(_function(worker, 'execute').body, """
+tokens = ({'DP_SUITE_STORAGE_TOKEN': token['home'],
+           **({'DP_SUITE_SCRATCH_TOKEN': token['scratch']} if token['scratch'] else {})}
+          if isinstance(token, dict) else {'DP_SUITE_STORAGE_TOKEN': token})
+return run_command(command, binding, task_context, attempt,
+    extra_environment={**worker_environment, **tokens,
+                       **({'DP_SUITE_TASK_ID': task_context['task_id']} if 'task_id' in task_context else {})},
+    storage_snapshot=budget.snapshot())
+""", """
+return run_command(command, binding, task_context, attempt,
+    extra_environment={**worker_environment, 'DP_SUITE_STORAGE_TOKEN': token},
+    storage_snapshot=budget.snapshot())
+""")
+    release = _function(worker, 'release_if_quiet')
+    _normalize_exact(release.body, """
+token_key = digest(token) if isinstance(token, dict) else token
+if token_key in released_tokens:
+    return True
+""", """
+if token in released_tokens:
+    return True
+""")
+    for node in release.body:
+        if isinstance(node, ast.If):
+            _normalize_exact(node.body, 'released_tokens.add(token_key)', 'released_tokens.add(token)')
+    for node in worker.body:
+        if isinstance(node, ast.Try):
+            _normalize_exact(node.body, """
+if binding['execution_profile'].get('schema_version') == 3:
+    from .suite_scratch import inspect_scratch, worker_run_root
+    from .suite_scratch_budget import PrivateScratchBudget, TieredTaskBudget
+    scratch_live = live_check()
+    scratch_proof = inspect_scratch(environment, scratch_live)
+    run_root = worker_run_root(binding['execution_profile'], worker_id)
+    safe(run_root.parent).mkdir(mode=0o700, exist_ok=True)
+    safe(run_root).mkdir(mode=0o700)
+    require(not any(run_root.iterdir()), 'A new private worker must have an empty run container')
+    _fsync_directory(run_root.parent)
+    write_once(state_root / 'workers' / worker_id / 'PRIVATE_SCRATCH_PREPARED.json', {
+        'live': scratch_live, 'inspection': scratch_proof, 'run_root': str(run_root),
+        'profile_sha256': digest(binding['execution_profile'])})
+    private_budget = PrivateScratchBudget(binding['execution_profile'], worker_id, scratch_live, state_root)
+    budget = TieredTaskBudget(budget, private_budget, {task['id']: task for task in plan['tasks']})
+    caches = safe(binding['execution_profile']['scratch']['mount_path']) / 'runtime-cache' / worker_id
+    for key, name in {'TMPDIR': 'tmp', 'CUDA_CACHE_PATH': 'cuda', 'TRITON_CACHE_DIR': 'triton',
+                      'TORCH_EXTENSIONS_DIR': 'torch-extensions'}.items():
+        path = safe(caches / name)
+        path.mkdir(parents=True, mode=0o700, exist_ok=True)
+        worker_environment[key] = str(path)
+""")
+            for loop in node.body:
+                if isinstance(loop, ast.While):
+                    _normalize_exact(loop.body, '''
+dependency_pins = [artifact(completion_path(state_root, item)) for item in task['dependencies']]
+''', '''
+dependency_pins = [artifact(state_root / 'tasks' / item / 'COMPLETED.json') for item in task['dependencies']]
+''')
     return ast.dump(tree, include_attributes=False)
 
 
@@ -67,18 +248,22 @@ def _legacy_publisher_compatible(environment, producer):
     runner.require(current == source_inventory(current_root),
                    'Legacy cache runtime source pins differ from its complete source tree')
     old = runner.read(producer['source_manifest']['path'])['files']
+    identities = {'src/deepprobe_vlm/' + module + '.py': identity for module, identity in (
+        ('suite_runner', _cache_runner_identity), ('suite_preflight', _cache_preflight_identity),
+        ('suite_workflow', _cache_workflow_identity))}
     for name in LEGACY_CACHE_SOURCE_MODULES:
-        runner.require(name in old and name in current and old[name] == current[name],
+        runner.require(name in old and name in current
+                       and (name in identities or old[name] == current[name]),
                        'Legacy cache validation source differs or is unpinned: ' + name)
-    runner_name = 'src/deepprobe_vlm/suite_runner.py'
-    runner.require(runner_name in old and runner_name in current, 'Legacy cache runner source is unpinned')
-    runner.require(_cache_runner_identity(old_root / runner_name)
-                   == _cache_runner_identity(current_root / runner_name),
-                   'Legacy cache runner validation implementation differs')
-    # Recheck bytes consumed after reading the manifest and runner definitions.
+    for name, identity in identities.items():
+        label = Path(name).stem.removeprefix('suite_')
+        runner.require(name in old and name in current, 'Legacy cache ' + label + ' source is unpinned')
+        runner.require(identity(old_root / name) == identity(current_root / name),
+                       'Legacy cache ' + label + ' validation implementation differs')
+        # Recheck the exact bytes consumed by the semantic comparison.
+        runner.verify_pin({'path': str(old_root / name), 'sha256': old[name]})
+        runner.verify_pin({'path': str(current_root / name), 'sha256': current[name]})
     runner.verify_pin(producer['source_manifest'])
-    runner.verify_pin({'path': str(old_root / runner_name), 'sha256': old[runner_name]})
-    runner.verify_pin({'path': str(current_root / runner_name), 'sha256': current[runner_name]})
 
 
 def key(benchmark, frames):
@@ -90,9 +275,9 @@ def key(benchmark, frames):
 def _context(environment):
     from .suite_fleet import validate_execution_profile
     from .suite_storage import validate_config
-    runner.require(isinstance(environment, dict) and environment.get('execution_profile', {}).get('schema_version') == 2
+    runner.require(isinstance(environment, dict) and environment.get('execution_profile', {}).get('schema_version') in {2, 3}
                    and environment.get('storage', {}).get('schema_version') == 2,
-                   'Progressive caches require a schema-v2 fleet and storage')
+                   'Progressive caches require a schema-v2/v3 fleet and schema-v2 storage')
     validate_execution_profile(environment['execution_profile'], suite_id=environment['suite_id'])
     validate_config(environment['storage'])
 

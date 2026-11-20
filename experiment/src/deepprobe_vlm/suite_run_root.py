@@ -11,6 +11,22 @@ from . import suite_runner as runner
 METADATA_RESERVE_BYTES = 16 * 1024 * 1024
 
 
+def _private_location(environment):
+    profile = environment.get('execution_profile', {})
+    if profile.get('schema_version') != 3:
+        return None
+    from .suite_fleet import validate_execution_profile
+    validate_execution_profile(profile, environment['suite_id'])
+    mount = runner.safe(profile['scratch']['mount_path'])
+    path = runner.safe(environment['run_root'])
+    roots = [runner.safe(root) for root in environment['storage']['roots']]
+    runner.require(path == mount / 'runs' and all(not mount.is_relative_to(root)
+                   and not root.is_relative_to(mount) for root in roots), 'Private scratch overlaps shared home roots')
+    return {'status': 'SUITE_PRIVATE_RUN_ROOT_DEFERRED_TO_STARTUP', 'run_root': str(path),
+            'created_directories': [], 'run_ownership_claimed': False, 'existing_contents_modified': False,
+            'actual_mount_verified': False, 'per_worker_startup_verification_required': True}
+
+
 def _identity(path, uid):
     info = runner.safe(path).lstat()
     runner.require(stat.S_ISDIR(info.st_mode) and info.st_uid == uid,
@@ -59,12 +75,18 @@ def _location(environment):
 
 def validate_run_root_location(environment):
     """Pure path/identity check, including before any ledger initialization."""
+    private = _private_location(environment)
+    if private is not None:
+        return private
     root, path, _, observed = _location(environment)
     return {'run_root': str(path), 'accounted_root': str(root), 'exists': path in observed}
 
 
 def inspect_run_root(environment):
     """Read-only CPU gate; never initialize a ledger, run owner or directory."""
+    private = _private_location(environment)
+    if private is not None:
+        return private
     _, path, _, observed = _location(environment)
     runner.require(path in observed,
                    'Declared suite run root is missing; use --prepare-assets before CPU admission')
@@ -78,6 +100,9 @@ def prepare_run_root(environment):
     An existing safe container is checked without touching its contents. Child
     task ownership remains exclusively governed by checkpoint_retention.
     """
+    private = _private_location(environment)
+    if private is not None:
+        return private
     root, path, uid, observed = _location(environment)
     if path in observed:
         return inspect_run_root(environment)

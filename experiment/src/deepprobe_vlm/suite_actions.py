@@ -31,11 +31,13 @@ pin, verify_pin, read = runner.artifact, runner.verify_pin, runner.read
 
 def save(path, value):
     path = safe(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    if path.exists():
-        require(read(path) == value, 'Immutable action artifact differs: ' + str(path))
-    else:
-        runner.write_once(path, value)
+    from .suite_metadata_limit import metadata_write
+    with metadata_write(path, len(runner.canonical(value)) + 8192):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if path.exists():
+            require(read(path) == value, 'Immutable action artifact differs: ' + str(path))
+        else:
+            runner.write_once(path, value)
     return pin(path)
 
 
@@ -239,6 +241,10 @@ class Actions:
         self.state = safe(state_root)
         self.root = safe(environment['experiment_root'])
         self.run_root = safe(environment['run_root'])
+        self.private_scratch = environment.get('execution_profile', {}).get('schema_version') == 3
+        if self.private_scratch:
+            from .suite_scratch import worker_run_root
+            self.run_root = worker_run_root(environment['execution_profile'], os.environ.get('DP_SUITE_WORKER_ID'))
         self.tasks = {t['id']: t for t in plan['tasks']}
         self.resume = resume
         self.source_sha = runner.source_identity({'source_files': environment['source_files']})
@@ -290,21 +296,66 @@ class Actions:
         token = os.environ.get('DP_SUITE_STORAGE_TOKEN')
         require(token and os.environ.get('DP_SUITE_STORAGE_LEDGER') == self.env['storage']['ledger_root'],
                 'Parallel actions require the shared ledger reservation from their worker')
+        private_token = os.environ.get('DP_SUITE_SCRATCH_TOKEN')
+        if self.private_scratch and private_token:
+            from .suite_scratch_budget import PrivateScratchBudget
+            worker = os.environ['DP_SUITE_WORKER_ID']
+            live = read(self.state / 'workers' / worker / 'PRIVATE_SCRATCH_PREPARED.json')['live']
+            private = PrivateScratchBudget(self.env['execution_profile'], worker, live, self.state)
+            task_id = os.environ.get('DP_SUITE_TASK_ID')
+            require(task_id in self.tasks, 'Private reservation needs its exact declared task identity')
+            training_payload = self.tasks[task_id]['kind'] == 'train'
+            # The four in-flight 64 MiB upload parts coexist with native saves.
+            private_result = private.extend(private_token, extra + 4 * 64 * 1024 * 1024)
+            shared_result = budget.extend(token, home_bytes=(self.env['execution_profile']['scratch']['shared_home_reserve_bytes']
+                                                            if training_payload else extra),
+                                          oss_bytes=oss_extra)
+            return {'shared': shared_result, 'private_scratch': private_result}
         return budget.extend(token, home_bytes=extra, oss_bytes=oss_extra)
+
+    def durable_pin(self, item):
+        if not self.private_scratch:
+            return item
+        from .suite_durable_metadata import retain_pin
+        task_id = os.environ.get('DP_SUITE_TASK_ID')
+        destination = self.state / 'durable-metadata'
+        if task_id is not None:
+            require(task_id in self.tasks, 'Durable metadata has an undeclared task owner')
+            destination = destination / task_id
+        return retain_pin(item, self.run_root, destination)
 
     def command(self, argv, directory, label, *, source_root=None, extra_env=None):
         directory = safe(directory)
         directory.mkdir(parents=True, exist_ok=True)
-        logs = directory / (label + '-' + os.urandom(6).hex())
+        log_directory = directory
+        if self.private_scratch and label == 'training':
+            # Native progress logs grow while the one pending export writes
+            # bounded shared metadata. Archive the logs with the owned run so
+            # that they cannot consume its shared metadata token concurrently.
+            task_id = os.environ['DP_SUITE_TASK_ID']
+            require(task_id in self.tasks and self.tasks[task_id]['kind'] == 'train',
+                    'Private training logs require an exact declared training owner')
+            log_directory = safe(self.owner(task_id)['run_root']) / '.suite-logs'
+            log_directory.mkdir(parents=True, exist_ok=True)
+        logs = log_directory / (label + '-' + os.urandom(6).hex())
         env = os.environ.copy()
         env.update(self.env['runtime_environment'])
         env.update(runner.OFFLINE)
+        if self.private_scratch:
+            # The action's machine environment cannot put runtime scratch back
+            # on shared home after the worker has bound its private caches.
+            for key in ('TMPDIR', 'CUDA_CACHE_PATH', 'TRITON_CACHE_DIR', 'TORCH_EXTENSIONS_DIR'):
+                require(key in os.environ, 'Private runtime cache binding is missing: ' + key)
+                env[key] = os.environ[key]
         env['PYTHONPATH'] = os.pathsep.join(filter(None, [str((source_root or self.root) / 'src'),
                                                        self.env['runtime_environment'].get('PYTHONPATH', '')]))
         if extra_env:
             env.update(extra_env)
         if list(argv[1:4]) == ['-B', '-m', 'torch.distributed.run']:
             env = single_node_torchrun_environment(env)
+        if self.private_scratch and label == 'training':
+            from .suite_training_process import run_training
+            return run_training(list(map(str, argv)), cwd=source_root or self.root, env=env, logs_prefix=logs)
         save(logs.with_suffix('.intent.json'), {'argv': list(map(str, argv)), 'source_root': str(source_root or self.root)})
         lease = getattr(self, '_benchmark_lease', None) if label == 'evaluate' else None
         if lease is None:
@@ -393,6 +444,10 @@ class Actions:
         live = self.live(require_startup=False)
         from .suite_bindings import validate_environment
         validate_environment(self.env, self.plan)
+        scratch = None
+        if self.env.get('execution_profile', {}).get('schema_version') == 3:
+            from .suite_scratch import inspect_scratch
+            scratch = inspect_scratch(self.env, live)
         self.budget(0)
         gpu = subprocess.run(['nvidia-smi', '--query-gpu=uuid', '--format=csv,noheader'], capture_output=True, text=True, timeout=30)
         uuids = gpu.stdout.strip().splitlines()
@@ -411,10 +466,25 @@ class Actions:
             allocation = profile_allocation(self.env['execution_profile'])
             require(all(gpu.get('expected_gpu') == 'B300' and gpu.get('expected_gpu_matches') is True
                         for gpu in report['gpus']), 'Each worker must pass the frozen B300 architecture/memory gate')
+        export_control = None
+        if scratch is not None:
+            from .suite_checkpoint_export import CONTROL_TIMEOUT_SECONDS
+            control_path = safe(output).parent / 'EXPORT_CONTROL_GROUP.json'
+            self.command(single_node_torchrun(self.env['python']) +
+                         ['-m', 'deepprobe_vlm.suite_checkpoint_export', '--verify-control-group',
+                          '--output', control_path], safe(output).parent, 'checkpoint-export-control')
+            control = read(control_path)
+            require(control.get('status') == 'SUITE_EXPORT_CONTROL_GROUP_READY'
+                    and control.get('world_size') == 8 and control.get('control_backend') == 'gloo'
+                    and control.get('control_timeout_seconds') == CONTROL_TIMEOUT_SECONDS,
+                    'Native checkpoint export control group gate failed')
+            export_control = pin(control_path)
         save(output, {'status': 'SUITE_STARTUP_ACCEPTED', 'allocation': allocation,
                       'source_identity_sha256': self.source_sha, **live, 'gpu_count': 8, 'gpu_uuids': uuids,
                       'hardware_preflight_passed': True, 'hardware': pin(hardware),
-                      **({'gpu_product': 'NVIDIA-B300'} if self.env.get('execution_profile') else {})})
+                      **({'gpu_product': 'NVIDIA-B300'} if self.env.get('execution_profile') else {}),
+                      **({'scratch': scratch, 'checkpoint_export_control_group': export_control}
+                         if scratch is not None else {})})
 
     def owner(self, task_id):
         run_id = self.env['suite_id'] + '--' + task_id
@@ -454,7 +524,8 @@ class Actions:
         from .checkpoint_store import OssutilStore
         prefix = self.env['archive_root'].rstrip('/') + '/runs/' + owner['run_id'] + '/'
         return OssutilStore(self.env['tools']['ossutil'], self.env['tools']['oss_config'],
-                            allowed_prefix=prefix, state_dir=Path(owner['run_root']) / '.retention' / 'oss'), prefix
+                            allowed_prefix=prefix, state_dir=Path(owner['run_root']) / '.retention' / 'oss',
+                            **({'part_workers': 4} if self.private_scratch else {})), prefix
 
     def history(self, task, owner, *, restore=True):
         """Copy only explicitly audited historical inputs; never adopt/delete old runs."""
@@ -464,6 +535,9 @@ class Actions:
         if modern:
             from .suite_bindings import verify_history_binding
             verify_history_binding(self.plan, task, value, verify_files=True)
+            if self.private_scratch and value['mode'] == 'resume':
+                from .suite_checkpoint_resume import verify_private_resume
+                verify_private_resume(task, value, self.env)
         evidence = read(verify_pin(value['acceptance'])['path'])
         for item in evidence.get('evidence', []):
             verify_pin(item)
@@ -588,8 +662,11 @@ class Actions:
         model = next(m for m in self.plan['models'] if m['id'] == task['model_id'])
         assets = self.env['assets']['backbones'][model['family']]
         require(assets.get('files'), 'Pinned offline backbone inventory required')
-        for item in assets['files']:
-            verify_pin(item)
+        # HF snapshot file aliases are a distinct audited asset class. Reuse
+        # the full revision/cache/tree gate instead of the regular-artifact
+        # validator, which correctly rejects aliases for receipts and sources.
+        from .suite_preflight import _backbone_gate
+        backbone = _backbone_gate(model['family'], assets, self.env, self.plan)
         config = read(self.root / task['config']['path'])
         config['model']['language_model'] = assets['language_root']
         config['model']['vision_model'] = assets['vision_root']
@@ -602,7 +679,8 @@ class Actions:
         # the whole future peak; never take credit for an unverified future GC.
         additional = estimate['required_additional_bytes']
         observed = self.budget(additional)
-        return {'estimate': estimate, 'owned_stage_resident_bytes': resident, 'capacity': observed}
+        return {'estimate': estimate, 'owned_stage_resident_bytes': resident, 'capacity': observed,
+                'backbone_validation': backbone}
 
     def train(self, task):
         owner = self.owner(task['id'])
@@ -613,10 +691,18 @@ class Actions:
         config = self.root / task['config']['path']
         require(sha(config) == task['config']['sha256'], 'Recipe changed')
         source, frozen, resume_checkpoint = self.root, training['frozen_source_manifest'], None
-        history = None
+        history, legacy_bridge = None, None
         owned_recovery = latest_complete_checkpoint(output) if self.resume else None
-        if task['historical_hint']['status'] in {'resume_candidate', 'reuse_candidate'}:
+        # New completed/resumable work can be imported after the plan was
+        # frozen; the original hint must not hide that explicitly audited input.
+        if (task['id'] in self.env.get('history', {})
+                or task['historical_hint']['status'] in {'resume_candidate', 'reuse_candidate'}):
             history, historical_checkpoint = self.history(task, owner, restore=owned_recovery is None)
+            if self.private_scratch and history['mode'] == 'resume':
+                from .suite_checkpoint_resume import verify_private_resume
+                recovery_proof = verify_private_resume(task, history, self.env)
+                if self.env.get('legacy_private_resume') and task['id'] == 'train__ouro_r4_s17__sft':
+                    legacy_bridge = recovery_proof
             if history['mode'] == 'accepted':
                 files = inventory(historical_checkpoint)
                 audit = read(history['acceptance']['path'])
@@ -641,7 +727,27 @@ class Actions:
                  self.training_storage(task, output))
             from .resume_checkpoint import verify_resume_checkpoint
             if resume_checkpoint:
-                verify_resume_checkpoint(resume_checkpoint, world_size=8, expected_max_steps=718)
+                native = verify_resume_checkpoint(resume_checkpoint, world_size=8, expected_max_steps=718)
+                if legacy_bridge is not None:
+                    require(native['optimizer_step'] == 600,
+                            'Legacy bridge may resume only the reviewed native checkpoint 600')
+            export_config = None
+            if self.private_scratch:
+                require(history is None or history['mode'] == 'resume',
+                        'Private export requires fresh or explicitly verified recovery')
+                export_config = save(self.task_dir(task['id']) / 'CHECKPOINT_EXPORT_CONFIG.json', {
+                    'schema_version': 1, 'owner': owner, 'task_id': task['id'], 'task_sha256': digest(task),
+                    'expected_steps': task['expected_optimizer_steps'], 'world_size': 8,
+                    'frozen_source_manifest': frozen, 'archive_root': self.env['archive_root'],
+                    'state_root': str(self.state), 'tools': self.env['tools'], 'part_workers': 4})
+                if legacy_bridge is not None:
+                    save(self.task_dir(task['id']) / 'LEGACY_PRIVATE_RESUME.json', {
+                        'status': 'LEGACY_R4_SFT_600_TO_718_PRIVATE_BRIDGE',
+                        'review': self.env['legacy_private_resume'], 'verification': legacy_bridge,
+                        'scientific_source_root': str(source), 'scientific_source_manifest': frozen,
+                        'native_resume_step': 600, 'target_optimizer_steps': 718,
+                        'in_training_export_hook_enabled': False, 'durable_recovery_step_until_exit': 600,
+                        'post_exit_full_native_export_required': True})
             if not (output / 'FORMAL_TRAIN_COMPLETE.json').exists():
                 argv = runner.build_training_argv(self.env['python'], config=config,
                     train_manifest=training['train_manifest']['path'], eval_manifest=training['eval_manifest']['path'],
@@ -650,8 +756,38 @@ class Actions:
                     frozen_source_manifest_sha256=frozen['sha256'], declared=task['entry'] == 'deepprobe_vlm.train_declared',
                     init_checkpoint=init_checkpoint, resume_checkpoint=resume_checkpoint,
                     no_alignment=task['initializer']['kind'] == 'pretrained_backbones_random_connector' and task['stage'] == 'sft')
-                self.command(argv, self.task_dir(task['id']), 'training', source_root=source)
+                extra_env = None
+                if self.private_scratch and legacy_bridge is None:
+                    from .suite_checkpoint_export import CONFIG_ENV, CONFIG_SHA_ENV
+                    extra_env = {CONFIG_ENV: export_config['path'], CONFIG_SHA_ENV: export_config['sha256']}
+                training_exit = self.command(argv, self.task_dir(task['id']), 'training', source_root=source,
+                                             **({'extra_env': extra_env} if extra_env else {}))
+                if legacy_bridge is not None:
+                    from .suite_training_process import verify_training_exit
+                    verify_training_exit(training_exit, expected_source_root=source,
+                                         expected_argv_sha256=digest(list(map(str, argv))))
+                    save(self.task_dir(task['id']) / 'NATIVE_TRAINING_EXIT.json', {
+                        key: self.durable_pin(training_exit[key]) for key in ('exit', 'intent')})
             outputs, files = validate_training_output(output, task, training, frozen['sha256'])
+            if legacy_bridge is not None:
+                # The frozen legacy Trainer has no export hook. Only after
+                # its complete eight-rank process exits and validates at 718
+                # may this outer executor publish the native final savepoint.
+                from .suite_checkpoint_export import export_checkpoint
+                from .suite_training_process import verify_training_exit
+                exit_proof = read(self.task_dir(task['id']) / 'NATIVE_TRAINING_EXIT.json')
+                verify_training_exit(exit_proof, expected_source_root=source)
+                post_exit = save(self.task_dir(task['id']) / 'POST_TRAINING_EXPORT_INPUT.json', {
+                    'schema_version': 1, 'status': 'LEGACY_NATIVE_POST_TRAINING_EXPORT_INPUT',
+                    'task_id': task['id'], 'task_sha256': digest(task), 'optimizer_step': 718,
+                    'source_root': str(source), 'frozen_source_manifest': frozen,
+                    'native_checkpoint': str(output / 'checkpoint-718'), 'training_exit': exit_proof,
+                    'formal_completion': self.durable_pin(pin(output / 'FORMAL_TRAIN_COMPLETE.json')),
+                    'legacy_review': self.env['legacy_private_resume']})
+                exported = export_checkpoint(read(export_config['path']), output / 'checkpoint-718', 718,
+                                             post_training_exit=post_exit)
+                outputs.append(exported)
+        outputs = [self.durable_pin(item) for item in outputs]
         summary = {'schema_version': 1, 'status': 'SUITE_TRAINING_COMPLETE', 'run_id': owner['run_id'],
                    'source_sha256': self.source_sha,
                    'final_checkpoint_inventory_sha256': digest([{**r, 'path': 'training/final/' + r['path']} for r in files]),
@@ -902,6 +1038,7 @@ class Actions:
             cleanup = retention.plan_cleanup(manifest, {}, checkpoints=intermediate)
             result = retention.cleanup(cleanup, store, guard=guard, execute=True,
                                        reference_guard=self.reference_guard(manifest, intermediate))
+            result = {**result, 'receipt': self.durable_pin(result['receipt'])}
             outputs.append(save(self.task_dir(task['id']) / 'INTERMEDIATE_CLEANUP.json', result))
             if self.shared_budget():
                 if self.retain_oss_weights():
@@ -910,7 +1047,8 @@ class Actions:
                     retired = retention.retire_intermediate_remote_weights(cleanup, store, guard=guard, execute=True,
                         reference_guard=self.reference_guard(manifest, intermediate))
                     outputs.append(save(self.task_dir(task['id']) / 'INTERMEDIATE_REMOTE_RETIREMENT.json', retired))
-        return {'outputs': outputs, 'manifest': pin(manifest_path), 'owner': owner}
+        return {'outputs': [self.durable_pin(item) for item in outputs],
+                'manifest': self.durable_pin(pin(manifest_path)), 'owner': owner}
 
     def archive_results(self, task):
         # Results use a distinct owned archive prefix; never modify model archives.
@@ -957,7 +1095,11 @@ class Actions:
             return
         for checkpoint in manifest['checkpoints']:
             rows = [r for r in manifest['files'] if r['path'].startswith(checkpoint + '/')]
-            locations = [{**r, 'path': str(Path(manifest['owner']['run_root']) / r['path'])} for r in rows]
+            # The shared reference ledger tracks durable OSS objects. Private
+            # copies are bound by their Pod scratch ledger and exact run owner;
+            # their node-only paths must never become shared accounting roots.
+            locations = ([] if self.private_scratch else
+                         [{**r, 'path': str(Path(manifest['owner']['run_root']) / r['path'])} for r in rows])
             locations += [{**r, 'path': manifest['archive_prefix'] + r['path']} for r in rows]
             budget.register_artifact(self.checkpoint_artifact_id(manifest, checkpoint), kind='checkpoint',
                 locations=locations, references=[r['id'] for r in manifest['required_consumers']
@@ -1022,6 +1164,7 @@ class Actions:
                 else:
                     result = retention.cleanup(plan, store, guard=guard, execute=True,
                         reference_guard=self.reference_guard(manifest, plan['checkpoints'], consumers))
+                result = {**result, 'receipt': self.durable_pin(result['receipt'])}
                 outputs.append(save(local_path, result))
                 external = {'prefix': backup_store.prefix, 'files': final_plan['targets']}
                 remote = retention.cleanup_remote_weights(final_plan, store, backup=external,
@@ -1031,6 +1174,7 @@ class Actions:
         else:
             result = retention.cleanup(plan, store, guard=guard, execute=True,
                 reference_guard=self.reference_guard(manifest, plan['checkpoints'], consumers))
+            result = {**result, 'receipt': self.durable_pin(result['receipt'])}
             outputs.append(save(directory / 'CLEANUP.json', result))
             if self.retain_oss_weights():
                 outputs.append(self.retained_oss_receipt(directory, plan, result))
@@ -1086,6 +1230,11 @@ class Actions:
             result = getattr(self, kind)(task)
         for item in result['outputs']:
             verify_pin(item)
+        if self.private_scratch and kind == 'train':
+            from .suite_metadata_limit import metadata_write
+            with metadata_write(output, len(runner.canonical(result)) + 8192) as metadata:
+                if metadata is not None:
+                    result['shared_metadata_accounting'] = metadata
         save(output, {'schema_version': 1, 'status': 'SUITE_TASK_ACCEPTED', 'task_id': task_id,
                       'task_sha256': digest(task), **result})
 

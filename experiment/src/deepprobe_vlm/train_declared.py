@@ -367,6 +367,13 @@ class DeepProbeTrainer(Trainer):
     def _load_from_checkpoint(self, resume_from_checkpoint, model=None):
         (model or self.model).load_checkpoint_weights(resume_from_checkpoint)
 
+    def _save_checkpoint(self, *args, **kwargs):
+        from .suite_checkpoint_export import flush_checkpoint_export, queue_checkpoint_export
+        flush_checkpoint_export(self)
+        result = super()._save_checkpoint(*args, **kwargs)
+        queue_checkpoint_export(self)
+        return result
+
     def save_final_resume_checkpoint(self):
         """Persist a native Trainer checkpoint at the exact final step.
 
@@ -380,6 +387,8 @@ class DeepProbeTrainer(Trainer):
         if self.state.global_step <= 0:
             raise ValueError("Cannot save a final resume checkpoint before an optimizer step")
         self._save_checkpoint(self.model, trial=None)
+        from .suite_checkpoint_export import flush_checkpoint_export
+        flush_checkpoint_export(self, final=True)
         self.accelerator.wait_for_everyone()
         return Path(self.args.output_dir) / f"checkpoint-{self.state.global_step}"
 

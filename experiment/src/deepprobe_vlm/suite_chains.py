@@ -108,3 +108,29 @@ def component_peak_plans(plan, binding, environment, estimates):
                         'required_additional_bytes': peak, 'prior_final_cleanup_credited': False,
                         'intermediate_archive_barrier_required': True, 'maximum_concurrent_training': 1})
     return results
+
+
+def private_capacity_requirements(plan, binding, environment, estimates):
+    """Bound one resident chain per Pod and independently bound shared consumers."""
+    from copy import deepcopy
+    profile = environment['execution_profile']
+    runner.require(profile['schema_version'] == 3, 'Private capacity needs an explicit scratch profile')
+    # Affinity permits one foreground task per Pod; consumers on other Pods
+    # cannot allocate files in this worker's private mount.
+    serial_environment = deepcopy(environment)
+    serial_environment['execution_profile']['workers'] = profile['workers'][:1]
+    components = component_peak_plans(plan, binding, serial_environment, estimates)
+    workers = len(profile['workers'])
+    shared = sorted((binding['tasks'][task['id']]['reserve_bytes'] for task in plan['tasks']
+                     if task['kind'] != 'train'), reverse=True)
+    shared_peak = sum(shared[:workers]) + workers * profile['scratch']['shared_home_reserve_bytes']
+    shared_peak = max(shared_peak, workers * binding['startup']['reserve_bytes'])
+    scratch_peak = max((row['required_additional_bytes'] for row in components), default=0) + 4 * 64 * 1024 * 1024
+    runner.require(scratch_peak + profile['scratch']['safety_bytes'] < profile['scratch']['limit_bytes'],
+                   'A complete resident checkpoint chain exceeds one private scratch budget')
+    return {'checkpoint_chains': components, 'shared_home_additional_bytes': shared_peak,
+            'private_scratch_additional_bytes_per_worker': scratch_peak,
+            'private_scratch_limit_bytes_per_worker': profile['scratch']['limit_bytes'],
+            'maximum_simultaneous_training': workers, 'maximum_open_chains_per_worker': 1,
+            'archive_upload_buffer_bytes_per_worker': 4 * 64 * 1024 * 1024,
+            'private_disk_startup_verification_required': True, 'future_cleanup_credited': False}
