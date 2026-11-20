@@ -434,6 +434,18 @@ def _initial_storage_gate(plan, binding, environment, estimates):
             'first_training_reserve_bytes': first_training_reserve, 'future_cleanup_credited': False}
 
 
+def _chain_storage_gate(plan, binding, environment, estimates):
+    from .suite_chains import component_peak_plans
+    components = component_peak_plans(plan, binding, environment, estimates)
+    if not components:
+        return {'checkpoint_chains': [], 'scientific_checkpoint_plan': False}
+    worst = max(row['required_additional_bytes'] for row in components)
+    observed = runner.capacity(binding, worst)
+    return {**observed, 'checkpoint_chains': components, 'required_additional_bytes': worst,
+            'global_training_claim_limit': 1, 'independent_chain_waits_for_all_cleanup': True,
+            'future_capacity_rechecked_per_task': True}
+
+
 def inspect(plan, binding, environment, *, plan_sha256, binding_sha256, environment_sha256,
             state_root, prepare_media=False):
     checks, failures, outputs, estimates, deferred = [], [], [], {}, []
@@ -542,6 +554,7 @@ def inspect(plan, binding, environment, *, plan_sha256, binding_sha256, environm
                     outputs.append(proof['ready_pin'] if progressive else proof['acceptance'])
     check('development_latency_inputs', lambda: _development_gate(environment))
     check('initial_storage', lambda: _initial_storage_gate(plan, binding, environment, estimates))
+    check('checkpoint_chain_storage', lambda: _chain_storage_gate(plan, binding, environment, estimates))
     return result()
 
 

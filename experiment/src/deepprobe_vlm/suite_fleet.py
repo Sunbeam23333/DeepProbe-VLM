@@ -281,11 +281,20 @@ class FleetState:
             pending = [t for t in self.plan['tasks'] if t['id'] not in completed]
             active = [t for t in pending if (self.state / 'tasks' / t['id'] / 'CLAIM.json').exists()]
             ready = [t for t in pending if t not in active and set(t['dependencies']) <= completed.keys()]
+            from .suite_chains import training_window
+            chain = training_window(self.plan, completed,
+                [task['id'] for task in self.plan['tasks']
+                 if (self.state / 'tasks' / task['id'] / 'CLAIM.json').exists()], active)
             # Free accepted checkpoints promptly; keep original scientific order within each class.
             order = {'cleanup': 0, 'archive': 1, 'evaluate': 2, 'latency': 2, 'compare_latency': 2}
             ready.sort(key=lambda t: order.get(t['kind'], 3))
-            blocked, asset_pending = [], []
+            blocked, asset_pending, chain_pending = [], [], []
             for task in ready:
+                if task['kind'] == 'train' and chain is not None and (
+                        task['id'] not in chain['training_task_ids'] or chain['active_training_task_ids']
+                        or chain['completed_training_awaiting_archive']):
+                    chain_pending.append(task['id'])
+                    continue
                 asset_readiness = readiness(task) if readiness is not None else {}
                 if asset_readiness is None:
                     asset_pending.append(task['id'])
@@ -311,7 +320,8 @@ class FleetState:
                 return {'status': 'claimed', 'task': task, 'claim': claim, 'completed': completed}
             require(active or asset_pending, 'No runnable task; dependency or storage admission failed: ' + str(blocked))
             return {'status': 'wait', 'active_task_ids': [t['id'] for t in active],
-                    'storage_blocked': blocked, 'asset_pending_task_ids': asset_pending}
+                    'storage_blocked': blocked, 'asset_pending_task_ids': asset_pending,
+                    'chain_pending_task_ids': chain_pending, 'training_chain': chain}
 
     def finish(self, task, claim, completion):
         with project_transaction(self.binding['storage']):

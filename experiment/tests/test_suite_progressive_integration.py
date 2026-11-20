@@ -117,7 +117,7 @@ def admission(tmp_path, monkeypatch):
         monkeypatch.setattr(suite_preflight, name, lambda *args, **kwargs: True)
     monkeypatch.setattr(runner, 'validate_binding', lambda *args, **kwargs: True)
     for name in ('_bound_environment', '_formal_gate', '_training_gate', '_source_gate',
-                 '_backbone_gate', '_development_gate', '_initial_storage_gate'):
+                 '_backbone_gate', '_development_gate', '_initial_storage_gate', '_chain_storage_gate'):
         monkeypatch.setattr(suite_preflight, name, lambda *args, **kwargs: {'synthetic': True})
     monkeypatch.setattr(suite_preflight, 'load_operation', lambda *_: SimpleNamespace(
         estimate_stage_storage=lambda *_: {'required_additional_bytes': 200}))
