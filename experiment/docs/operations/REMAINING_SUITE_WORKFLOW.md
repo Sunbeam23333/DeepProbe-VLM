@@ -6,7 +6,52 @@ report: it does not build caches, restore checkpoints, initialize task state or
 contact the scheduler. The plan remains 18 models, 34 training stages,
 36 evaluations, 15 latency runs, 12 comparisons and 185 operational tasks.
 
-## Machine discovery and one entry point
+## Current preparation on 2026-11-21
+
+The scientific DAG still contains all 185 tasks. Source commit `4034666` adds
+checkpoint-chain backpressure: 17 training components share one resident-chain
+slot, at most one training claim is active, a following stage waits for its
+predecessor's archive, and a new component waits for all consumer/cleanup
+barriers of the preceding component. Ready admitted tasks can run while the
+CPU cache producer continues, with verified cache receipts published as ready.
+The 190 scoped CPU tests passed, including synthetic full-DAG claimants at
+counts 1–4; these are scheduling tests, not completed experiments.
+
+The source-v4/control-v8 candidate is frozen locally and has **not been
+deployed**. Its source manifest SHA is
+`7f6a0d40385d6363845b6f936a161ef9ca02356a587a60a7ff62864981b96208`.
+No full-suite GPU worker has been submitted. The current plan uses **one
+normal-priority worker, one node and eight GPUs**. The shared 150 GB budget
+does not currently admit four workers. Fresh deployment/readback, complete
+CPU admission and exact Job/server dry-run checks remain required.
+
+Smol a6 completed all 718 alignment updates; its original Job failed during
+archival. The recovery precheck passed at November 21 01:18:26 Beijing time:
+240 local files passed SHA checks and 82 existing objects passed full GET/SHA.
+The supplement-upload and independent-audit client started at 01:19:54 and is
+running. No client, execute or audit completion receipt is present yet; wait
+for those receipts and root acceptance without treating startup as a completed
+upload. The new candidate must import its accepted final
+instead of repeating the old cp350 continuation. Smol SFT, R4's remaining
+118 SFT updates, evaluations and the rest of the DAG remain pending.
+
+The November 21 01:13 Beijing-time cleanup acceptance measured
+62,504,292,995 bytes in the accounted home roots after deleting six already
+archived old checkpoint weight files (17,116,975,648 bytes). All a6 files and
+other active reservations were retained; the original a6 42 GB reservation
+was released. Home including all active reservations and safety measured
+65,049,552,515 bytes before releasing the cleanup operation's own 8 MiB token.
+These are dated observations and must be refreshed at GPU admission.
+The 01:18:26 recovery precheck also found five project Jobs and three Pods
+terminal; this is a dated workload snapshot, not a free-GPU capacity measurement.
+
+## Historical v5 machine discovery and entry point
+
+The following v5 commands document the earlier deployment. They are not the
+current launch authorization: their Smol cp350 binding predates completed a6,
+and their four-worker example has no current capacity admission. Keep the
+immutable candidates as history; use a newly admitted v8 binding for the next
+launch after actual deployment and a6 archive acceptance.
 
 The deployed v5 worker-count candidates and command script use
 `/home/jinhaopeng/.cache/Paper/DeepProbe-VLM-p1/suite-suite-remaining-20261119/control-v5`.
@@ -329,8 +374,9 @@ The later 14:57 UTC readback supersedes that Running snapshot: a6 completed
 outer Job Failed at 03:27:04 UTC/container exit1 during archival. A procfs
 PermissionError preceded the archive child's SIGTERM. The final/cp718 local
 inventories remain; exact OSS has 82 objects and 157 missing manifest payloads.
-No archive acceptance or cleanup is recorded. Reconcile and verify archival,
-then bind the completed final for SFT; do not rerun the 368 alignment updates.
+No archive acceptance or cleanup was recorded in that November 20 check.
+Reconcile and verify archival, then bind the completed final for SFT; do not
+rerun the 368 alignment updates.
 See [terminal status](evidence/smollm2-resume-a6-20261120/ROOT_A6_TERMINAL_STATUS_20261120.json).
 
 The reusable process tracker now rechecks process identity after a denied
@@ -343,8 +389,10 @@ incomplete archive. A local recovery plan identifies the 157 missing payloads
 and the original manifest: completing them would produce 240 objects /
 18,149,863,235 bytes, without fabricating the original `ARCHIVED.json`.
 Fresh local SHA, full GET checks of existing objects and writer quiescence
-remain required before uploading. No recovery upload or local deletion was
-performed in this status check.
+were required before uploading. No recovery upload or local deletion was
+performed in that November 20 status check. The separate November 21 recovery
+and accepted old-checkpoint cleanup are described above; the original a6
+archive has not yet gained independent recovery acceptance.
 
 The offline helper `scripts/operations/derive_suite_cache_continuation.py`
 authenticates the original candidate and 35 captured preparation receipts,

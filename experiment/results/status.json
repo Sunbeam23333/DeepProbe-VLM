@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
-  "observed_at_utc": "2026-11-20T14:57:36.375748+00:00",
+  "observed_at_utc": "2026-11-20T17:18:26.556688+00:00",
   "display_timezone": "Asia/Shanghai",
-  "observation_note": "Smol a6 completed all 718 alignment optimizer steps, adding 368 updates from cp350. Both preflights and the formal training child exited0. Its outer Job later Failed/exit1 due to a procfs PermissionError during archival, with the archive child interrupted by SIGTERM. Local final and cp718 filenames/lengths match the original archive manifest, but fresh payload SHA and independent archive acceptance are pending. The exact OSS prefix contains82 objects;157 manifest payloads are absent. Do not rerun alignment. Smol SFT/evaluation and the full suite remain unstarted; no new held-out result is claimed.",
+  "observation_note": "Smol a6 completed all 718 alignment optimizer steps, adding 368 updates from cp350; its formal training child and both preflights exited 0. The original Job remains Failed after the archival interruption. Recovery precheck passed at 2026-11-20T17:18:26Z: 240 local files passed SHA and 82 existing objects passed full GET/SHA. The supplement-upload and independent-audit client started at 2026-11-20T17:19:54Z and is running; client, execute and audit completion receipts plus root archive acceptance are still pending. Client startup is not upload completion. Do not repeat alignment. Source 4034666 preserves the full 185-task DAG and passed 190 scoped CPU tests; source-v4/control-v8 is locally frozen, not deployed or GPU submitted. The current plan is one normal-priority, one-node/eight-GPU worker under the 150 GB shared home budget. No new held-out result is claimed.",
   "new_held_out_results": false,
   "runs": {
     "dp-p1-ouro-r4-f8-g4-s17-sft-a1": {
@@ -170,8 +170,45 @@
       "missing_checkpoint_bytes": 22312029341,
       "missing_checkpoint_files_archive_keys_present_and_sizes_match": true,
       "local_missing_file_cause": "unknown; this read-only check did not delete or move files",
-      "current_status_note": "The experiment historically Failed. Its exact Job and original Pod are now NotFound. Trainer metadata remains at 600 and the log at 602, but five model/optimizer payloads are missing locally; matching archive keys/sizes were listed without fresh payload downloads or SHA checks.",
-      "recovery_gate": "Restore missing model/optimizer payloads from the accepted exact archive and verify original SHA256, then validate complete optimizer/RNG recovery and fresh source/storage/scheduler admission before the remaining 118 updates."
+      "current_status_note": "The original experiment remains historically Failed. Its November 17 local snapshot lacked five checkpoint600 weight/optimizer payloads. The later November 20 recovery preparation accepted complete archived checkpoint GET/SHA and native metadata checks; it does not claim that the original run was repopulated or runtime model/optimizer/scheduler/RNG state was restored. The remaining 118 SFT updates and evaluation remain pending.",
+      "recovery_gate": "Reuse the authenticated cp600 archive and native metadata binding; restore the required payloads for the exact new runtime, verify full optimizer/scheduler/RNG recovery, and pass fresh source/storage/scheduler admission before the remaining 118 updates.",
+      "historical_recovery_gate_observations": [
+        {
+          "observed_at_utc": "2026-11-17T03:15:23.427190+00:00",
+          "current_status_note": "The experiment historically Failed. Its exact Job and original Pod are now NotFound. Trainer metadata remains at 600 and the log at 602, but five model/optimizer payloads are missing locally; matching archive keys/sizes were listed without fresh payload downloads or SHA checks.",
+          "recovery_gate": "Restore missing model/optimizer payloads from the accepted exact archive and verify original SHA256, then validate complete optimizer/RNG recovery and fresh source/storage/scheduler admission before the remaining 118 updates."
+        }
+      ],
+      "latest_archive_recovery_preparation": {
+        "observed_at_utc": "2026-11-20T01:18:36.086464+00:00",
+        "checkpoint_step": 600,
+        "remaining_optimizer_updates": 118,
+        "all_objects_full_get_sha256_verified": true,
+        "native_metadata_verified": true,
+        "runtime_resume_verified": false,
+        "optimizer_scheduler_rng_deserialized": false,
+        "original_local_run_repopulated_claimed": false,
+        "evidence": {
+          "ARCHIVE_ACCEPTANCE": {
+            "source_path": "experiment/docs/operations/evidence/smol-a6-launch-20261120-v1/recovery-completions/train__ouro_r4_s17__sft/ARCHIVE_ACCEPTANCE.json",
+            "bytes": 9182,
+            "sha256": "7eb953678bafbdd0e009e5266e1a3c567c7db0563563d143d22264db28e789d4",
+            "available_in_github": false
+          },
+          "NATIVE_METADATA_VERIFICATION": {
+            "source_path": "experiment/docs/operations/evidence/smol-a6-launch-20261120-v1/recovery-completions/train__ouro_r4_s17__sft/NATIVE_METADATA_VERIFICATION.json",
+            "bytes": 732,
+            "sha256": "ed68f208d29bfe8e90a2852a1bdd2bb3a90504aff2d86cf0482fbbe355c55b5d",
+            "available_in_github": false
+          },
+          "RECOVERY_PREPARED": {
+            "source_path": "experiment/docs/operations/evidence/smol-a6-launch-20261120-v1/recovery-completions/train__ouro_r4_s17__sft/RECOVERY_PREPARED.json",
+            "bytes": 6343,
+            "sha256": "f03fe8b495a595228b0077db184fd29e7f441badeea8e8eb51f4d3a988cd1f79",
+            "available_in_github": false
+          }
+        }
+      }
     },
     "dp-p1-smollm2-f8-g4-s29-alignment-a1": {
       "run_id": "dp-p1-smollm2-f8-g4-s29-alignment-a1",
@@ -1612,7 +1649,7 @@
       "handshake_local_tests_passed": true,
       "handshake_linux_shared_filesystem_synthetic_smoke_passed": true,
       "handshake_actual_gpu_acceptance": true,
-      "observation_limit": "The exact attempt5 Job Failed after its real GPU submission handshake, eight-device identity, all eight BF16/NCCL ranks and the enclosing preflight passed. The native initializer receipt and manifest bind checkpoint300; training reached logged step354/718, adding 54 updates. Checkpoint350 passed full 29-file SHA and native CPU metadata/contract checks and is a candidate for the remaining 368 updates. Its optimizer/scheduler/RNG deserialization, exact archive and fresh independent recovery/submission admission remain open. SIGTERM source is unknown; runner exit1 is distinct from the unavailable original container exit code. No final model, training completion, numerical resume-equivalence or held-out result is claimed.",
+      "observation_limit": "Attempt5 itself reached logged step354 after its actual handshake and eight-rank preflight, then Failed after SIGTERM of unknown source. Its terminal and original-prefix snapshots remain historical. Later checkpoint preparation and a6 training completion supersede the earlier statement that no continuation had been named; they do not rewrite the a5 Job outcome or establish numerical resume equivalence or held-out quality.",
       "evidence": {
         "draft_preparation": {
           "source_path": "experiment/docs/operations/evidence/smollm2-resume-a5-20261118/A5_DRAFT_READY.json",
@@ -2044,7 +2081,7 @@
         "training_log_segment_sha256": "6ef308e78ea350db6cd80432017de590f81e6ce070d93e1e46469595455373d9",
         "scope": "Earlier stage-file observation; metadata-only checkpoint350 limits here remain historical. The separately recorded later native full-payload verification advances checkpoint350 CPU validation."
       },
-      "recovery_gate": "Attempt5 passed real GPU startup and natively continued from the unchanged accepted attempt2 checkpoint300 to logged step354, then Failed after SIGTERM of unknown origin. Checkpoint350 passed full SHA and native CPU metadata/contract checks and is a candidate for the remaining 368 updates. Complete and independently verify its failure archive, then pass fresh recovery/source/storage/scheduler admission before any separately identified continuation. No next attempt has been created or named. Prior attempt2/3/4 archives remain separately accepted and unchanged.",
+      "recovery_gate": "This historical a5 Job remains Failed at logged step354. The authenticated cp350 continuation was later submitted as a6 and completed all 718 alignment steps; do not create another continuation for those 368 updates. a6 archive recovery and independent acceptance gate matched SFT/evaluation. The dated empty a5 run-prefix observation is retained and is distinct from cp350 preparation archival.",
       "checkpoint_full_payload_sha256_verified": true,
       "checkpoint_file_count": 29,
       "checkpoint_bytes": 8642274062,
@@ -2081,13 +2118,20 @@
         "progress_and_terminal_evidence_reviewed": true,
         "scope": "Independent byte-bound handshake, native checkpoint300 continuation through logged step354, and failure review. Its checkpoint350 conclusion covers the earlier metadata-only readback; the separate native full-payload verification is recorded separately.",
         "checkpoint350_complete_payload_acceptance_in_this_review": false
-      }
+      },
+      "historical_recovery_gate_observations": [
+        {
+          "observed_at_utc": "2026-11-19T10:34:35.716149+00:00",
+          "recovery_gate": "Attempt5 passed real GPU startup and natively continued from the unchanged accepted attempt2 checkpoint300 to logged step354, then Failed after SIGTERM of unknown origin. Checkpoint350 passed full SHA and native CPU metadata/contract checks and is a candidate for the remaining 368 updates. Complete and independently verify its failure archive, then pass fresh recovery/source/storage/scheduler admission before any separately identified continuation. No next attempt has been created or named. Prior attempt2/3/4 archives remain separately accepted and unchanged.",
+          "observation_limit": "The exact attempt5 Job Failed after its real GPU submission handshake, eight-device identity, all eight BF16/NCCL ranks and the enclosing preflight passed. The native initializer receipt and manifest bind checkpoint300; training reached logged step354/718, adding 54 updates. Checkpoint350 passed full 29-file SHA and native CPU metadata/contract checks and is a candidate for the remaining 368 updates. Its optimizer/scheduler/RNG deserialization, exact archive and fresh independent recovery/submission admission remain open. SIGTERM source is unknown; runner exit1 is distinct from the unavailable original container exit code. No final model, training completion, numerical resume-equivalence or held-out result is claimed."
+        }
+      ]
     },
     "dp-p1-smollm2-f8-g4-s29-alignment-a6": {
       "schema_version": 1,
       "run_id": "dp-p1-smollm2-f8-g4-s29-alignment-a6",
       "stage": "alignment",
-      "observed_at_utc": "2026-11-20T14:57:36.375748+00:00",
+      "observed_at_utc": "2026-11-20T17:18:26.556688+00:00",
       "job_name": "jinhaopeng-dpvlm-p1-smollm2-s29-align-a6-n1-16f41",
       "job_uid": "58a74e0d-7309-4ad6-8a22-266be9d8d956",
       "status": "Failed",
@@ -2113,13 +2157,17 @@
         "files": 18,
         "bytes": 8589657473,
         "matches_archive_manifest_names_and_lengths": true,
-        "fresh_payload_sha_verified": false
+        "fresh_payload_sha_verified": true,
+        "sha_verified_at_utc": "2026-11-20T17:18:26.556688+00:00",
+        "sha_verification_evidence_key": "archive_recovery_precheck"
       },
       "checkpoint718_local_inventory": {
         "files": 29,
         "bytes": 8642280705,
         "matches_archive_manifest_names_and_lengths": true,
-        "fresh_payload_sha_verified": false
+        "fresh_payload_sha_verified": true,
+        "sha_verified_at_utc": "2026-11-20T17:18:26.556688+00:00",
+        "sha_verification_evidence_key": "archive_recovery_precheck"
       },
       "archive_payload_count": 239,
       "archive_payload_bytes": 18149819512,
@@ -2131,7 +2179,7 @@
       "archive_accepted": false,
       "archive_receipt_present": false,
       "local_cleanup_performed": false,
-      "storage_reservation_released": false,
+      "storage_reservation_released": true,
       "two_stage_training_complete": false,
       "new_held_out_result": null,
       "evidence": {
@@ -2170,17 +2218,99 @@
           "bytes": 540423,
           "sha256": "c62c7eb8fe77a45f7929384c54679258d7902c84fe3216d69e6e5e4fee2285c9",
           "available_in_github": false
+        },
+        "archive_recovery_precheck": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-resume-a6-20261120/archive-recovery-20261121-v2/precheck-once-v3/readback/RESULT.json",
+          "bytes": 203089,
+          "sha256": "6ecdf6057e0e920b4cdf5748c35ae90a787dd68b872dc80d127ad4df168f771f",
+          "available_in_github": false
+        },
+        "archive_recovery_client_intent": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-resume-a6-20261120/archive-recovery-20261121-v2/execute-and-audit-once-v1/CLIENT_INTENT.json",
+          "bytes": 403,
+          "sha256": "86e3f7b0a0a8a747bf9112da571caf36794f2917bb003da25407ab1a4777402a",
+          "available_in_github": false
         }
-      }
+      },
+      "archive_inventory_observed_at_utc": "2026-11-20T17:18:26.556688+00:00",
+      "archive_inventory_scope": "Recovery precheck verified 82 existing objects before the upload/audit client started. These counts do not report later upload progress; no complete recovery acceptance exists yet.",
+      "historical_storage_observations": [
+        {
+          "observed_at_utc": "2026-11-20T14:57:36.375748+00:00",
+          "local_cleanup_performed": false,
+          "storage_reservation_released": false
+        }
+      ],
+      "storage_reservation_release_evidence": {
+        "source_path": "experiment/docs/operations/evidence/smol-old-checkpoint-retention-20261121-v1/CLEANUP_READBACK_ACCEPTANCE.json",
+        "bytes": 4708,
+        "sha256": "3a94b46f40d552182f342ecb7239e88318970c87f89a688a0654341fc895cd0d",
+        "available_in_github": false
+      },
+      "archive_recovery": {
+        "status": "SUPPLEMENT_UPLOAD_AND_INDEPENDENT_AUDIT_CLIENT_RUNNING_AWAITING_COMPLETION_AND_ROOT_ACCEPTANCE",
+        "original_job_status_unchanged": "Failed",
+        "independently_accepted": false,
+        "history_import_accepted": false,
+        "native_ARCHIVED_receipt_fabricated": false,
+        "completed_alignment_updates_must_not_repeat": true,
+        "sealed_package_evidence": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-resume-a6-20261120/archive-recovery-20261121-v2/package/PACKAGE_MANIFEST.json",
+          "bytes": 1311,
+          "sha256": "8841e8ebbeba03ed03b8613c9f4e08028b05169c78808b4e2bd2e5146f729d9a",
+          "available_in_github": false
+        },
+        "scope": "Precheck completed real local SHA, existing-object full GET/SHA and terminal/writer checks. The supplement-upload and independent-audit client is running. No completed upload, completed audit, root archive acceptance or completed-final history import is claimed; client startup alone is not upload completion.",
+        "precheck_status": "A6_ARCHIVE_RECOVERY_PRECHECK_PASSED",
+        "precheck_completed_at_utc": "2026-11-20T17:18:26.556688+00:00",
+        "local_files_sha_verified": 240,
+        "existing_objects_full_get_sha_verified": 82,
+        "precheck_uploaded_files": 0,
+        "client_started_at_utc": "2026-11-20T17:19:54.191832+00:00",
+        "client_completion_receipt_present": false,
+        "execute_completion_receipt_present": false,
+        "audit_completion_receipt_present": false,
+        "automatic_retry": false,
+        "precheck_evidence": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-resume-a6-20261120/archive-recovery-20261121-v2/precheck-once-v3/readback/RESULT.json",
+          "bytes": 203089,
+          "sha256": "6ecdf6057e0e920b4cdf5748c35ae90a787dd68b872dc80d127ad4df168f771f",
+          "available_in_github": false
+        },
+        "client_intent_evidence": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-resume-a6-20261120/archive-recovery-20261121-v2/execute-and-audit-once-v1/CLIENT_INTENT.json",
+          "bytes": 403,
+          "sha256": "86e3f7b0a0a8a747bf9112da571caf36794f2917bb003da25407ab1a4777402a",
+          "available_in_github": false
+        }
+      },
+      "historical_inventory_verifications": [
+        {
+          "observed_at_utc": "2026-11-20T14:57:36.375748+00:00",
+          "final_local_inventory": {
+            "files": 18,
+            "bytes": 8589657473,
+            "matches_archive_manifest_names_and_lengths": true,
+            "fresh_payload_sha_verified": false
+          },
+          "checkpoint718_local_inventory": {
+            "files": 29,
+            "bytes": 8642280705,
+            "matches_archive_manifest_names_and_lengths": true,
+            "fresh_payload_sha_verified": false
+          }
+        }
+      ]
     }
   },
   "remaining_work": [
-    "Reconcile and complete the interrupted a6 archive without overwriting accepted existing objects, verify final/cp718 payloads and independent archive acceptance, then pass fresh admission for matched Smol SFT and evaluations. Alignment training is complete; do not repeat its368 updates.",
-    "Restore R4 checkpoint-600 missing model/optimizer payloads from its accepted archive, verify SHA256 and numerical recovery, then pass fresh capacity/source/scheduler admission before its remaining 118 updates.",
-    "Additional seeds and declared ablations, controlled cost/latency measurements, and new-model evaluation."
+    "Obtain completion receipts from the running a6 supplement-upload/independent-audit client and root archive acceptance, then import the completed final and admit matched Smol SFT and evaluations. Its 718 alignment updates are complete; do not repeat the 368 updates from cp350.",
+    "Use the authenticated R4 checkpoint-600 archive and native metadata binding, restore required runtime payloads, verify model/optimizer/scheduler/RNG recovery and fresh capacity/source/scheduler admission, then complete its remaining 118 SFT updates and evaluations.",
+    "Deploy and verify the locally frozen source-v4/control-v8 185-task suite, derive its candidate from accepted a6 history, pass full CPU and one-worker normal/eight-GPU submission admission, and complete ready tasks with verified cache publication and checkpoint-chain backpressure.",
+    "Additional seeds and declared ablations, controlled cost/latency measurements, new-model evaluations and comparative statistics remain to be executed; synthetic scheduling tests are not scientific results."
   ],
   "active_run_id": null,
-  "active_run_observation": "Latest exact a6 Job and Pod are Failed at 2026-11-20T03:27:04Z, after formal alignment completed 718 steps with training exit0. This check did not refresh the full project workload inventory.",
+  "active_run_observation": "The a6 exact Job remains Failed after completed alignment. At the November 20 17:18:26 UTC recovery precheck, all five project GPU Jobs and three Pods were terminal. The separate archive upload/audit client started at 17:19:54 UTC and is running without completion receipts; it is not a GPU training Job. No full-suite GPU worker has been submitted, and no free-node claim follows from the workload snapshot.",
   "engineering_qa": {
     "run_id": "dp-cuda-pool-qa-20261114-a3",
     "scope": "synthetic CUDA weighted-pooling correctness and microbenchmark; no model training or quality evaluation",
@@ -2535,7 +2665,7 @@
   },
   "training_observed_at_utc": "2026-11-20T14:57:36.375748+00:00",
   "serial_suite_preparation": {
-    "status": "SCRIPTS_CPU_VALIDATED_NOT_GPU_SUBMITTED",
+    "status": "CURRENT_SOURCE_LOCALLY_FROZEN_CPU_SCOPED_TESTED_NOT_DEPLOYED_OR_GPU_SUBMITTED",
     "plan_path": "experiment/configs/experiment_suite.json",
     "plan_sha256": "be12c2aa1f48699fe603be9f84ccc83e7b843b315bfa14495464813337e93cd0",
     "planned_scope": {
@@ -2567,14 +2697,105 @@
     "checkpoint_cleanup_executed_this_preparation": false,
     "actual_frame_variant_caches_created_this_preparation": false,
     "remaining_admission": [
-      "bind_independent_historical_recovery_and_accepted_inputs",
-      "build_and_accept_actual_original_video_F4_F16_caches",
-      "fresh_two_root_capacity_and_source_CPU_admission",
-      "actual_GPU_startup_and_CUDA_gate"
+      "complete_and_independently_accept_a6_archive_and_history",
+      "deploy_and_verify_source_v4_and_control_v8",
+      "derive_exact_candidate_and_complete_cpu_admission",
+      "fresh_global_capacity_all_reservations_exact_prefix_and_project_workload_checks",
+      "exact_job_server_dryrun_and_single_worker_submission",
+      "actual_GPU_startup_and_CUDA_gate",
+      "per_task_verified_original_video_cache_and_input_readiness"
     ],
     "conditional_research_work_completed": false,
-    "latest_gate_observed_at_utc": "2026-11-19T10:34:35.716149+00:00",
-    "latest_gate_note": "The complete 185-task suite remains unsubmitted. Separate attempt5 recovery passed real GPU startup and preflight, then continued from 300 to logged 354 before SIGTERM and Job failure. Checkpoint350 full SHA and native CPU metadata/contract checks passed; failure archival and fresh recovery/submission admission remain open. The exact a5 OSS prefix is empty. All six project Jobs and three Pods are terminal; no next attempt has been created or named. R4 restoration, actual F4/F16 caches and full-suite admission remain outstanding."
+    "latest_gate_observed_at_utc": "2026-11-20T17:18:26.556688+00:00",
+    "latest_gate_note": "Latest a6 recovery precheck passed at 17:18:26 UTC with 240 local SHA checks, 82 existing-object full GET/SHA checks and all five project Jobs/three Pods terminal. Its supplement-upload and independent-audit client started at 17:19:54 UTC and is running; completion receipts and root acceptance remain pending. Accepted old-checkpoint cleanup preserves all a6 files and other reservations. Source-v4/control-v8 remains locally frozen and CPU-scoped tested, not deployed or GPU submitted. Seven historical/checkpoint preparations are authenticated, including R4 cp600 archive/native metadata. Completed a6 history binding, source deployment and full-suite admission remain required. The dated workload snapshot does not measure free GPUs.",
+    "historical_gate_observations": [
+      {
+        "observed_at_utc": "2026-11-19T10:34:35.716149+00:00",
+        "note": "The complete 185-task suite remains unsubmitted. Separate attempt5 recovery passed real GPU startup and preflight, then continued from 300 to logged 354 before SIGTERM and Job failure. Checkpoint350 full SHA and native CPU metadata/contract checks passed; failure archival and fresh recovery/submission admission remain open. The exact a5 OSS prefix is empty. All six project Jobs and three Pods are terminal; no next attempt has been created or named. R4 restoration, actual F4/F16 caches and full-suite admission remain outstanding."
+      }
+    ],
+    "source_commit": "4034666e468a8abc09fcbf2013b625c294028ec9",
+    "source_release_candidate": "20261121-v4",
+    "control_candidate": "control-v8",
+    "source_remote_deployed": false,
+    "control_remote_deployed": false,
+    "cpu_tests_scope_note": "The existing 624-pass/80-skip cpu_tests record is retained as a historical regression. The latest 190-test result below is scoped, not a claim of a new complete repository test run.",
+    "latest_scoped_cpu_tests": {
+      "passed": 190,
+      "seconds": 44.96,
+      "scope": "chain_capacity,chain_backpressure,cache_publisher,progressive,progressive_integration,evaluation_reuse,workflow,fleet,preflight,launch,fleet_launch,bindings,actions_media,actions",
+      "synthetic_full185_dag_claimants": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "synthetic_completions_are_production_results": false,
+      "gpu_admission": false,
+      "evidence": {
+        "source_path": "experiment/docs/operations/evidence/suite-progressive-fleet-20261121-v2/LOCAL_TEST_RESULTS.json",
+        "bytes": 513,
+        "sha256": "d8437e244f01cf461d9ea346f59b4c1c2f0f28ff79fa7891a16dfb14824a6fb2",
+        "available_in_github": false
+      }
+    },
+    "checkpoint_chain_backpressure": {
+      "training_components": 17,
+      "maximum_resident_training_components": 1,
+      "maximum_concurrent_train_claims": 1,
+      "next_stage_waits_for_previous_archive": true,
+      "next_component_waits_for_all_consumer_cleanup_barriers": true,
+      "scientific_dag_task_count_unchanged": 185
+    },
+    "worker_plan": {
+      "workers": 1,
+      "priority": "normal",
+      "nodes_per_worker": 1,
+      "gpus_per_worker": 8,
+      "restart_policy": "Never",
+      "home_limit_bytes": 150000000000,
+      "current_capacity_supports_four_workers": false,
+      "fresh_capacity_and_gpu_admission_required": true,
+      "gpu_submitted": false
+    },
+    "evidence": {
+      "local_source_manifest": {
+        "source_path": "experiment/docs/operations/evidence/suite-progressive-fleet-20261121-v2/P1_SOURCE_MANIFEST.json",
+        "bytes": 21742,
+        "sha256": "7f6a0d40385d6363845b6f936a161ef9ca02356a587a60a7ff62864981b96208",
+        "available_in_github": false
+      },
+      "local_scoped_cpu_tests": {
+        "source_path": "experiment/docs/operations/evidence/suite-progressive-fleet-20261121-v2/LOCAL_TEST_RESULTS.json",
+        "bytes": 513,
+        "sha256": "d8437e244f01cf461d9ea346f59b4c1c2f0f28ff79fa7891a16dfb14824a6fb2",
+        "available_in_github": false
+      },
+      "unexecuted_command_template": {
+        "source_path": "experiment/docs/operations/evidence/suite-progressive-fleet-20261121-v2/EXECUTION_HANDOFF_TEMPLATE.json",
+        "bytes": 3583,
+        "sha256": "8af779cfc849623dfdbd05a4966d8e73590f279bea495be1fe6a349d33000ddb",
+        "available_in_github": false
+      },
+      "accepted_old_checkpoint_cleanup": {
+        "source_path": "experiment/docs/operations/evidence/smol-old-checkpoint-retention-20261121-v1/CLEANUP_READBACK_ACCEPTANCE.json",
+        "bytes": 4708,
+        "sha256": "3a94b46f40d552182f342ecb7239e88318970c87f89a688a0654341fc895cd0d",
+        "available_in_github": false
+      },
+      "a6_recovery_precheck": {
+        "source_path": "experiment/docs/operations/evidence/smollm2-resume-a6-20261120/archive-recovery-20261121-v2/precheck-once-v3/readback/RESULT.json",
+        "bytes": 203089,
+        "sha256": "6ecdf6057e0e920b4cdf5748c35ae90a787dd68b872dc80d127ad4df168f771f",
+        "available_in_github": false
+      },
+      "a6_recovery_client_intent": {
+        "source_path": "experiment/docs/operations/evidence/smollm2-resume-a6-20261120/archive-recovery-20261121-v2/execute-and-audit-once-v1/CLIENT_INTENT.json",
+        "bytes": 403,
+        "sha256": "86e3f7b0a0a8a747bf9112da571caf36794f2917bb003da25407ab1a4777402a",
+        "available_in_github": false
+      }
+    }
   },
   "engineering_qa_history": [
     {
@@ -3207,7 +3428,7 @@
     }
   ],
   "project_workload_observation": {
-    "job_count": 6,
+    "job_count": 5,
     "pod_count": 3,
     "active_jobs_including_pending_or_unknown": 0,
     "active_pods_including_pending_or_unknown": 0,
@@ -3217,13 +3438,13 @@
     "all_other_project_workloads_terminal": true,
     "sole_nonterminal_job": null,
     "sole_nonterminal_job_uid": null,
-    "observed_at_utc": "2026-11-19T10:29:22.558113+00:00",
-    "scope": "Fresh complete project Job/Pod projections plus exact attempt5 Job readback. All six project Jobs and three remaining Pods are terminal; original a5 Pod is NotFound. Earlier a1/a2 Jobs are no longer listed; historical outcomes remain unchanged. This is not capacity or submission admission. Raw cluster outputs remain private.",
+    "observed_at_utc": "2026-11-20T17:18:26.228010+00:00",
+    "scope": "Recovery precheck complete project Job/Pod projections: five Jobs and three Pods terminal. Raw cluster payloads remain private. This is not a free-node measurement or new GPU submission admission.",
     "evidence": {
-      "source_path": "experiment/docs/operations/evidence/smollm2-resume-a5-20261118/job-readback-20261119-v1/stdout.json",
-      "available_in_github": false,
-      "sha256": "0e08059970a17d5b069ebaae1aecfc9f1a37c69c56dcb88d3c9c2b224a5b2164",
-      "bytes": 3437645
+      "source_path": "experiment/docs/operations/evidence/smollm2-resume-a6-20261120/archive-recovery-20261121-v2/precheck-once-v3/readback/RESULT.json",
+      "bytes": 203089,
+      "sha256": "6ecdf6057e0e920b4cdf5748c35ae90a787dd68b872dc80d127ad4df168f771f",
+      "available_in_github": false
     }
   },
   "training_progress_observations": [
@@ -3684,5 +3905,48 @@
       "available_in_github": false
     }
   },
-  "next_run_id": null
+  "next_run_id": null,
+  "public_status_updated_on": "2026-11-21",
+  "storage_preparation": {
+    "observed_at_utc": "2026-11-20T17:13:21.700826+00:00",
+    "scope": "Dated cleanup acceptance; remeasure before GPU admission.",
+    "home_limit_bytes": 150000000000,
+    "oss_limit_bytes": null,
+    "observed_home_bytes_after_cleanup": 62504292995,
+    "observed_home_with_active_reserves_and_safety_before_own_8MiB_token_release": 65049552515,
+    "deleted_archived_old_weight_files": 6,
+    "confirmed_deleted_logical_bytes": 17116975648,
+    "all_a6_files_preserved": true,
+    "original_a6_42GB_reservation_released": true,
+    "other_active_reservations_preserved": true,
+    "evidence": {
+      "source_path": "experiment/docs/operations/evidence/smol-old-checkpoint-retention-20261121-v1/CLEANUP_READBACK_ACCEPTANCE.json",
+      "bytes": 4708,
+      "sha256": "3a94b46f40d552182f342ecb7239e88318970c87f89a688a0654341fc895cd0d",
+      "available_in_github": false
+    }
+  },
+  "project_workload_observation_scope_note": "Latest retained workload snapshot is the November 20 17:18:26 UTC recovery precheck. The prior November 19 snapshot is preserved under historical_project_workload_observations. No available-node or current free-GPU claim is made.",
+  "historical_project_workload_observations": [
+    {
+      "job_count": 6,
+      "pod_count": 3,
+      "active_jobs_including_pending_or_unknown": 0,
+      "active_pods_including_pending_or_unknown": 0,
+      "framing_complete": true,
+      "continuation_empty": true,
+      "all_project_workloads_terminal": true,
+      "all_other_project_workloads_terminal": true,
+      "sole_nonterminal_job": null,
+      "sole_nonterminal_job_uid": null,
+      "observed_at_utc": "2026-11-19T10:29:22.558113+00:00",
+      "scope": "Fresh complete project Job/Pod projections plus exact attempt5 Job readback. All six project Jobs and three remaining Pods are terminal; original a5 Pod is NotFound. Earlier a1/a2 Jobs are no longer listed; historical outcomes remain unchanged. This is not capacity or submission admission. Raw cluster outputs remain private.",
+      "evidence": {
+        "source_path": "experiment/docs/operations/evidence/smollm2-resume-a5-20261118/job-readback-20261119-v1/stdout.json",
+        "available_in_github": false,
+        "sha256": "0e08059970a17d5b069ebaae1aecfc9f1a37c69c56dcb88d3c9c2b224a5b2164",
+        "bytes": 3437645
+      }
+    }
+  ]
 }

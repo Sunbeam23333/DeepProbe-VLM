@@ -1,4 +1,4 @@
-# Experiment status — 2026-11-20
+# Experiment status — 2026-11-21
 
 Smol attempt 6 **completed alignment training at 718/718 optimizer steps**,
 adding all 368 remaining updates from checkpoint350. The training child exited 0
@@ -10,13 +10,41 @@ The enclosing Job **Failed at 11:27:04 Beijing time**, with container exit1,
 after the controller could not read `/proc/1687474/environ` during archival.
 The archive child received SIGTERM; external preemption is not established.
 The original archive manifest lists 239 payloads / 18,149,819,512 bytes. The exact
-prefix currently contains 82 objects / 916,219,811 bytes, leaving 157 payloads /
-17,233,599,701 bytes absent. There is no `ARCHIVED.json` or independent archive
+prefix at the November 20 14:57 UTC readback contained 82 objects /
+916,219,811 bytes, leaving 157 payloads / 17,233,599,701 bytes absent.
+There is no `ARCHIVED.json` or independent archive
 acceptance. Final 18 files / 8,589,657,473 bytes and cp718 29 files / 8,642,280,705 bytes
-remain locally; names and lengths match the manifest, with fresh full hashes
-still pending. **Do not repeat alignment training.** Complete and verify its
+remained locally; names and lengths matched the manifest, with fresh full hashes
+still pending in that observation. The later recovery precheck passed at
+**01:18:26 Beijing time on November 21**: all 240 local files passed SHA checks,
+and all 82 existing objects passed full GET/SHA. The supplement-upload and
+independent-audit client started at **01:19:54** and is running, with no client,
+execute or audit completion receipt yet. Completion receipts and root acceptance
+remain required; client startup does not establish a completed upload.
+The original Job remains Failed, and no native `ARCHIVED.json` is fabricated.
+**Do not repeat alignment training.** Complete and verify its
 archive before admitting Smol SFT and evaluations. No new held-out result exists.
 Current source identities and evidence hashes are recorded in [status.json](status.json).
+
+The full **185-task** source is synchronized at `4034666`; **190 scoped CPU
+tests** passed, including synthetic full-DAG execution with 1–4 claimants.
+The synthetic completions are not experiment results. Checkpoint-chain
+backpressure covers 17 components, permits at most one active training claim,
+waits for the previous stage's archive and holds a component until all its
+consumer/cleanup barriers finish. The source-v4/control-v8 candidate is locally
+frozen and has not been deployed or submitted to the GPU queue. The current
+plan is **one normal-priority worker, one node and eight GPUs** under the
+shared 150 GB home budget; fresh capacity and submission admission remain required.
+
+At **01:13 Beijing time on November 21**, independently checked cleanup removed
+six already archived old checkpoint weight files, releasing **17,116,975,648 bytes**.
+All a6 files were preserved and its old 42 GB reservation was released.
+The accounted home roots measured **62,504,292,995 bytes**; all other active
+reservations were retained. This dated snapshot is not GPU admission.
+
+The recovery precheck's **01:18:26** workload snapshot found all **five project
+Jobs and three Pods terminal**. It does not measure available GPU nodes or
+authorize a new submission.
 
 The following attempt 5 paragraph is retained as history, superseded by the
 a6 training completion and separate archive failure above.
@@ -27,12 +55,12 @@ after actually resuming from checkpoint300 and reaching logged step
 handshake, eight-device identity checks, eight-rank BF16/NCCL checks and
 training preflight passed. The controller records interruption by SIGTERM;
 the signal source is unconfirmed. The November 19 **18:29:22** exact readback
-finds its original Pod absent and all **six project Jobs and three Pods
-terminal**, with no active or queued project workload. Checkpoint350's complete
-29-file payload passed full SHA and native CPU metadata/contract checks; it is
-a candidate for the remaining **368 updates**. Exact archival and fresh
-recovery/submission admission remain open.
-No final model, training-completion receipt or new held-out result is present.
+found its original Pod absent and all **six project Jobs and three Pods
+terminal**, with no active or queued project workload at that time. Checkpoint350's complete
+29-file payload passed full SHA and native CPU metadata/contract checks; it was
+a candidate for the remaining **368 updates** at that observation. Its later
+authenticated continuation is a6, which completed those updates. Attempt 5
+itself has no final model, training-completion receipt or new held-out result.
 
 CUDA pooling QA attempt 3 **Succeeded on November 14 at 13:51:28 Beijing
 time (UTC+08:00)**, with container exit code 0 and no restarts. The November
@@ -101,8 +129,8 @@ the November 11 submission. Its submission-side capacity projection was
 control and source/input binding were read back with the exact Job/Pod evidence.
 
 The scientific recipe remains F8/G4/R1 and global batch 128, with 91,826 train
-and 4,472 dev QA and a target of 718 optimizer updates. No Smol training
-completion or held-out result has been accepted.
+and 4,472 dev QA and a target of 718 optimizer updates. Attempt 2 did not
+complete training or produce a held-out result; a6 completion is recorded above.
 
 The initial November 17 readback found the same failed Job UID, log step 317
 and checkpoint step 300. A subsequent complete inventory freshly hashed all
@@ -552,27 +580,25 @@ rescan capacity. No new recovery-submission evidence was found. These fresh
 observations are separately retained under `training_progress_observations`;
 the older training and capacity facts remain unchanged.
 
-The complete suite's scripts cover 18 model configurations, 34 training stages,
-36 evaluations, 15 latency runs and 12 comparisons. **The suite remains
-unsubmitted** while actual F4/F16 original-video caches, independent historical
-recovery bindings and fresh storage/source admission are outstanding. The
-completed small QA validates only its synthetic pooling scope. Smol attempt-2
-checkpoint provenance and the separate attempt-3/4 failure archives are
-accepted. The separate attempt-5 recovery passed its actual GPU handshake,
-startup and preflight, then continued from step300 to logged step354 before
-SIGTERM and Job failure. Its checkpoint350 full SHA and native CPU metadata
-checks passed; exact archival and fresh recovery admission remain pending.
-This does not submit the complete serial suite;
-R4 and full-suite admission retain their separate gates.
+The complete suite retains 18 model configurations, 34 training stages,
+36 evaluations, 15 latency runs, 12 comparisons and **185 operational tasks**.
+It remains unsubmitted. The new locally tested scheduler can run admitted,
+ready tasks while benchmark caches prepare; it publishes verified cache
+receipts as they become ready and applies checkpoint-chain backpressure.
+This does not waive individual task inputs, capacity or startup checks.
+The seven November 20 historical/checkpoint preparations are authenticated;
+R4 cp600 has full archive GET/SHA and native metadata verification, while
+runtime model/optimizer/RNG recovery remains untested. The suite must replace
+its old Smol cp350 continuation with the accepted a6 final after archive
+recovery, so the completed 368 alignment updates are not repeated.
 
 ## Remaining work
 
-1. Complete and independently verify the failed attempt-5 archive, then pass
-   fresh recovery/source/storage/scheduler admission for a separately identified
-   continuation from the verified checkpoint350 candidate. Complete its
-   remaining 368 alignment updates, matched SFT and evaluations.
-2. Finish R4 checkpoint recovery and storage admission, run the remaining SFT,
-   then archive and evaluate the completed model.
+1. Obtain completion receipts from the running a6 supplement-upload/audit client
+   and root archive acceptance, import its completed final into the suite, then
+   admit matched Smol SFT and evaluations. Its 718 alignment updates are complete.
+2. Finish R4 runtime checkpoint recovery and storage admission, run its remaining
+   118 SFT updates, then archive and evaluate the completed model.
 3. Complete the additional training seeds and declared ablations, controlled
    cost/latency experiments and updated comparative statistics.
 
