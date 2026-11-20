@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "release_id": "2026-11-21-progress-v1",
+  "kind": "CURATED_EXPERIMENT_RESULTS",
+  "created_utc": "2026-11-20T17:47:46.161159+00:00",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 1666,
+      "sha256": "5c54a17874460d24a8a75a5a0ef8ebbfdc06ac9ebaa40d1953ceb8548cf6cb5b"
+    },
+    {
+      "path": "progress.json",
+      "bytes": 6387,
+      "sha256": "40c3bf52a0a4af47b3a97896c6ca49f93b05beb03a1cc9aa851a74bfa8a75496"
+    }
+  ],
+  "file_count": 2,
+  "payload_bytes": 8053,
+  "provenance": {
+    "repository_commit": "ed5902c0ba3fb15285bb370400d5713cc487878c",
+    "source_status_sha256": "65ff68151f04847dafd095317a19f542bde1b5e6466e6c15b69d90b48683760b",
+    "no_new_quality_results": true
+  },
+  "scope": "Results and documents only; no media, weights or private cluster snapshots."
+}

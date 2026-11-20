@@ -1,0 +1,140 @@
+{
+  "schema_version": 1,
+  "snapshot_basis": "Verified receipts through 2026-11-20T17:19:54Z plus subsequently verified local source/tests and GitHub synchronization; no later cluster snapshot is implied.",
+  "repository_commit": "ed5902c0ba3fb15285bb370400d5713cc487878c",
+  "scientific_source_commit": "4034666e468a8abc09fcbf2013b625c294028ec9",
+  "new_held_out_results": false,
+  "plan": {
+    "models": 18,
+    "training_stages": 34,
+    "model_benchmark_evaluations": 36,
+    "latency_runs": 15,
+    "latency_comparisons": 12,
+    "operational_tasks": 185
+  },
+  "acceptance_counts": {
+    "complete_two_stage_models": 2,
+    "independently_accepted_training_stages": 5,
+    "completed_model_benchmark_evaluations": 4,
+    "completed_full_model_latency_runs": 0
+  },
+  "smollm2_a6": {
+    "training_status": "formal_training_complete",
+    "optimizer_step": 718,
+    "new_optimizer_updates": 368,
+    "original_job_status": "Failed",
+    "archive_recovery": {
+      "status": "SUPPLEMENT_UPLOAD_AND_INDEPENDENT_AUDIT_CLIENT_RUNNING_AWAITING_COMPLETION_AND_ROOT_ACCEPTANCE",
+      "original_job_status_unchanged": "Failed",
+      "independently_accepted": false,
+      "history_import_accepted": false,
+      "native_ARCHIVED_receipt_fabricated": false,
+      "completed_alignment_updates_must_not_repeat": true,
+      "sealed_package_evidence": {
+        "source_path": "experiment/docs/operations/evidence/smollm2-resume-a6-20261120/archive-recovery-20261121-v2/package/PACKAGE_MANIFEST.json",
+        "bytes": 1311,
+        "sha256": "8841e8ebbeba03ed03b8613c9f4e08028b05169c78808b4e2bd2e5146f729d9a",
+        "available_in_github": false
+      },
+      "scope": "Precheck completed real local SHA, existing-object full GET/SHA and terminal/writer checks. The supplement-upload and independent-audit client is running. No completed upload, completed audit, root archive acceptance or completed-final history import is claimed; client startup alone is not upload completion.",
+      "precheck_status": "A6_ARCHIVE_RECOVERY_PRECHECK_PASSED",
+      "precheck_completed_at_utc": "2026-11-20T17:18:26.556688+00:00",
+      "local_files_sha_verified": 240,
+      "existing_objects_full_get_sha_verified": 82,
+      "precheck_uploaded_files": 0,
+      "client_started_at_utc": "2026-11-20T17:19:54.191832+00:00",
+      "client_completion_receipt_present": false,
+      "execute_completion_receipt_present": false,
+      "audit_completion_receipt_present": false,
+      "automatic_retry": false,
+      "precheck_evidence": {
+        "source_path": "experiment/docs/operations/evidence/smollm2-resume-a6-20261120/archive-recovery-20261121-v2/precheck-once-v3/readback/RESULT.json",
+        "bytes": 203089,
+        "sha256": "6ecdf6057e0e920b4cdf5748c35ae90a787dd68b872dc80d127ad4df168f771f",
+        "available_in_github": false
+      },
+      "client_intent_evidence": {
+        "source_path": "experiment/docs/operations/evidence/smollm2-resume-a6-20261120/archive-recovery-20261121-v2/execute-and-audit-once-v1/CLIENT_INTENT.json",
+        "bytes": 403,
+        "sha256": "86e3f7b0a0a8a747bf9112da571caf36794f2917bb003da25407ab1a4777402a",
+        "available_in_github": false
+      }
+    }
+  },
+  "r4_sft": {
+    "checkpoint_step": 600,
+    "remaining_optimizer_updates": 118,
+    "archive_full_get_sha_verified": true,
+    "native_metadata_verified": true,
+    "runtime_resume_verified": false
+  },
+  "suite_execution": {
+    "gpu_submitted": false,
+    "worker_plan": {
+      "workers": 1,
+      "priority": "normal",
+      "nodes_per_worker": 1,
+      "gpus_per_worker": 8,
+      "restart_policy": "Never",
+      "home_limit_bytes": 150000000000,
+      "current_capacity_supports_four_workers": false,
+      "fresh_capacity_and_gpu_admission_required": true,
+      "gpu_submitted": false
+    },
+    "source_remote_deployed": false,
+    "source_manifest_sha256": "7f6a0d40385d6363845b6f936a161ef9ca02356a587a60a7ff62864981b96208",
+    "checkpoint_chain_backpressure": {
+      "training_components": 17,
+      "maximum_resident_training_components": 1,
+      "maximum_concurrent_train_claims": 1,
+      "next_stage_waits_for_previous_archive": true,
+      "next_component_waits_for_all_consumer_cleanup_barriers": true,
+      "scientific_dag_task_count_unchanged": 185
+    },
+    "latest_scoped_cpu_tests": {
+      "passed": 190,
+      "seconds": 44.96,
+      "scope": "chain_capacity,chain_backpressure,cache_publisher,progressive,progressive_integration,evaluation_reuse,workflow,fleet,preflight,launch,fleet_launch,bindings,actions_media,actions",
+      "synthetic_full185_dag_claimants": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "synthetic_completions_are_production_results": false,
+      "gpu_admission": false,
+      "evidence": {
+        "source_path": "experiment/docs/operations/evidence/suite-progressive-fleet-20261121-v2/LOCAL_TEST_RESULTS.json",
+        "bytes": 513,
+        "sha256": "d8437e244f01cf461d9ea346f59b4c1c2f0f28ff79fa7891a16dfb14824a6fb2",
+        "available_in_github": false
+      }
+    }
+  },
+  "storage": {
+    "observed_at_utc": "2026-11-20T17:13:21.700826+00:00",
+    "scope": "Dated cleanup acceptance; remeasure before GPU admission.",
+    "home_limit_bytes": 150000000000,
+    "oss_limit_bytes": null,
+    "observed_home_bytes_after_cleanup": 62504292995,
+    "observed_home_with_active_reserves_and_safety_before_own_8MiB_token_release": 65049552515,
+    "deleted_archived_old_weight_files": 6,
+    "confirmed_deleted_logical_bytes": 17116975648,
+    "all_a6_files_preserved": true,
+    "original_a6_42GB_reservation_released": true,
+    "other_active_reservations_preserved": true,
+    "evidence": {
+      "source_path": "experiment/docs/operations/evidence/smol-old-checkpoint-retention-20261121-v1/CLEANUP_READBACK_ACCEPTANCE.json",
+      "bytes": 4708,
+      "sha256": "3a94b46f40d552182f342ecb7239e88318970c87f89a688a0654341fc895cd0d",
+      "available_in_github": false
+    }
+  },
+  "claim_limits": [
+    "Synthetic DAG test completions are not completed scientific tasks.",
+    "The a6 original Job remains Failed after its training child completed successfully.",
+    "Archive client startup is not archive completion.",
+    "Existing CUDA speedups measure only a synthetic pooling operator."
+  ],
+  "baseline_results": "https://github.com/Sunbeam23333/DeepProbe-VLM/tree/main/experiment/results/releases/2026-11-19"
+}

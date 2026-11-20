@@ -1,0 +1,30 @@
+{
+  "status": "MODELSCOPE_RESULTS_FULL_READBACK_VERIFIED",
+  "utc": "2026-11-20T17:50:54.412788+00:00",
+  "repo_id": "JasonJin/DeepProbe-VLM",
+  "prefix": "releases/2026-11-21-progress-v1",
+  "revision": "master",
+  "manifest_sha256": "fbc7584bd5723989e9dd275d276187fe65c5b1920d203c3a467de9f5d933f494",
+  "files": [
+    {
+      "path": "releases/2026-11-21-progress-v1/README.md",
+      "bytes": 1666,
+      "sha256": "5c54a17874460d24a8a75a5a0ef8ebbfdc06ac9ebaa40d1953ceb8548cf6cb5b"
+    },
+    {
+      "path": "releases/2026-11-21-progress-v1/progress.json",
+      "bytes": 6387,
+      "sha256": "40c3bf52a0a4af47b3a97896c6ca49f93b05beb03a1cc9aa851a74bfa8a75496"
+    },
+    {
+      "path": "releases/2026-11-21-progress-v1/PUBLICATION_MANIFEST.json",
+      "bytes": 827,
+      "sha256": "fbc7584bd5723989e9dd275d276187fe65c5b1920d203c3a467de9f5d933f494"
+    }
+  ],
+  "file_count": 3,
+  "total_bytes": 8880,
+  "remote_files_deleted": false,
+  "visibility_changed": false,
+  "already_present": false
+}
