@@ -7,35 +7,33 @@ states. Only the real task's verified outputs advance its completion journal.
 
 ## Current admission status
 
-As of **2026-11-20 01:48 UTC**, the 185-task suite has **not been submitted**.
-Its declared DAG and scientific scope are unchanged. Separately controlled
-Smol recovery is tracked independently of the full suite.
+As of **2026-11-20 14:57 UTC**, the 185-task suite has **not been submitted**.
+Its scientific scope is unchanged. The standalone Smol alignment a6 ran on
+normal/stream, one node/eight GPUs, restart-Never, exact Job
+`jinhaopeng-dpvlm-p1-smollm2-s29-align-a6-n1-16f41`, UID
+`58a74e0d-7309-4ad6-8a22-266be9d8d956`.
 
-- SmolLM2 seed29 alignment **a6 was submitted once** as
-  `jinhaopeng-dpvlm-p1-smollm2-s29-align-a6-n1-16f41`, UID
-  `58a74e0d-7309-4ad6-8a22-266be9d8d956`, created at **01:40:03 UTC** and
-  confirmed by the root controller at **01:40:44 UTC**.
-  The observed Job contract is **normal / stream / one node / eight GPUs /
-  restart Never**, with no forced node. It targets native recovery from the
-  verified checkpoint350 toward step718; it does not submit the full suite.
-  [The exact submission receipt](operations/evidence/smollm2-resume-a6-20261120/submit-execution-v1/stdout.json)
-  establishes creation and identity. The **01:48:21 UTC**
-  [actual training readback](operations/evidence/smollm2-resume-a6-20261120/exact-training-progress-v2/stdout.json)
-  confirms the Job remains Running, with eight GPUs allocated and zero
-  restarts; its original Running transition was **01:40:05 UTC**. The
-  submission startup handshake passed after **36.8 seconds**, startup
-  admission passed, and all eight ranks passed BF16 forward/backward and
-  NCCL checks. The enclosing preflight ended with code0 and formal alignment
-  training started. Logs show steps **351 through 354/718**: actual native
-  continuation from checkpoint350 has added **four optimizer updates**. The
-  target remains step718; no final checkpoint, completion receipt or new
-  held-out result is established by this observation.
+- Alignment training **completed 718/718 steps**, adding 368 updates from cp350.
+  Formal training and both preflights exited 0. The final and cp718 inventories
+  are present locally and match the original manifest names and lengths.
+- The outer Job subsequently **Failed at 03:27:04 UTC**, container exit1, after
+  a controller procfs PermissionError interrupted archival. The archive is
+  incomplete: 82 objects / 916,219,811 bytes present; 157 payloads /
+  17,233,599,701 bytes absent; no `ARCHIVED.json`. Fresh payload SHA and independent
+  archive acceptance remain pending. Do not rerun alignment; reconcile the
+  archive before Smol SFT. External preemption is not established.
+  [The terminal evidence](operations/evidence/smollm2-resume-a6-20261120/ROOT_A6_TERMINAL_STATUS_20261120.json)
+  binds exact Job/Pod, full completion receipts and the exact OSS listing.
+- Smol SFT, its new-model evaluations and the full suite have not started.
+  Replace the historical cp350 suite binding with the accepted a6 final once
+  archival acceptance is complete, avoiding duplicate optimizer work.
 
 - Seven completed historical preparations are now authenticated for suite
   reuse: Ouro R1 seed17 alignment/SFT, R2 seed17 alignment/SFT and R4 seed17
   alignment each have their accepted **718-step final**, with 20 checkpoint
   files per stage. SmolLM2 seed29 alignment has a **step350** native-resume
-  binding (29 files / **8,642,274,062 bytes**, 368 updates remaining). R4 seed17
+  binding (29 files / **8,642,274,062 bytes**, then 368 updates remaining;
+  superseded for future training by the separate a6 completion). R4 seed17
   SFT has a **step600** native-resume binding (31 files /
   **22,317,153,372 bytes**, 118 updates remaining). All seven retain their
   exact original source/config identities and independently accepted archive
@@ -46,7 +44,8 @@ Smol recovery is tracked independently of the full suite.
   **zero new checkpoint payload GETs**. Native CPU metadata verification does
   not deserialize optimizer/scheduler/RNG state or establish successful GPU
   continuation. Five final-stage histories are eligible for accepted reuse;
-  the two resume histories still need runtime restoration and completion.
+  the R4 resume still needs runtime restoration and completion. Smol a6 has now
+  completed training separately and awaits archive acceptance/history rebinding.
   The concrete reuse proof is
   [PREPARED_REUSE.stdout.json](operations/evidence/suite-cache-ownership-diagnosis-20261120-v1/PREPARED_REUSE.stdout.json),
   SHA256 `bfb16d20dd03e5c3b836a3349ddd3beac48472285d39644df1778a158a74a504`.

@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
-  "observed_at_utc": "2026-11-19T10:34:35.716149+00:00",
+  "observed_at_utc": "2026-11-20T14:57:36.375748+00:00",
   "display_timezone": "Asia/Shanghai",
-  "observation_note": "Attempt5 actually passed its GPU submission handshake, eight-device identity, eight-rank BF16/NCCL and enclosing preflight, then natively continued from checkpoint300 to logged step354/718 before failing on November 17 at 18:37:32 UTC. SIGTERM source is unknown. The November 19 inventory contains six project Jobs and three Pods, all terminal. Checkpoint350 passed full 29-file SHA and native CPU metadata/contract checks; it is a candidate for the remaining 368 updates. Its exact OSS prefix has zero objects and no accepted failure archive. Optimizer/scheduler/RNG deserialization and fresh independent recovery/submission admission remain open. No next attempt has been created or named. Prior admission/submission acceptance and attempt2/3/4 archive provenance remain historical facts. R4 restoration and the full 185-task suite remain separately gated. No new completed model or held-out result is claimed.",
+  "observation_note": "Smol a6 completed all 718 alignment optimizer steps, adding 368 updates from cp350. Both preflights and the formal training child exited0. Its outer Job later Failed/exit1 due to a procfs PermissionError during archival, with the archive child interrupted by SIGTERM. Local final and cp718 filenames/lengths match the original archive manifest, but fresh payload SHA and independent archive acceptance are pending. The exact OSS prefix contains82 objects;157 manifest payloads are absent. Do not rerun alignment. Smol SFT/evaluation and the full suite remain unstarted; no new held-out result is claimed.",
   "new_held_out_results": false,
   "runs": {
     "dp-p1-ouro-r4-f8-g4-s17-sft-a1": {
@@ -2082,15 +2082,105 @@
         "scope": "Independent byte-bound handshake, native checkpoint300 continuation through logged step354, and failure review. Its checkpoint350 conclusion covers the earlier metadata-only readback; the separate native full-payload verification is recorded separately.",
         "checkpoint350_complete_payload_acceptance_in_this_review": false
       }
+    },
+    "dp-p1-smollm2-f8-g4-s29-alignment-a6": {
+      "schema_version": 1,
+      "run_id": "dp-p1-smollm2-f8-g4-s29-alignment-a6",
+      "stage": "alignment",
+      "observed_at_utc": "2026-11-20T14:57:36.375748+00:00",
+      "job_name": "jinhaopeng-dpvlm-p1-smollm2-s29-align-a6-n1-16f41",
+      "job_uid": "58a74e0d-7309-4ad6-8a22-266be9d8d956",
+      "status": "Failed",
+      "container_exit_code": 1,
+      "failure_at_utc": "2026-11-20T03:27:04Z",
+      "priority": "normal",
+      "nodes": 1,
+      "gpus": 8,
+      "restart_count": 0,
+      "training_status": "formal_training_complete",
+      "training_process_returncode": 0,
+      "optimizer_step": 718,
+      "resume_checkpoint_step": 350,
+      "new_optimizer_updates": 368,
+      "target_steps": 718,
+      "training_process_elapsed_seconds": 6014.715020755306,
+      "preflight_before_returncode": 0,
+      "preflight_after_returncode": 0,
+      "controller_error": "PermissionError reading /proc/1687474/environ",
+      "archive_interrupted_by_signal": 15,
+      "failure_interpretation": "Post-training controller/archival failure. The denied PID identity is unknown; external preemption is not established.",
+      "final_local_inventory": {
+        "files": 18,
+        "bytes": 8589657473,
+        "matches_archive_manifest_names_and_lengths": true,
+        "fresh_payload_sha_verified": false
+      },
+      "checkpoint718_local_inventory": {
+        "files": 29,
+        "bytes": 8642280705,
+        "matches_archive_manifest_names_and_lengths": true,
+        "fresh_payload_sha_verified": false
+      },
+      "archive_payload_count": 239,
+      "archive_payload_bytes": 18149819512,
+      "archive_exact_prefix": "oss://ss-devbox-stream/jinhaopeng/Paper/DeepProbe-VLM/runs/dp-p1-smollm2-f8-g4-s29-alignment-a6/",
+      "archive_present_objects": 82,
+      "archive_present_bytes": 916219811,
+      "archive_missing_payload_count": 157,
+      "archive_missing_payload_bytes": 17233599701,
+      "archive_accepted": false,
+      "archive_receipt_present": false,
+      "local_cleanup_performed": false,
+      "storage_reservation_released": false,
+      "two_stage_training_complete": false,
+      "new_held_out_result": null,
+      "evidence": {
+        "exact_job_and_logs": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-resume-a6-20261120/status-20261120-check1/stdout.json",
+          "bytes": 242177,
+          "sha256": "a54aca82f8ea13cb5515b4146ece1fef30572d642d2d208d343010f7e30d2e5b",
+          "available_in_github": false
+        },
+        "formal_completion": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-resume-a6-20261120/terminal-metadata-and-oss-20261120-v1/readback/training/FORMAL_TRAIN_COMPLETE.json",
+          "bytes": 5727,
+          "sha256": "907b799a0bc094b9b0011d512dc5a5b19cc71a8cae368f2e689365564af9b51c",
+          "available_in_github": false
+        },
+        "stage_completion": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-resume-a6-20261120/terminal-metadata-and-oss-20261120-v1/readback/P1_STAGE_COMPLETE.json",
+          "bytes": 200008,
+          "sha256": "14a6d25ba1cd65b854690c8261ff9520718b47d4f6f13dbb5ac7117911128923",
+          "available_in_github": false
+        },
+        "stage_exit": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-resume-a6-20261120/terminal-metadata-and-oss-20261120-v1/readback/EXIT_STATUS.json",
+          "bytes": 5307,
+          "sha256": "5a989380bba8f0cd58df3b9e4740f1474de72b8a27e147c19a9e163ab57a40a5",
+          "available_in_github": false
+        },
+        "archive_manifest": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-resume-a6-20261120/terminal-metadata-and-oss-20261120-v1/readback/ARCHIVE_MANIFEST.json",
+          "bytes": 43723,
+          "sha256": "53a0a2f8c3975ddec48f2c57251a773cc6d5e9423165e809e95947bbe9f8bca2",
+          "available_in_github": false
+        },
+        "terminal_metadata_and_oss": {
+          "source_path": "experiment/docs/operations/evidence/smollm2-resume-a6-20261120/terminal-metadata-and-oss-20261120-v1/stdout.json",
+          "bytes": 540423,
+          "sha256": "c62c7eb8fe77a45f7929384c54679258d7902c84fe3216d69e6e5e4fee2285c9",
+          "available_in_github": false
+        }
+      }
     }
   },
   "remaining_work": [
-    "Complete and independently verify the failed attempt5 archive, then pass fresh recovery/source/storage/scheduler admission for a separately identified continuation from the checkpoint350 candidate. Finish its remaining 368 alignment updates, matched SFT and evaluations. No next attempt is yet created or named.",
+    "Reconcile and complete the interrupted a6 archive without overwriting accepted existing objects, verify final/cp718 payloads and independent archive acceptance, then pass fresh admission for matched Smol SFT and evaluations. Alignment training is complete; do not repeat its368 updates.",
     "Restore R4 checkpoint-600 missing model/optimizer payloads from its accepted archive, verify SHA256 and numerical recovery, then pass fresh capacity/source/scheduler admission before its remaining 118 updates.",
     "Additional seeds and declared ablations, controlled cost/latency measurements, and new-model evaluation."
   ],
   "active_run_id": null,
-  "active_run_observation": "At 2026-11-19T10:29:22.558113+00:00, the exact attempt5 Job was Failed; its original Pod was NotFound. The current six project Jobs and three Pods were all terminal, with no active or queued project workload. Persisted training receipts and logs support native checkpoint300 continuation to 354/718 before interruption.",
+  "active_run_observation": "Latest exact a6 Job and Pod are Failed at 2026-11-20T03:27:04Z, after formal alignment completed 718 steps with training exit0. This check did not refresh the full project workload inventory.",
   "engineering_qa": {
     "run_id": "dp-cuda-pool-qa-20261114-a3",
     "scope": "synthetic CUDA weighted-pooling correctness and microbenchmark; no model training or quality evaluation",
@@ -2443,7 +2533,7 @@
     "files_deleted": false,
     "archive_scope": "Synthetic startup, numerical and operator-microbenchmark evidence; no model checkpoint or held-out quality result."
   },
-  "training_observed_at_utc": "2026-11-19T10:34:11.386087+00:00",
+  "training_observed_at_utc": "2026-11-20T14:57:36.375748+00:00",
   "serial_suite_preparation": {
     "status": "SCRIPTS_CPU_VALIDATED_NOT_GPU_SUBMITTED",
     "plan_path": "experiment/configs/experiment_suite.json",
@@ -3431,6 +3521,20 @@
         "source_path": "experiment/docs/operations/evidence/smollm2-resume-20261117/terminal-details-v2-20261117T1519Z/stdout.json",
         "sha256": "149f10675f0278b99618f50bf4bd269f19843df68acbdc1345392ab9e195fe9f",
         "bytes": 33455699,
+        "available_in_github": false
+      }
+    },
+    {
+      "observed_at_utc": "2026-11-20T14:57:36.375748+00:00",
+      "run_id": "dp-p1-smollm2-f8-g4-s29-alignment-a6",
+      "optimizer_step": 718,
+      "training_complete": true,
+      "archive_accepted": false,
+      "job_status": "Failed",
+      "evidence": {
+        "source_path": "experiment/docs/operations/evidence/smollm2-resume-a6-20261120/ROOT_A6_TERMINAL_STATUS_20261120.json",
+        "bytes": 3918,
+        "sha256": "7d781e95376594a4e48819bca9ee000ee303feb2dd0a7aa4f090ce5098e954ae",
         "available_in_github": false
       }
     }

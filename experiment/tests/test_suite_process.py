@@ -136,5 +136,110 @@ class SuiteProcessAncestryTest(unittest.TestCase):
                 self.assertNotIn(self.outer, str(caught.exception))
 
 
+class SuiteProcessPermissionTest(unittest.TestCase):
+    token = 'a' * 32
+    pid = 93421
+
+    def make_tree(self):
+        return SuiteProcessAncestryTest().make_tree(self.token)
+
+    def row(self, pid=None, **updates):
+        value = SuiteProcessAncestryTest.orphan(self.pid if pid is None else pid)
+        value.update(updates)
+        return value
+
+    def contexts(self, rows, identity, environment):
+        from contextlib import ExitStack
+        stack = ExitStack()
+        stack.enter_context(mock.patch.object(process, 'LINUX_PROC', True))
+        stack.enter_context(mock.patch.object(process, 'process_table', return_value=rows))
+        stack.enter_context(mock.patch.object(process, '_linux_identity', side_effect=identity))
+        stack.enter_context(mock.patch('builtins.open', side_effect=environment))
+        return stack
+
+    def test_procfs_permission_race_with_exit_or_reused_pid_does_not_adopt_new_identity(self):
+        old = self.row()
+        cases = [FileNotFoundError(), ProcessLookupError(),
+                 {**old, 'state': 'Z'}, {**old, 'state': 'X'},
+                 {**old, 'start': 'different-process'}]
+        for current in cases:
+            tree = self.make_tree()
+            def identity(pid):
+                self.assertEqual(pid, self.pid)
+                if isinstance(current, BaseException):
+                    raise current
+                return current
+            with self.subTest(identity=current), self.contexts(
+                    {self.pid: old}, identity, PermissionError('synthetic procfs race')):
+                self.assertEqual(tree.refresh(), {})
+                self.assertNotIn(self.pid, tree.identities)
+
+    def test_stable_unknown_process_requires_readable_marker_after_retry(self):
+        row = self.row()
+        raw = SuiteProcessAncestryTest.encoded({process.MARKER: self.token})
+        calls = []
+        def environment(path, mode):
+            calls.append(path)
+            if len(calls) == 1:
+                raise PermissionError('synthetic transient access')
+            return io.BytesIO(raw)
+        tree = self.make_tree()
+        with self.contexts({self.pid: row}, lambda pid: row, environment):
+            self.assertEqual(set(tree.refresh()), {self.pid})
+        self.assertEqual(calls, ['/proc/93421/environ'] * 2)
+
+    def test_unknown_live_process_still_denied_blocks_quiescence_even_after_proc_uid_change(self):
+        row = self.row()
+        for current in (row, {**row, 'uid': row['uid'] + 1}):
+            tree = self.make_tree()
+            with self.subTest(uid=current['uid']), self.contexts(
+                    {self.pid: row}, lambda pid: current, PermissionError('synthetic denied')):
+                with self.assertRaisesRegex(process.GroupCleanupError, 'ownership unverified') as caught:
+                    tree.quiet_after_leader_exit()
+                self.assertFalse(caught.exception.group_cleanup_verified)
+                self.assertNotIn(self.token, str(caught.exception))
+                self.assertNotIn(self.pid, tree.identities)
+
+    def test_known_owned_live_process_stays_tracked_without_marker_access(self):
+        row = self.row()
+        for current in (row, {**row, 'uid': row['uid'] + 1}):
+            tree = self.make_tree()
+            tree.identities[self.pid] = row['start']
+            with self.subTest(uid=current['uid']), self.contexts(
+                    {self.pid: row}, lambda pid: current, PermissionError('synthetic denied')):
+                self.assertEqual(set(tree.refresh()), {self.pid})
+                self.assertFalse(tree.quiet_after_leader_exit())
+                self.assertEqual(tree.identities[self.pid], row['start'])
+
+    def test_unreadable_child_is_discovered_through_later_marker_ancestor(self):
+        parent_pid = self.pid + 1
+        rows = {self.pid: self.row(ppid=parent_pid), parent_pid: self.row(parent_pid)}
+        raw = SuiteProcessAncestryTest.encoded({process.MARKER: self.token})
+        def environment(path, mode):
+            if path == '/proc/' + str(self.pid) + '/environ':
+                raise PermissionError('synthetic child access')
+            return io.BytesIO(raw)
+        tree = self.make_tree()
+        with self.contexts(rows, lambda pid: rows[pid], environment):
+            self.assertEqual(set(tree.refresh()), {self.pid, parent_pid})
+            self.assertFalse(tree.quiet_after_leader_exit())
+
+    def test_known_ancestry_before_marker_scan_retains_unreadable_child(self):
+        parent_pid = self.pid + 1
+        rows = {self.pid: self.row(ppid=parent_pid), parent_pid: self.row(parent_pid)}
+        tree = self.make_tree()
+        tree.identities[parent_pid] = rows[parent_pid]['start']
+        with self.contexts(rows, lambda pid: rows[pid], PermissionError('synthetic denied')):
+            self.assertEqual(set(tree.refresh()), set(rows))
+
+    def test_unreadable_identity_is_not_mistaken_for_process_exit(self):
+        tree = self.make_tree()
+        with self.contexts({self.pid: self.row()}, PermissionError('synthetic stat access'),
+                           PermissionError('synthetic environ access')):
+            with self.assertRaisesRegex(process.GroupCleanupError, 'identity unreadable') as caught:
+                tree.refresh()
+            self.assertFalse(caught.exception.group_cleanup_verified)
+
+
 if __name__ == '__main__':
     unittest.main()

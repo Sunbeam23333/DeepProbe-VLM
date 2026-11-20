@@ -1,4 +1,25 @@
-# Experiment status — 2026-11-19
+# Experiment status — 2026-11-20
+
+Smol attempt 6 **completed alignment training at 718/718 optimizer steps**,
+adding all 368 remaining updates from checkpoint350. The training child exited 0
+at about **11:25:46 Beijing time** after 100 min 15 s; both preflights also exited 0.
+Formal and stage completion receipts, Trainer state and the saved final/cp718
+inventories agree on completion. This completes alignment training only.
+
+The enclosing Job **Failed at 11:27:04 Beijing time**, with container exit1,
+after the controller could not read `/proc/1687474/environ` during archival.
+The archive child received SIGTERM; external preemption is not established.
+The original archive manifest lists 239 payloads / 18,149,819,512 bytes. The exact
+prefix currently contains 82 objects / 916,219,811 bytes, leaving 157 payloads /
+17,233,599,701 bytes absent. There is no `ARCHIVED.json` or independent archive
+acceptance. Final 18 files / 8,589,657,473 bytes and cp718 29 files / 8,642,280,705 bytes
+remain locally; names and lengths match the manifest, with fresh full hashes
+still pending. **Do not repeat alignment training.** Complete and verify its
+archive before admitting Smol SFT and evaluations. No new held-out result exists.
+Current source identities and evidence hashes are recorded in [status.json](status.json).
+
+The following attempt 5 paragraph is retained as history, superseded by the
+a6 training completion and separate archive failure above.
 
 Smol attempt 5 **Failed on November 18 at 02:37:32 Beijing time (UTC+08:00)**
 after actually resuming from checkpoint300 and reaching logged step
@@ -30,12 +51,13 @@ and the timing statistics were recomputed from every recorded call.
 The actual submission and atomically published READY receipt passed independent
 review. Earlier attempt-3 and attempt-4 failure archives are independently
 accepted and remain distinct from this new run; original source/checkpoint
-files were preserved. The actual native continuation does not establish
-numerical resume equivalence or complete the alignment stage.
+files were preserved. The historical attempt 5 continuation did not complete alignment or establish
+numerical resume equivalence; the newer a6 training completion is recorded above.
 
-The full experiment suite remains unsubmitted. R4 still needs recovery from
-step 600, including restoration of five model/optimizer files now missing
-locally. No new training completion or held-out result was produced.
+The full experiment suite remains unsubmitted. R4 SFT still needs its final 118
+updates from the authenticated cp600 archive binding. Smol SFT and new-model
+evaluation remain pending; the a6 alignment result is not a complete two-stage
+model or a held-out quality result.
 
 ## Completed
 

@@ -20,6 +20,10 @@ class GroupCleanupError(RuntimeError):
     group_cleanup_verified = False
 
 
+class _UnverifiedMarker(GroupCleanupError):
+    pass
+
+
 def _marker_tokens(environment):
     """Read bounded ancestry without dropping identities or exposing tokens."""
     current, chain = environment.get(MARKER), environment.get(MARKER_CHAIN)
@@ -129,6 +133,62 @@ def process_table():
     return rows
 
 
+def _linux_identity(pid):
+    """Recheck the identity after a procfs access failure, without reading secrets."""
+    path = Path('/proc') / str(pid) / 'stat'
+    fields = path.read_text().rsplit(')', 1)[1].split()
+    return {'start': fields[19], 'state': fields[0], 'uid': path.stat().st_uid}
+
+
+def _read_environment(pid):
+    with open('/proc/' + str(pid) + '/environ', 'rb') as stream:
+        raw = stream.read(1_048_577)
+    if len(raw) > 1_048_576:
+        raise GroupCleanupError('same-user process environment exceeded read bound')
+    return raw
+
+
+def _marker_environment(pid, row, already_owned):
+    """Tolerate a procfs exit/credential race without hiding an unknown writer.
+
+    Reading stat and environ is not atomic. A process can exit or become a
+    zombie between the two reads. Known live descendants do
+    not need a readable inherited marker to remain tracked. An unclassified,
+    stable same-user process still requires a readable marker before quiescence
+    can be established; do not blindly skip PermissionError.
+    """
+    for attempt in range(2):
+        try:
+            return _read_environment(pid)
+        except (FileNotFoundError, ProcessLookupError):
+            return None
+        except PermissionError as denied:
+            try:
+                current = _linux_identity(pid)
+            except (FileNotFoundError, ProcessLookupError):
+                return None
+            except PermissionError as exc:
+                raise GroupCleanupError('process identity unreadable after marker access failure') from exc
+            if current['start'] != row['start'] or current['state'] in {'Z', 'X'}:
+                return None
+            if already_owned:
+                return None
+            # procfs st_uid can change when dumpability changes; it does not
+            # prove this live process is unrelated to the tracked command.
+            # One bounded retry permits transient access changes. Recheck stat
+            # after both failures, so exit during the retry is also tolerated.
+            if attempt:
+                raise _UnverifiedMarker('process marker unreadable; ownership unverified') from denied
+
+
+def _descendants(rows, owned):
+    while True:
+        children = {pid for pid, row in rows.items() if row['ppid'] in owned}
+        if children <= owned:
+            return owned
+        owned |= children
+
+
 class OwnedTree:
     def __init__(self, process, token, pidfds=None):
         self.process, self.token, self.pidfds = process, token, pidfds
@@ -146,7 +206,11 @@ class OwnedTree:
         if not LINUX_PROC:
             # Mac-only regression fallback keeps the newly created process group.
             owned |= {pid for pid, row in rows.items() if row['pgid'] == self.process.pid}
+        # Classify the known ancestry first: a non-readable environment must not
+        # make an otherwise verified child disappear from lifecycle tracking.
+        owned = _descendants(rows, owned)
         if LINUX_PROC:
+            unreadable = {}
             deadline = time.monotonic() + 2
             for pid,row in rows.items():
                 if time.monotonic() > deadline:
@@ -154,19 +218,19 @@ class OwnedTree:
                 if row['uid'] != os.getuid() or row['state'] in {'Z','X'}:
                     continue
                 try:
-                    with open('/proc/' + str(pid) + '/environ','rb') as stream:
-                        raw = stream.read(1_048_577)
-                    if len(raw) > 1_048_576:
-                        raise GroupCleanupError('same-user process environment exceeded read bound')
-                except (FileNotFoundError,ProcessLookupError):
+                    raw = _marker_environment(pid, row, pid in owned)
+                except _UnverifiedMarker as exc:
+                    unreadable[pid] = exc
                     continue
-                if self.token in _process_marker_tokens(raw):
+                if raw is not None and self.token in _process_marker_tokens(raw):
                     owned.add(pid)
-        while True:
-            children = {pid for pid,row in rows.items() if row['ppid'] in owned}
-            if children <= owned:
-                break
-            owned |= children
+        owned = _descendants(rows, owned)
+        if LINUX_PROC:
+            for pid, error in unreadable.items():
+                # A marker-bearing ancestor may occur later in the inventory.
+                # Preserve such children even when their own marker is hidden.
+                if pid not in owned:
+                    raise error
         for pid in owned:
             self.identities[pid] = rows[pid]['start']
         if os.getpid() in owned:

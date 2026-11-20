@@ -304,6 +304,28 @@ submission review confirmed a 104,526,968,806-byte projected home total and no
 other active project Job/Pod. This starts only the standalone Smol stage, not
 the complete suite. See [the actual running handoff](evidence/smollm2-resume-a6-20261120/ROOT_A6_RUNNING_HANDOFF.json).
 
+The later 14:57 UTC readback supersedes that Running snapshot: a6 completed
+718/718 alignment steps with training and both preflight exit codes 0, but its
+outer Job Failed at 03:27:04 UTC/container exit1 during archival. A procfs
+PermissionError preceded the archive child's SIGTERM. The final/cp718 local
+inventories remain; exact OSS has 82 objects and 157 missing manifest payloads.
+No archive acceptance or cleanup is recorded. Reconcile and verify archival,
+then bind the completed final for SFT; do not rerun the 368 alignment updates.
+See [terminal status](evidence/smollm2-resume-a6-20261120/ROOT_A6_TERMINAL_STATUS_20261120.json).
+
+The reusable process tracker now rechecks process identity after a denied
+procfs environment read. Exited/reused identities may be skipped; known
+descendants remain tracked, and a stable unknown live process still blocks
+quiescence acceptance. Twenty-one targeted tests passed. The frozen a6 package
+was not changed or redeployed, and the denied PID's historical identity is
+unknown, so this patch does not establish the exact trigger or recover the
+incomplete archive. A local recovery plan identifies the 157 missing payloads
+and the original manifest: completing them would produce 240 objects /
+18,149,863,235 bytes, without fabricating the original `ARCHIVED.json`.
+Fresh local SHA, full GET checks of existing objects and writer quiescence
+remain required before uploading. No recovery upload or local deletion was
+performed in this status check.
+
 The offline helper `scripts/operations/derive_suite_cache_continuation.py`
 authenticates the original candidate and 35 captured preparation receipts,
 preserves all seven history bindings, four evaluation imports and six cache
