@@ -115,8 +115,8 @@ def audit_fleet_jobs(profile, document, state_root, current_worker_id=None, *, b
     require(any('jinhaopeng-dpvlm-'.startswith(p) for p in project_name_prefixes), 'Complete project scope required')
     exact = {(w['namespace'], w['job_name']): w for w in profile['workers']}
     verified, nodes, current = {}, {}, None
-    project_items = [item for item in document['items'] if any(
-        item.get('metadata', {}).get('name', '').startswith(p) for p in project_name_prefixes)]
+    from .suite_cluster import project_workloads
+    project_items = project_workloads(document['items'], project_name_prefixes)
     for item in project_items:
         kind, meta = item.get('kind'), item.get('metadata', {})
         require(kind in {'PyTorchJob', 'Pod'}, 'Unexpected project workload kind')

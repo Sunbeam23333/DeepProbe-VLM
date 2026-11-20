@@ -1,4 +1,5 @@
 """One-shot scheduler admission tested against a fake kubectl and empty bucket."""
+from contextlib import contextmanager
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 import json
@@ -8,8 +9,10 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
+from urllib.parse import parse_qs, urlsplit
 
-from deepprobe_vlm import experiment_suite, suite_bindings, suite_launch, suite_relocation, suite_runner as runner
+from deepprobe_vlm import experiment_suite, suite_bindings, suite_cluster, suite_launch, suite_relocation, suite_runner as runner
 
 
 class FakeStore:
@@ -23,6 +26,73 @@ class FakeStore:
         yield self.objects[uri]
 
 
+def _fixture_workloads(items, kind):
+    """Give census and exact reads the same identity without mutating fixtures."""
+    observed = []
+    for original in items:
+        if original.get('kind') != kind:
+            continue
+        item = deepcopy(original)
+        item.setdefault('apiVersion', 'kubeflow.org/v1' if kind == 'PyTorchJob' else 'v1')
+        metadata = item.setdefault('metadata', {})
+        metadata.setdefault('namespace', 'default')
+        metadata.setdefault('uid', 'fixture-' + kind.lower() + '-' + metadata['namespace'] + '-' + metadata['name'])
+        metadata.setdefault('resourceVersion', '101')
+        observed.append(item)
+    return observed
+
+
+def fake_metadata_connection(items):
+    """Model paginated server metadata; never start a real kubectl proxy."""
+    @contextmanager
+    def connection(tools, deadline, clock):
+        snapshot = deepcopy(items())
+
+        def get(path, timeout):
+            parsed = urlsplit(path)
+            kinds = {'/apis/kubeflow.org/v1/pytorchjobs': 'PyTorchJob', '/api/v1/pods': 'Pod'}
+            if parsed.scheme or parsed.netloc or parsed.fragment or parsed.path not in kinds:
+                raise AssertionError('Unexpected metadata API path: ' + path)
+            query = parse_qs(parsed.query, keep_blank_values=True, strict_parsing=True)
+            if query.get('limit') != ['100'] or set(query) - {'limit', 'continue'} or timeout <= 0:
+                raise AssertionError('Metadata GET must be bounded and paginated: ' + path)
+            token = query.get('continue', ['0'])
+            if len(token) != 1 or not token[0].isdigit() or int(token[0]) % 100:
+                raise AssertionError('Unexpected metadata continuation: ' + path)
+            start = int(token[0])
+            observed = _fixture_workloads(snapshot, kinds[parsed.path])
+            page = observed[start:start + 100]
+            header = {'resourceVersion': '101'}
+            if start + 100 < len(observed):
+                header['continue'] = str(start + 100)
+                header['remainingItemCount'] = len(observed) - start - 100
+            return json.dumps({'apiVersion': 'meta.k8s.io/v1', 'kind': 'PartialObjectMetadataList',
+                'metadata': header, 'items': [{'apiVersion': 'meta.k8s.io/v1', 'kind': 'PartialObjectMetadata',
+                    'metadata': item['metadata']} for item in page]})
+        yield get
+    return connection
+
+
+def fake_workload_get(argv, items):
+    """Model exact plural GETs, leaving singular reconciliation separate."""
+    if 'get' not in argv:
+        return None
+    resource = argv[argv.index('get') + 1]
+    kinds = {'pytorchjobs': 'PyTorchJob', 'pods': 'Pod'}
+    if resource not in kinds:
+        return None
+    if '-A' in argv or '--show-managed-fields=false' not in argv or '-o' not in argv or argv[argv.index('-o') + 1] != 'json':
+        raise AssertionError('Full workload reads must be exact JSON GETs: ' + repr(argv))
+    observed = _fixture_workloads(items, kinds[resource])
+    name = argv[argv.index(resource) + 1]
+    namespace = argv[argv.index('-n') + 1]
+    matches = [item for item in observed if item['metadata']['name'] == name
+               and item['metadata']['namespace'] == namespace]
+    if len(matches) != 1:
+        return subprocess.CompletedProcess(argv, 1, '', 'Error from server (NotFound): fixture workload not found')
+    return subprocess.CompletedProcess(argv, 0, json.dumps(matches[0]), '')
+
+
 class FakeKubectl:
     def __init__(self, job):
         self.job = deepcopy(job)
@@ -32,6 +102,16 @@ class FakeKubectl:
         self.created = None
         self.timeout_create = False
         self.timeout_but_created = False
+
+    @property
+    def workloads(self):
+        items = list(self.items)
+        if self.created is not None and not any(item.get('kind') == 'PyTorchJob'
+            and item.get('metadata', {}).get('name') == self.created['metadata']['name']
+            and item.get('metadata', {}).get('namespace', 'default') == self.created['metadata']['namespace']
+            for item in items):
+            items.append(self.created)
+        return items
 
     def __call__(self, argv, **kwargs):
         self.calls.append(argv)
@@ -45,8 +125,9 @@ class FakeKubectl:
             if self.timeout_create:
                 raise subprocess.TimeoutExpired(argv, 60)
             return subprocess.CompletedProcess(argv, 0, json.dumps(self.created), '')
-        if 'pytorchjobs,pods' in argv:
-            return subprocess.CompletedProcess(argv, 0, json.dumps({'items': self.items}), '')
+        workload = fake_workload_get(argv, self.workloads)
+        if workload is not None:
+            return workload
         if 'pytorchjob' in argv:
             return subprocess.CompletedProcess(argv, 0, json.dumps(self.created) if self.created else '', '')
         raise AssertionError(argv)
@@ -108,6 +189,9 @@ class SuiteLaunchTest(unittest.TestCase):
                [('plan', self.plan_pin), ('binding', self.binding_pin), ('environment', self.env_pin)]}}
         self.preflight_pin = self.write('CPU.json', self.preflight)
         self.kube = FakeKubectl(self.job)
+        metadata = patch.object(suite_cluster, '_metadata_connection',
+                                fake_metadata_connection(lambda: self.kube.workloads))
+        metadata.start(); self.addCleanup(metadata.stop)
         self.objects = {}
         self.relocation_pin = None
 
@@ -227,6 +311,17 @@ class SuiteLaunchTest(unittest.TestCase):
         self.assertEqual(self.kube.creates, 1)
         self.assertTrue((self.output / 'SUBMISSION_INTENT.json').is_file())
         self.assertFalse(self.state.exists())
+
+    def test_existing_exact_job_blocks_new_output_without_original_intent(self):
+        self.launcher().run('submit')
+        intent = self.output / 'SUBMISSION_INTENT.json'
+        original = intent.read_bytes()
+        self.output = self.project / 'different-launch-output'
+        with self.assertRaisesRegex(ValueError, 'Exact Job already exists'):
+            self.launcher().run('submit')
+        self.assertEqual(self.kube.creates, 1)
+        self.assertEqual(intent.read_bytes(), original)
+        self.assertFalse((self.output / 'SUBMISSION_INTENT.json').exists())
 
     def test_exact_status_reconciliation_remains_available_while_runner_holds_project_lock(self):
         self.launcher().run('submit')

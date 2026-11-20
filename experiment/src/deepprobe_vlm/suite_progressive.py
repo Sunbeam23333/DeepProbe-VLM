@@ -6,6 +6,7 @@ An absent receipt means pending; invalid evidence is always an error.
 """
 from __future__ import annotations
 
+import ast
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
@@ -16,6 +17,68 @@ from . import suite_runner as runner
 BENCHMARKS = {'videomme899': 'videomme', 'tempcompass_mc': 'tempcompass'}
 FRAMES = (4, 8, 16)
 STATUS = 'SUITE_BENCHMARK_CACHE_READY'
+# These modules define the legacy frame protocol, normalization, pin checks,
+# complete remote readback and hydration. A new runtime may reuse a frozen
+# publisher only when their real bytes still implement that exact protocol.
+LEGACY_CACHE_SOURCE_MODULES = tuple('src/deepprobe_vlm/' + name + '.py' for name in (
+    'suite_legacy_cache', 'suite_media', 'formal_integrity', 'manifest', 'data',
+    'evaluate', 'checkpoint_retention', 'suite_workflow', 'suite_preflight'))
+
+
+def _cache_runner_identity(path):
+    """Retain every runner definition except the fleet observation body.
+
+    The bounded workload-query repair changes only this body. Hash/path/pin
+    primitives, constants, imports and all other definitions must remain the
+    same; a changed query signature or decorator is not exempted.
+    """
+    tree = ast.parse(Path(path).read_text(encoding='utf-8'))
+    queries = [node for node in tree.body if isinstance(node, ast.FunctionDef)
+               and node.name == '_fleet_live']
+    runner.require(len(queries) == 1, 'Legacy cache runner must retain one fleet observation function')
+    queries[0].body = [ast.Pass()]
+    return ast.dump(tree, include_attributes=False)
+
+
+def _legacy_publisher_compatible(environment, producer):
+    if producer['source_root'] == environment['experiment_root']:
+        return
+    # A different directory is allowed only with a live, complete old source
+    # attestation and the current runtime's complete, byte-verified source pins.
+    # Nothing here rebases or rewrites the old contract or READY proof.
+    _producer(environment, producer, live=True)
+    from .formal_integrity import source_inventory
+    old_root = _accounted(environment, producer['source_root'])
+    current_root = _accounted(environment, environment['experiment_root'])
+    pins = environment.get('source_files')
+    runner.require(isinstance(pins, list) and pins, 'Legacy cache reuse requires current runtime source pins')
+    current = {}
+    for pin in pins:
+        runner.require(isinstance(pin, dict) and set(pin) == {'path', 'bytes', 'sha256'}
+                       and type(pin['bytes']) is int and pin['bytes'] > 0,
+                       'Legacy cache runtime source pins must include path/size/SHA')
+        path = runner.safe(pin['path'])
+        runner.require(path != current_root and path.is_relative_to(current_root),
+                       'Legacy cache runtime source pin escapes current source root')
+        name = path.relative_to(current_root).as_posix()
+        runner.require(name not in current, 'Duplicate legacy cache runtime source pin')
+        runner.verify_pin(pin)
+        current[name] = pin['sha256']
+    runner.require(current == source_inventory(current_root),
+                   'Legacy cache runtime source pins differ from its complete source tree')
+    old = runner.read(producer['source_manifest']['path'])['files']
+    for name in LEGACY_CACHE_SOURCE_MODULES:
+        runner.require(name in old and name in current and old[name] == current[name],
+                       'Legacy cache validation source differs or is unpinned: ' + name)
+    runner_name = 'src/deepprobe_vlm/suite_runner.py'
+    runner.require(runner_name in old and runner_name in current, 'Legacy cache runner source is unpinned')
+    runner.require(_cache_runner_identity(old_root / runner_name)
+                   == _cache_runner_identity(current_root / runner_name),
+                   'Legacy cache runner validation implementation differs')
+    # Recheck bytes consumed after reading the manifest and runner definitions.
+    runner.verify_pin(producer['source_manifest'])
+    runner.verify_pin({'path': str(old_root / runner_name), 'sha256': old[runner_name]})
+    runner.verify_pin({'path': str(current_root / runner_name), 'sha256': current[runner_name]})
 
 
 def key(benchmark, frames):
@@ -113,8 +176,7 @@ def _declaration(environment, declaration):
     identity = _request(environment, contract['request'])
     _producer(environment, contract['producer'])
     if 'legacy_reuse' in contract['request']:
-        runner.require(contract['producer']['source_root'] == environment['experiment_root'],
-                       'Legacy reuse must bind the current publisher source, not the old decoder')
+        _legacy_publisher_compatible(environment, contract['producer'])
     ready = _accounted(environment, declaration['ready_path'])
     request = contract['request']
     output = Path(request['output_dir'])

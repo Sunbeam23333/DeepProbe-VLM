@@ -683,12 +683,9 @@ def run_bound_suite(plan, binding, *, plan_sha256, binding_sha256, state_root, r
 
 def _fleet_live(environment, binding, state_root, worker_id):
     from .suite_fleet import audit_fleet_jobs
-    tools = environment['tools']
-    result = subprocess.run([tools['kubectl'], '--kubeconfig', tools['kubeconfig'],
-        '--request-timeout=30s', 'get', 'pytorchjobs,pods', '-A', '-o', 'json'],
-        capture_output=True, text=True, timeout=40)
-    require(result.returncode == 0, 'Cannot freshly verify fleet jobs and task owners')
-    document = json.loads(result.stdout)
+    from .suite_cluster import list_workloads
+    document = list_workloads(environment['tools'],
+        project_name_prefixes=environment['allocation_identity']['project_name_prefixes'])
     audit_fleet_jobs(binding['execution_profile'], document, state_root, worker_id,
         project_name_prefixes=environment['allocation_identity']['project_name_prefixes'])
     from .suite_actions import terminal_job

@@ -238,23 +238,18 @@ class SuiteLauncher:
         return runner.capacity(self.binding, self.binding['startup'].get('reserve_bytes', 0))
 
     def cluster(self):
-        result = self.kubectl(['get', 'pytorchjobs,pods', '-A', '-o', 'json'])
-        require(result.returncode == 0, 'Fresh complete Job/Pod listing failed')
-        document = json.loads(result.stdout)
-        require(isinstance(document.get('items'), list) and not document.get('metadata', {}).get('continue'),
-                'Cluster listing is incomplete')
+        from .suite_cluster import project_workloads
+        document = self.workloads()
         prefixes = self.env['allocation_identity']['project_name_prefixes']
         require(any('jinhaopeng-dpvlm-'.startswith(prefix) for prefix in prefixes),
                 'Project audit must include the full DeepProbe job-name prefix')
         active, observed = [], []
         exact = self.env['allocation_identity']
-        for item in document['items']:
+        for item in project_workloads(document['items'], prefixes):
             kind, metadata = item.get('kind'), item.get('metadata', {})
             name, namespace = metadata.get('name', ''), metadata.get('namespace')
             if kind == 'PyTorchJob' and name == exact['job_name'] and namespace == exact['namespace']:
                 raise ValueError('Exact Job already exists; use its original launch receipt to reconcile, never recreate')
-            if not any(name.startswith(prefix) for prefix in prefixes):
-                continue
             require(kind in {'PyTorchJob', 'Pod'}, 'Unexpected project workload kind')
             inactive = terminal_job(item) if kind == 'PyTorchJob' else (
                 item.get('status', {}).get('phase') in {'Succeeded', 'Failed'}
@@ -265,6 +260,11 @@ class SuiteLauncher:
                 active.append(observed[-1])
         require(not active, 'Another project Job or Pod is active, including Pending/terminating workloads')
         return {'status': 'NO_ACTIVE_PROJECT_WORKLOADS', 'generated_utc': runner.utc(), 'observed': observed}
+
+    def workloads(self):
+        from .suite_cluster import list_workloads
+        return list_workloads(self.env['tools'],
+            project_name_prefixes=self.env['allocation_identity']['project_name_prefixes'], command=self.command)
 
     def archive_prefixes(self):
         results = []

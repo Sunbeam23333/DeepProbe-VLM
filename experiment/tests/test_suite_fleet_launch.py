@@ -6,8 +6,8 @@ import subprocess
 import unittest
 from unittest.mock import patch
 
-from deepprobe_vlm import suite_bindings, suite_fleet, suite_fleet_launch, suite_runner as runner
-from test_suite_launch import SuiteLaunchTest, FakeStore
+from deepprobe_vlm import suite_bindings, suite_cluster, suite_fleet, suite_fleet_launch, suite_runner as runner
+from test_suite_launch import SuiteLaunchTest, FakeStore, fake_metadata_connection, fake_workload_get
 
 
 class FakeFleetKubectl:
@@ -30,8 +30,9 @@ class FakeFleetKubectl:
             if name == self.timeout_worker:
                 raise subprocess.TimeoutExpired(argv, 30)
             return subprocess.CompletedProcess(argv, 0, json.dumps(job), '')
-        if 'pytorchjobs,pods' in argv:
-            return subprocess.CompletedProcess(argv, 0, json.dumps({'items': list(self.jobs.values()) + self.extra}), '')
+        workload = fake_workload_get(argv, [*self.jobs.values(), *self.extra])
+        if workload is not None:
+            return workload
         if 'pytorchjob' in argv:
             name = argv[argv.index('pytorchjob') + 1]
             return subprocess.CompletedProcess(argv, 0, json.dumps(self.jobs[name]) if name in self.jobs else '', '')
@@ -58,6 +59,9 @@ class FleetLaunchTest(unittest.TestCase):
         f.preflight.update(binding_sha256=f.binding_pin['sha256'], environment_sha256=f.env_pin['sha256'])
         f.preflight_pin = f.write('FLEET_CPU.json', f.preflight)
         self.kube = FakeFleetKubectl()
+        metadata = patch.object(suite_cluster, '_metadata_connection',
+            fake_metadata_connection(lambda: [*self.kube.jobs.values(), *self.kube.extra]))
+        metadata.start(); self.addCleanup(metadata.stop)
         self.capacity = patch.object(runner, 'capacity', return_value={'synthetic_fixture': True})
         self.capacity.start(); self.addCleanup(self.capacity.stop)
 

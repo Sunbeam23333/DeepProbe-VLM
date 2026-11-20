@@ -337,12 +337,8 @@ class Actions:
 
     def live(self, *, require_startup=True):
         tools, identity = self.env['tools'], self.env['allocation_identity']
-        argv = [tools['kubectl'], '--kubeconfig', tools['kubeconfig'], '--request-timeout=30s',
-                'get', 'pytorchjobs,pods', '-A', '-o', 'json']
-        result = subprocess.run(argv, capture_output=True, timeout=40)
-        require(result.returncode == 0, 'Cannot verify exact allocation and project jobs')
-        document = json.loads(result.stdout)
-        require(not document.get('metadata', {}).get('continue'), 'Complete Job/Pod listing required')
+        from .suite_cluster import list_workloads, project_workloads
+        document = list_workloads(tools, project_name_prefixes=identity['project_name_prefixes'])
         items = document['items']
         jobs = [x for x in items if x['kind'] == 'PyTorchJob']
         profile = self.env.get('execution_profile')
@@ -369,13 +365,15 @@ class Actions:
         allocation_contract(job)
         prefixes = identity['project_name_prefixes']
         require(prefixes and all(p.startswith('jinhaopeng-dp') for p in prefixes), 'Project job scope missing')
-        others = [x['metadata']['name'] for x in jobs if any(x['metadata']['name'].startswith(p) for p in prefixes)
+        project_items = project_workloads(items, prefixes)
+        others = [x['metadata']['name'] for x in project_items if x['kind'] == 'PyTorchJob'
                   and x['metadata']['uid'] != job['metadata']['uid'] and not terminal_job(x)]
         pods = [x for x in items if x['kind'] == 'Pod']
         owned = [x for x in pods if any(r.get('uid') == job['metadata']['uid'] for r in x['metadata'].get('ownerReferences', []))]
         require(len(owned) == 1 and owned[0].get('status', {}).get('phase') == 'Running', 'Suite requires one live owned pod')
-        others.extend(x['metadata']['name'] for x in pods if any(x['metadata']['name'].startswith(p) for p in prefixes)
-                      and x not in owned and x.get('status', {}).get('phase') not in {'Failed', 'Succeeded'})
+        others.extend(x['metadata']['name'] for x in project_items if x['kind'] == 'Pod'
+                      and x not in owned and (x.get('status', {}).get('phase') not in {'Failed', 'Succeeded'}
+                                             or x.get('metadata', {}).get('deletionTimestamp')))
         require(not others, 'Another project job or orphan pod is active')
         if require_startup:
             invocations = sorted((self.state / 'invocations').glob('invocation-*'))

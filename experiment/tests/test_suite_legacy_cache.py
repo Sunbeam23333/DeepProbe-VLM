@@ -4,6 +4,7 @@ from contextlib import nullcontext
 import io
 import json
 from pathlib import Path
+import shutil
 from unittest.mock import Mock
 import zipfile
 
@@ -13,6 +14,7 @@ from PIL import Image
 from deepprobe_vlm import suite_legacy_cache as legacy, suite_media as media
 from deepprobe_vlm import suite_progressive as progressive, suite_runner as runner
 from deepprobe_vlm import suite_cache_publisher as publisher
+from deepprobe_vlm import formal_integrity
 from test_suite_media import FakeStore
 from test_suite_progressive import declared, write
 
@@ -249,6 +251,113 @@ def test_prefix_etag_drift_during_readback_prevents_ready(old_cache):
     with pytest.raises(ValueError, match='changed during full remote readback'):
         progressive.publish_ready(env, declaration, asset)
     assert not Path(declaration['ready_path']).exists()
+
+
+def _freeze_publisher_implementation(env):
+    """Create a real source-pinned publisher fixture before publishing READY."""
+    source = Path(env['experiment_root'])
+    local = Path(__file__).resolve().parents[1]
+    names = (*progressive.LEGACY_CACHE_SOURCE_MODULES,
+             'src/deepprobe_vlm/suite_runner.py', 'src/deepprobe_vlm/suite_progressive.py')
+    for name in names:
+        target = source / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes((local / name).read_bytes())
+    declarations = env['benchmark_preparations'].values()
+    pin_path = next(iter(declarations))['contract']['producer']['source_manifest']['path']
+    pin = write(Path(pin_path), {'schema_version': 1, 'purpose': 'DEEPPROBE_FROZEN_P1_SOURCE',
+                                 'files': formal_integrity.source_inventory(source)})
+    for item in declarations:
+        item['contract']['producer']['source_manifest'] = deepcopy(pin)
+        item['contract_sha256'] = runner.digest(item['contract'])
+    return source
+
+
+def _new_runtime(env):
+    old_root = Path(env['experiment_root'])
+    current_root = old_root.with_name('new-gpu-runtime')
+    shutil.copytree(old_root, current_root)
+    progressive_path = current_root / 'src/deepprobe_vlm/suite_progressive.py'
+    progressive_path.write_bytes(progressive_path.read_bytes() + b'\n# new compatibility gate\n')
+    runner_path = current_root / 'src/deepprobe_vlm/suite_runner.py'
+    runner_path.write_text(runner_path.read_text().replace(
+        'def _fleet_live(environment, binding, state_root, worker_id):\n',
+        'def _fleet_live(environment, binding, state_root, worker_id):\n    query_revision = 6\n', 1))
+    env['experiment_root'] = str(current_root)
+    _pin_runtime(env)
+    return current_root
+
+
+def _pin_runtime(env):
+    root = Path(env['experiment_root'])
+    env['source_files'] = [runner.artifact(root / name) for name in formal_integrity.source_inventory(root)]
+
+
+def test_new_runtime_reuses_immutable_old_publisher_ready(old_cache):
+    env, plan, declaration, store = old_cache
+    _freeze_publisher_implementation(env)
+    request = declaration['contract']['request']
+    asset = legacy.prepare_asset(env, request, store=store)
+    ready = progressive.publish_ready(env, declaration, asset)
+    original_contract = runner.canonical(declaration)
+    original_ready = Path(declaration['ready_path']).read_bytes()
+    reads = list(store.gets)
+    _new_runtime(env)
+    assert len(progressive.validate_declarations(env, plan)) == 6
+    assert progressive.resolve_ready(env, request['benchmark'], 8) == ready
+    assert progressive.publish_ready(env, declaration, asset) == ready
+    assert runner.canonical(declaration) == original_contract
+    assert Path(declaration['ready_path']).read_bytes() == original_ready
+    assert store.gets == reads and not store.puts
+
+
+@pytest.mark.parametrize('damage', ['repinned_cache_validator', 'unpinned_runtime_bytes',
+                                   'runner_pin_helper', 'missing_current_pin', 'unbound_runtime', 'old_source_bytes',
+                                   'missing_old_validator', 'symlink_validator'])
+def test_new_runtime_cannot_bypass_cache_source_attestation(old_cache, damage):
+    env, _, declaration, store = old_cache
+    old_root = _freeze_publisher_implementation(env)
+    current_root = _new_runtime(env)
+    relative = 'src/deepprobe_vlm/suite_media.py'
+    path = current_root / relative
+    if damage in {'repinned_cache_validator', 'unpinned_runtime_bytes'}:
+        path.write_bytes(path.read_bytes() + b'\n# changed validator\n')
+        if damage == 'repinned_cache_validator':
+            _pin_runtime(env)
+        match = 'validation source differs' if damage == 'repinned_cache_validator' else 'pinned artifact changed'
+    elif damage == 'runner_pin_helper':
+        path = current_root / 'src/deepprobe_vlm/suite_runner.py'
+        path.write_text(path.read_text().replace('def verify_pin(item):\n',
+                                               'def verify_pin(item):\n    return item\n', 1))
+        _pin_runtime(env)
+        match = 'runner validation implementation differs'
+    elif damage == 'missing_current_pin':
+        env['source_files'] = [pin for pin in env['source_files'] if pin['path'] != str(path)]
+        match = 'complete source tree'
+    elif damage == 'unbound_runtime':
+        env['source_files'] = []
+        match = 'requires current runtime source pins'
+    elif damage == 'old_source_bytes':
+        # Even a non-cache file remains protected by the complete old manifest.
+        (old_root / 'src/deepprobe_vlm/train.py').write_text('# old frozen source changed\n')
+        match = 'Frozen source tree differs'
+    elif damage == 'missing_old_validator':
+        (old_root / relative).unlink()
+        pin = declaration['contract']['producer']['source_manifest']
+        value = runner.read(pin['path']); value['files'].pop(relative)
+        declaration['contract']['producer']['source_manifest'] = write(Path(pin['path']), value)
+        declaration['contract_sha256'] = runner.digest(declaration['contract'])
+        match = 'validation source differs or is unpinned'
+    else:
+        path.unlink()
+        path.symlink_to(old_root / relative)
+        match = 'symlink'
+    original = runner.canonical(declaration)
+    with pytest.raises(ValueError, match=match):
+        progressive.resolve_ready(env, declaration['contract']['request']['benchmark'], 8)
+    assert runner.canonical(declaration) == original
+    assert not Path(declaration['ready_path']).exists()
+    assert not store.gets and not store.puts
 
 
 @pytest.mark.private_evidence

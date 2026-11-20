@@ -113,9 +113,7 @@ class FleetLauncher(SuiteLauncher):
         return capacity
 
     def cluster(self):
-        result = self.kubectl(['get', 'pytorchjobs,pods', '-A', '-o', 'json'])
-        require(result.returncode == 0, 'Fresh complete cluster query failed')
-        document = json.loads(result.stdout)
+        document = self.workloads()
         report = audit_fleet_jobs(self.profile, document, self.state, require_current=False,
             binding_sha256=self.pins['binding']['sha256'],
             project_name_prefixes=self.env['allocation_identity']['project_name_prefixes'])
