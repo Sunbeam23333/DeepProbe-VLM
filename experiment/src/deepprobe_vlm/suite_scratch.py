@@ -100,9 +100,10 @@ def validate_scratch_pod(pod, profile):
     runner.require(type(security.get('runAsUser')) is int and security['runAsUser'] > 0
                    and type(security.get('runAsGroup')) is int and security['runAsGroup'] > 0
                    and security.get('runAsNonRoot') is True
-                   and security.get('fsGroup') == security['runAsGroup']
-                   and security.get('fsGroupChangePolicy') == 'OnRootMismatch',
+                   and security.get('fsGroup') == security['runAsGroup'],
                    'Scratch requires the declared non-root UID/GID and volume fsGroup')
+    runner.require('fsGroupChangePolicy' not in security,
+                   'The supported PyTorchJob CRD does not accept fsGroupChangePolicy')
     overrides = container.get('securityContext', {})
     runner.require(all(key not in overrides or overrides[key] == security[key]
                        for key in ('runAsUser', 'runAsGroup', 'runAsNonRoot')),
@@ -137,8 +138,10 @@ def configure_scratch_pod(pod, profile, machine_identity):
                        'Template ephemeral-storage conflicts with the declared scratch limit')
         resources['ephemeral-storage'] = '100Gi'
     security = pod.setdefault('securityContext', {})
+    # The cluster's PyTorchJob CRD predates fsGroupChangePolicy. It does not
+    # affect emptyDir volumes; retain fsGroup for the private disk permissions.
     security.update(runAsUser=machine_identity['uid'], runAsGroup=machine_identity['gid'], runAsNonRoot=True,
-                    fsGroup=machine_identity['gid'], fsGroupChangePolicy='OnRootMismatch')
+                    fsGroup=machine_identity['gid'])
     validate_scratch_pod(pod, profile)
     return pod
 

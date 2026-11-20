@@ -56,7 +56,8 @@ def test_schema3_policy_is_explicit_and_schema2_remains_unchanged(profile):
 
 
 @pytest.mark.parametrize('change', ['memory', 'host_path', 'no_limit', 'no_request', 'sub_path',
-                                   'read_only', 'nested_mount', 'wrong_fsgroup', 'container_root'])
+                                   'read_only', 'nested_mount', 'wrong_fsgroup', 'missing_fsgroup',
+                                   'unsupported_fsgroup_policy', 'container_root'])
 def test_actual_pod_contract_rejects_unsafe_storage(profile, change):
     spec = scratch.configure_scratch_pod(pod_spec(profile), profile, {'uid': 1000, 'gid': 1000})
     container = spec['containers'][0]
@@ -68,6 +69,8 @@ def test_actual_pod_contract_rejects_unsafe_storage(profile, change):
     elif change == 'read_only': container['volumeMounts'][0]['readOnly'] = True
     elif change == 'nested_mount': container['volumeMounts'].append({'name': 'other', 'mountPath': profile['scratch']['mount_path'] + '/runs'})
     elif change == 'wrong_fsgroup': spec['securityContext']['fsGroup'] = 42
+    elif change == 'missing_fsgroup': del spec['securityContext']['fsGroup']
+    elif change == 'unsupported_fsgroup_policy': spec['securityContext']['fsGroupChangePolicy'] = 'OnRootMismatch'
     else: container['securityContext'] = {'runAsUser': 0}
     with pytest.raises(ValueError):
         suite_fleet.allocation_contract(job_document(profile, spec), profile)
@@ -102,7 +105,31 @@ def test_prepared_worker_jobs_really_include_disk_scratch_and_ephemeral_resource
         proof = scratch.validate_scratch_pod(spec, profile)
         assert proof['medium'] == 'disk' and proof['limit_bytes'] == 100 * scratch.GIB
         assert spec['securityContext']['fsGroup'] == 1000
+        assert 'fsGroupChangePolicy' not in spec['securityContext']
     assert not Path(profile['scratch']['mount_path']).exists()
+
+
+def test_legacy_crd_scratch_keeps_shared_volumes_and_nonroot_identity(profile):
+    spec = pod_spec(profile)
+    volumes = [{'name': 'vepfs', 'hostPath': {'path': '/mnt/vepfs'}},
+               {'name': 'personal-home', 'hostPath': {'path': '/mnt/vepfs/base2/jinhaopeng'}},
+               {'name': 'shm', 'emptyDir': {'medium': 'Memory'}}]
+    mounts = [{'name': 'vepfs', 'mountPath': '/mnt/vepfs'},
+              {'name': 'personal-home', 'mountPath': '/home/jinhaopeng'},
+              {'name': 'shm', 'mountPath': '/dev/shm'}]
+    spec['volumes'] = deepcopy(volumes)
+    spec['containers'][0]['volumeMounts'] = deepcopy(mounts)
+    scratch.configure_scratch_pod(spec, profile, {'uid': 83980, 'gid': 83980})
+    assert spec['volumes'][:-1] == volumes
+    assert spec['containers'][0]['volumeMounts'][:-1] == mounts
+    assert spec['securityContext'] == {'runAsUser': 83980, 'runAsGroup': 83980,
+                                       'runAsNonRoot': True, 'fsGroup': 83980}
+    assert scratch.validate_scratch_pod(spec, profile)['gid'] == 83980
+    # An old or unrelated template cannot silently reintroduce the rejected
+    # CRD field, nor can the renderer silently override its explicit policy.
+    spec['securityContext']['fsGroupChangePolicy'] = 'OnRootMismatch'
+    with pytest.raises(ValueError, match='does not accept fsGroupChangePolicy'):
+        scratch.configure_scratch_pod(spec, profile, {'uid': 83980, 'gid': 83980})
 
 
 @pytest.fixture
