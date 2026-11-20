@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import ast
 from copy import deepcopy
+import hashlib
 from pathlib import Path
 
 from . import suite_bindings as bindings, suite_runner as runner
@@ -144,14 +145,41 @@ def _verify_training_entry(old_root, old_files):
     train_name = 'src/deepprobe_vlm/train.py'
     runner.require(old_files.get(train_name) == LEGACY_TRAIN_SHA,
                    'Legacy final-native checkpoint training entry differs from the reviewed source')
-    train_text = (old_root / train_name).read_text()
+    train_bytes = (old_root / train_name).read_bytes()
+    runner.require(hashlib.sha256(train_bytes).hexdigest() == LEGACY_TRAIN_SHA,
+                   'Legacy training entry bytes differ from the reviewed source')
+    train_text = train_bytes.decode('utf-8')
     train_ast = ast.parse(train_text)
-    functions = {node.name: node for node in train_ast.body if isinstance(node, ast.FunctionDef)}
-    runner.require('save_final_resume_checkpoint' in functions and 'main' in functions
-                   and any(isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
-                           and node.func.id == 'save_final_resume_checkpoint'
-                           for node in ast.walk(functions['main'])),
+    trainers = [node for node in train_ast.body
+                if isinstance(node, ast.ClassDef) and node.name == 'DeepProbeTrainer']
+    mains = [node for node in train_ast.body
+             if isinstance(node, ast.FunctionDef) and node.name == 'main']
+    runner.require(len(trainers) == len(mains) == 1,
+                   'Legacy training entry requires its original Trainer class and main')
+    savers = [node for node in trainers[0].body
+              if isinstance(node, ast.FunctionDef) and node.name == 'save_final_resume_checkpoint']
+    runner.require(len(savers) == 1 and len(savers[0].args.args) == 1
+                   and savers[0].args.args[0].arg == 'self',
+                   'Legacy Trainer class lacks its final native checkpoint method')
+
+    def body_nodes(function):
+        pending = list(function.body)
+        while pending:
+            node = pending.pop()
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Lambda)):
+                continue
+            yield node
+            pending.extend(ast.iter_child_nodes(node))
+
+    def calls(function, receiver, method):
+        return any(isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                   and isinstance(node.func.value, ast.Name) and node.func.value.id == receiver
+                   and node.func.attr == method for node in body_nodes(function))
+
+    runner.require(calls(mains[0], 'trainer', 'save_final_resume_checkpoint'),
                    'Legacy train main does not call its final native checkpoint saver')
+    runner.require(calls(savers[0], 'self', '_save_checkpoint'),
+                   'Legacy final saver does not call the native Trainer checkpoint method')
     runner.require('src/deepprobe_vlm/suite_checkpoint_export.py' not in old_files
                    and 'suite_checkpoint_export' not in train_text,
                    'Legacy source unexpectedly claims an intermediate checkpoint export hook')

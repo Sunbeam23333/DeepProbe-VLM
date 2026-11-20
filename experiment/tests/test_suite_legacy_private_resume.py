@@ -10,6 +10,9 @@ from deepprobe_vlm import formal_integrity, suite_legacy_private_resume as legac
 from deepprobe_vlm import suite_runner as runner
 
 
+LEGACY_TRAIN_ENTRY = (Path(__file__).parent / 'fixtures' / 'legacy_r4_train_entry.py').read_bytes()
+
+
 def write(path, value):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(value if isinstance(value, bytes) else runner.canonical(value) + b'\n')
@@ -60,8 +63,7 @@ def fixture(tmp_path, monkeypatch):
         (old / name).mkdir(parents=True)
     for name in (*formal_integrity.REQUIRED_P1_SOURCE, *formal_integrity.SOURCE_FILES):
         write(old / name, b'# synthetic old scientific source, no checkpoint hook\n')
-    write(old / 'src/deepprobe_vlm/train.py',
-          b'def save_final_resume_checkpoint(trainer):\n    pass\n\ndef main():\n    save_final_resume_checkpoint(None)\n')
+    write(old / 'src/deepprobe_vlm/train.py', LEGACY_TRAIN_ENTRY)
     model = {'num_frames': 8, 'pool_grid': 4, 'num_loops': 4,
              'language_revision': 'a' * 40, 'vision_revision': 'b' * 40}
     recipe = {'model': model, 'training': {'seed': 17, 'stage': 'sft', 'max_steps': 718}}
@@ -250,20 +252,41 @@ def test_reaudited_archive_still_needs_full_get_true(fixture):
         verify(f)
 
 
+def test_legacy_training_entry_accepts_audited_class_method_structure(tmp_path, monkeypatch):
+    root = tmp_path.resolve(); name = 'src/deepprobe_vlm/train.py'
+    pin = write(root / name, LEGACY_TRAIN_ENTRY)
+    monkeypatch.setattr(legacy, 'LEGACY_TRAIN_SHA', pin['sha256'])
+    legacy._verify_training_entry(root, {name: pin['sha256']})
+
+
 @pytest.mark.parametrize('change', ['missing-saver', 'missing-main', 'main-does-not-call',
-                                  'hook-import', 'hook-module', 'wrong-train-sha'])
+                                  'hook-import', 'hook-module', 'wrong-train-sha', 'changed-live-bytes',
+                                  'wrong-class', 'duplicate-class', 'duplicate-main', 'wrong-self',
+                                  'missing-native-save', 'wrong-main-receiver', 'wrong-native-receiver',
+                                  'nested-main-call', 'nested-native-call', 'top-level-helper'])
 def test_legacy_training_entry_requires_final_native_saver_and_no_intermediate_hook(tmp_path, monkeypatch, change):
     root = tmp_path.resolve(); name = 'src/deepprobe_vlm/train.py'
-    source = 'def save_final_resume_checkpoint(trainer):\n    pass\n\ndef main():\n    save_final_resume_checkpoint(None)\n'
-    if change == 'missing-saver': source = 'def main():\n    save_final_resume_checkpoint(None)\n'
-    elif change == 'missing-main': source = 'def save_final_resume_checkpoint(trainer):\n    pass\n'
-    elif change == 'main-does-not-call': source = 'def save_final_resume_checkpoint(trainer):\n    pass\n\ndef main():\n    pass\n'
+    source = LEGACY_TRAIN_ENTRY.decode()
+    if change == 'missing-saver': source = source.replace('def save_final_resume_checkpoint(self):', 'def other(self):')
+    elif change == 'missing-main': source = source.replace('def main(argv=None):', 'def other(argv=None):')
+    elif change == 'main-does-not-call': source = source.replace('trainer.save_final_resume_checkpoint()', 'pass')
     elif change == 'hook-import': source += '\nfrom . import suite_checkpoint_export\n'
+    elif change == 'wrong-class': source = source.replace('class DeepProbeTrainer(Trainer):', 'class OtherTrainer(Trainer):')
+    elif change == 'duplicate-class': source += '\nclass DeepProbeTrainer(Trainer):\n    pass\n'
+    elif change == 'duplicate-main': source += '\ndef main():\n    pass\n'
+    elif change == 'wrong-self': source = source.replace('def save_final_resume_checkpoint(self):', 'def save_final_resume_checkpoint(other):')
+    elif change == 'missing-native-save': source = source.replace('self._save_checkpoint(self.model, trial=None)', 'pass')
+    elif change == 'wrong-main-receiver': source = source.replace('trainer.save_final_resume_checkpoint()', 'other.save_final_resume_checkpoint()')
+    elif change == 'wrong-native-receiver': source = source.replace('self._save_checkpoint(', 'other._save_checkpoint(')
+    elif change == 'nested-main-call': source = source.replace('trainer.save_final_resume_checkpoint()', 'def unused():\n            trainer.save_final_resume_checkpoint()')
+    elif change == 'nested-native-call': source = source.replace('self._save_checkpoint(self.model, trial=None)', 'def unused():\n            self._save_checkpoint(self.model, trial=None)')
+    elif change == 'top-level-helper': source = 'def save_final_resume_checkpoint(trainer):\n    pass\n\ndef main():\n    save_final_resume_checkpoint(None)\n'
     pin = write(root / name, source.encode())
     monkeypatch.setattr(legacy, 'LEGACY_TRAIN_SHA', pin['sha256'])
     files = {name: pin['sha256']}
     if change == 'hook-module': files['src/deepprobe_vlm/suite_checkpoint_export.py'] = '0' * 64
     elif change == 'wrong-train-sha': files[name] = '0' * 64
+    elif change == 'changed-live-bytes': (root / name).write_text(source + '\n# changed after manifest verification\n')
     with pytest.raises(ValueError):
         legacy._verify_training_entry(root, files)
 
