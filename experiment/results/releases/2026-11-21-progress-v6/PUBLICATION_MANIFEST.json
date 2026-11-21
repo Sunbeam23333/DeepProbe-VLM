@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "release_id": "2026-11-21-progress-v6",
+  "kind": "CURATED_EXPERIMENT_RESULTS",
+  "created_utc": "2026-11-21T00:46:48.799480+00:00",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 3305,
+      "sha256": "7e1143969fc932c77fadf703ff0df09ec4e57cb34a899eda38ae3a76cf58f771"
+    },
+    {
+      "path": "cuda_pool/bf16/SUMMARY.json",
+      "bytes": 3493,
+      "sha256": "e31c78d2567efca076b37d6ae5c46cc8ee94dcfd417181ae9eb6c72f539ae929"
+    },
+    {
+      "path": "cuda_pool/fp32/SUMMARY.json",
+      "bytes": 3495,
+      "sha256": "d1ff9fa3a805396fdc2464610d0866730544a9f361c4747fe11a1e8a98177586"
+    },
+    {
+      "path": "progress.json",
+      "bytes": 8789,
+      "sha256": "94611fd6d6b2536b2c48de9e3692863533dbbbbe77c08bd294d9655fba3c0494"
+    }
+  ],
+  "file_count": 4,
+  "payload_bytes": 19082,
+  "provenance": {
+    "source_commit": "a114a4cd9e026af42cf480c0e68724cdea4063a4",
+    "runtime_observed_at_utc": "2026-11-21T00:38:25.078184+00:00",
+    "cache_observed_at_utc": "2026-11-21T00:33:49.827925+00:00",
+    "runtime_observation_sha256": "6375b71e9a03f205fa3f0533309e1302ddb3606c63950d9967e3a29b5a578a33",
+    "independent_admission_sha256": "d6f2045e0bb68dfa852afbf8e17ac1535a184ab53446601fd73ab9649e27da1b",
+    "source_manifest_sha256": "632c0f9aa84ae55dbe23dee8bb4379298f7eb123b73231a8fcc3990167c3784b",
+    "plan_sha256": "5d073f4b663a8bfae28684696b84c34700c7cd303f15592953819e6c30bea8a7",
+    "new_scientific_results": false,
+    "new_scientific_results_scope": "No new training completion or model/benchmark quality result; new synthetic pooling microbenchmarks are reported separately.",
+    "new_operator_microbenchmark_summaries": 2,
+    "full_model_or_training_speedup_claim": false,
+    "older_releases_unchanged": true
+  },
+  "scope": "Results and documents only; no media, weights or private cluster snapshots."
+}

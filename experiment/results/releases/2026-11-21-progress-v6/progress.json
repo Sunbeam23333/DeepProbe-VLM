@@ -1,0 +1,228 @@
+{
+  "schema_version": 1,
+  "release_id": "2026-11-21-progress-v6",
+  "snapshot_started_at_utc": "2026-11-21T00:38:23.055248+00:00",
+  "snapshot_observed_at_utc": "2026-11-21T00:38:25.078184+00:00",
+  "observation_is_atomic": false,
+  "public_code_commit": "a114a4cd9e026af42cf480c0e68724cdea4063a4",
+  "new_held_out_results": false,
+  "new_scientific_training_completions": 0,
+  "new_model_benchmark_evaluation_completions": 0,
+  "suite_execution": {
+    "attempt": "a6",
+    "job_status": "Running",
+    "pod_status": "Running",
+    "exact_identity_verified": true,
+    "worker_count": 1,
+    "priority": "normal",
+    "queue": "stream",
+    "nodes_per_worker": 1,
+    "gpus_per_worker": 8,
+    "restart_policy": "Never",
+    "container_restart_count": 0,
+    "container_started_at_utc": "2026-11-21T00:34:25Z",
+    "startup_accepted": true,
+    "gpu_gate_accepted": true,
+    "completed_operational_task_count": 1,
+    "completed_operational_tasks": [
+      "gpu_gate"
+    ],
+    "completed_task_count_scope": "Engineering gate only; not a scientific completion percentage.",
+    "active_task": "train__ouro_r4_s17__alignment",
+    "active_task_scope": "Restore accepted historical R4 seed17 alignment; the active claim is not a new alignment completion.",
+    "active_claim_observed": true,
+    "new_optimizer_updates_verified": false,
+    "optimizer_step_observed": null,
+    "scientific_task_completion_observed": false,
+    "automatic_resubmit": false,
+    "public_run_label": "suite-isolated-worker-a6",
+    "hardware_admission_passed": true,
+    "hardware_contract": "NVIDIA-B300"
+  },
+  "bound_plan": {
+    "models": 18,
+    "operational_tasks": 185,
+    "task_kinds": {
+      "gate": 1,
+      "train": 34,
+      "archive": 52,
+      "evaluate": 36,
+      "latency": 15,
+      "compare_latency": 12,
+      "cleanup": 34,
+      "aggregate": 1
+    },
+    "new_training_stages": 27,
+    "r4_sft_remaining_optimizer_updates": 118,
+    "new_model_benchmark_evaluations": 32,
+    "remaining_work_scope": "Pending work after accepted historical reuse, not work completed by this allocation.",
+    "plan_sha256": "5d073f4b663a8bfae28684696b84c34700c7cd303f15592953819e6c30bea8a7",
+    "source_manifest_sha256": "632c0f9aa84ae55dbe23dee8bb4379298f7eb123b73231a8fcc3990167c3784b"
+  },
+  "admission": {
+    "reviewed_at_utc": "2026-11-21T00:32:28.524046+00:00",
+    "accepted": true,
+    "cpu_admitted": true,
+    "server_dry_run_accepted": true,
+    "exact_empty_archive_prefix_count": 52,
+    "active_project_jobs_at_admission": 0,
+    "projected_home_bytes": 120429007416,
+    "home_limit_bytes": 150000000000,
+    "parent_reserved_bytes": 48000000000,
+    "oss_limit_bytes": null,
+    "capacity_scope": "Admission-time projection, not current actual disk use. Capacity must be checked again per operation.",
+    "private_scratch_bytes": 107374182400,
+    "isolated_home_overlay": true,
+    "old_home_and_vepfs_read_only": true,
+    "parent_reservation_lifetime": "Allocation lifetime; retained until all owned work and export activity have stopped."
+  },
+  "benchmark_cache_preparation": {
+    "observed_at_utc": "2026-11-21T00:33:49.827925+00:00",
+    "shapes": {
+      "videomme899-f4": {
+        "frames": 4,
+        "cache_entries_observed": 629,
+        "pngs_observed": 2516,
+        "objects_observed": 3146,
+        "bytes_observed": 996822917,
+        "complete_marker_observed": false,
+        "ready_receipt_observed": false,
+        "prepared_asset_observed": false
+      },
+      "tempcompass_mc-f4": {
+        "frames": 4,
+        "cache_entries_observed": 0,
+        "pngs_observed": 0,
+        "objects_observed": 0,
+        "bytes_observed": 0,
+        "complete_marker_observed": false,
+        "ready_receipt_observed": false,
+        "prepared_asset_observed": false
+      },
+      "videomme899-f16": {
+        "frames": 16,
+        "cache_entries_observed": 0,
+        "pngs_observed": 0,
+        "objects_observed": 0,
+        "bytes_observed": 0,
+        "complete_marker_observed": false,
+        "ready_receipt_observed": false,
+        "prepared_asset_observed": false
+      },
+      "tempcompass_mc-f16": {
+        "frames": 16,
+        "cache_entries_observed": 0,
+        "pngs_observed": 0,
+        "objects_observed": 0,
+        "bytes_observed": 0,
+        "complete_marker_observed": false,
+        "ready_receipt_observed": false,
+        "prepared_asset_observed": false
+      }
+    },
+    "entry_count_scope": "Entries count cache metadata objects; they are not PNG counts, QA counts, or independently accepted READY clips.",
+    "all_new_shapes_ready": false,
+    "evaluation_requires_own_ready_receipt": true,
+    "original_f8_caches": {
+      "videomme899": "READY",
+      "tempcompass_mc": "READY"
+    }
+  },
+  "evidence": {
+    "submission": {
+      "bytes": 1535,
+      "sha256": "2c9196a0bf315f44a5e211f84a5dad236a92822554eca60ae4f492d4bcab0bc2",
+      "available_in_github": false
+    },
+    "submission_review": {
+      "bytes": 3152,
+      "sha256": "d6f2045e0bb68dfa852afbf8e17ac1535a184ab53446601fd73ab9649e27da1b",
+      "available_in_github": false
+    },
+    "runtime_observation": {
+      "bytes": 16665,
+      "sha256": "6375b71e9a03f205fa3f0533309e1302ddb3606c63950d9967e3a29b5a578a33",
+      "available_in_github": false
+    },
+    "cache_observation": {
+      "bytes": 18859,
+      "sha256": "f977da2c84f2dd793e4822862cf08690a1263067ac104315a9d57760b302df79",
+      "available_in_github": false
+    },
+    "bound_plan": {
+      "bytes": 90952,
+      "sha256": "5d073f4b663a8bfae28684696b84c34700c7cd303f15592953819e6c30bea8a7",
+      "available_in_github": false
+    },
+    "bound_runtime_inputs": {
+      "bytes": 446571,
+      "sha256": "c8af2f5cc4ca8f173fc01a92ec59c1feae909bb42b94109659a7a881ef872073",
+      "available_in_github": false
+    },
+    "startup": {
+      "bytes": 4760,
+      "sha256": "36fe623381555ec0151e3e6fcb7f63e24146ca0d804606a28fe017de24edfa37",
+      "available_in_github": false
+    }
+  },
+  "baseline_results": "https://github.com/Sunbeam23333/DeepProbe-VLM/tree/main/experiment/results/releases/2026-11-19",
+  "claim_limits": [
+    "This is a dated, non-atomic read-only observation; it is not a background live status.",
+    "STARTUP and gpu_gate acceptance do not establish new scientific training, evaluation, or full-model latency results.",
+    "An active historical R4 alignment claim does not prove restored model/optimizer/RNG state or new optimizer updates.",
+    "The 185 operational tasks include engineering, archive and cleanup work and are not a scientific completion percentage.",
+    "Cache entry counts do not establish READY acceptance or benchmark quality.",
+    "New CUDA figures measure only synthetic weighted pooling, including output allocation. No end-to-end model latency, training speedup, or quality result is asserted."
+  ],
+  "accepted_scientific_totals": {
+    "training_stages": 6,
+    "complete_two_stage_models": 2,
+    "model_benchmark_evaluations": 4,
+    "full_model_latency_runs": 0
+  },
+  "cuda_pool_microbenchmark": {
+    "scope": "Single-device synthetic weighted pooling, including output allocation; gate and projector excluded. No model checkpoint loaded.",
+    "new_operator_measurements": true,
+    "full_model_or_training_speedup_claim": false,
+    "quality_measured": false,
+    "input_shape": [
+      8,
+      729,
+      1152
+    ],
+    "pool_grid": 4,
+    "warmup_calls_per_backend": 25,
+    "measured_calls_per_backend": 100,
+    "pair_order": "reference,triton on even repeats; triton,reference on odd repeats",
+    "dtypes": {
+      "bf16": {
+        "completed_at_utc": "2026-11-21T00:36:56.696788+00:00",
+        "reference_median_cuda_event_ms": 0.24940799921751022,
+        "triton_median_cuda_event_ms": 0.09699199721217155,
+        "reference_over_triton_median_ratio": 2.5714286372712403,
+        "numerical_parity_passed": true,
+        "max_abs_error": 1.1920928955078125e-07,
+        "summary": {
+          "path": "cuda_pool/bf16/SUMMARY.json",
+          "bytes": 3493,
+          "sha256": "e31c78d2567efca076b37d6ae5c46cc8ee94dcfd417181ae9eb6c72f539ae929",
+          "unchanged_copy_of_original": true
+        }
+      },
+      "fp32": {
+        "completed_at_utc": "2026-11-21T00:37:08.265307+00:00",
+        "reference_median_cuda_event_ms": 0.24217600375413895,
+        "triton_median_cuda_event_ms": 0.09777599945664406,
+        "reference_over_triton_median_ratio": 2.476845085705566,
+        "numerical_parity_passed": true,
+        "max_abs_error": 1.4901161193847656e-07,
+        "summary": {
+          "path": "cuda_pool/fp32/SUMMARY.json",
+          "bytes": 3495,
+          "sha256": "d1ff9fa3a805396fdc2464610d0866730544a9f361c4747fe11a1e8a98177586",
+          "unchanged_copy_of_original": true
+        }
+      }
+    }
+  }
+}

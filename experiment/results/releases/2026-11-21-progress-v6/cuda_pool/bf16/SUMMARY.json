@@ -1,0 +1,106 @@
+{
+  "backends": {
+    "reference": {
+      "cuda_event_ms": {
+        "count": 100,
+        "max": 0.5824000239372253,
+        "mean": 0.24481184020638466,
+        "median": 0.24940799921751022,
+        "min": 0.1871040016412735,
+        "p95": 0.32320799678564066
+      },
+      "peak_allocated_bytes": 80487936,
+      "peak_reserved_bytes": 111149056,
+      "synchronized_call_seconds": {
+        "count": 100,
+        "max": 0.0006179995834827423,
+        "mean": 0.0002685488946735859,
+        "median": 0.0002683345228433609,
+        "min": 0.00020646490156650543,
+        "p95": 0.00036817975342273707
+      }
+    },
+    "triton": {
+      "cuda_event_ms": {
+        "count": 100,
+        "max": 0.4166719913482666,
+        "mean": 0.0973932794854045,
+        "median": 0.09699199721217155,
+        "min": 0.05929600074887276,
+        "p95": 0.11436640284955499
+      },
+      "peak_allocated_bytes": 22569984,
+      "peak_reserved_bytes": 111149056,
+      "synchronized_call_seconds": {
+        "count": 100,
+        "max": 0.0005355551838874817,
+        "mean": 0.00012065544724464417,
+        "median": 0.00011763349175453186,
+        "min": 7.660128176212311e-05,
+        "p95": 0.0001401710323989391
+      }
+    }
+  },
+  "completed_utc": "2026-11-21T00:36:56.696788+00:00",
+  "model_speedup_or_quality_claim": false,
+  "numerical": {
+    "atol": 3e-05,
+    "finite": true,
+    "max_abs_error": 1.1920928955078125e-07,
+    "max_relative_error_with_1e_minus8_floor": 0.0013661159900948405,
+    "output_dtype": "torch.float32",
+    "output_shape": [
+      8,
+      16,
+      1152
+    ],
+    "passed": true,
+    "rmse": 1.2717996433764256e-08,
+    "rtol": 3e-05
+  },
+  "profile": {
+    "performed": false,
+    "requested": false
+  },
+  "protocol": {
+    "cuda_events": "same device/current stream, synchronized after every call",
+    "end_to_end_model_latency_measured": false,
+    "hardware_admission_owned_by_caller": true,
+    "input_scope": "synthetic model-shaped states; no checkpoint loaded",
+    "measured_calls_per_backend": 100,
+    "num_inference_devices": 1,
+    "numerical_gate": {
+      "atol": 3e-05,
+      "rtol": 3e-05
+    },
+    "pair_order": "reference,triton on even repeats; triton,reference on odd repeats",
+    "patch_grid_side": 27,
+    "pool_grid": 4,
+    "profiler_in_timing": false,
+    "protocol": "deepprobe-cuda-weighted-pool-micro-v1",
+    "quality_measured": false,
+    "seed": 17,
+    "separate_profile_requested": false,
+    "shape": [
+      8,
+      729,
+      1152
+    ],
+    "states_dtype": "bfloat16",
+    "timed_scope": "weighted pooling only, including output allocation; gate and projector excluded",
+    "wall_time": "call plus event recording and completion synchronization",
+    "warmup_and_first_triton_call_excluded": true,
+    "warmup_calls_per_backend": 25,
+    "weights": "sigmoid of seeded synthetic gate logits in states dtype, then FP32 clamp_min(1e-6)",
+    "weights_dtype": "float32"
+  },
+  "quantile_method": "R7 linear interpolation",
+  "source_sha256": {
+    "_triton_pool.py": "43bc3073b031566ed9b93bf059c39f48d94f3202d2328dcd5456c0a6827c5f5d",
+    "benchmark_cuda_pool.py": "def82781c7ef21ef0db0279e342815a31dfde5895162632b1eed7a9d3697efdd",
+    "benchmark_latency.py": "76c048f33f12c91c44a4244d5ff1cf588b9f4fd98b5e3cc49a698601247d094a",
+    "cuda_pool.py": "3ff130511dc4887d6243711c011ac8c6ccdad67dddf1cd39bbf279744cf017ed"
+  },
+  "status": "CUDA_POOL_MICROBENCHMARK_COMPLETE",
+  "timings_are_operator_microbenchmarks": true
+}

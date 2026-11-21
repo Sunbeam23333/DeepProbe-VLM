@@ -1,116 +1,65 @@
 # Experiment status — 2026-11-21
 
-Smol attempt 6 **completed alignment training at 718/718 optimizer steps**,
-adding all 368 remaining updates from checkpoint350. The training child exited 0
-at about **11:25:46 Beijing time** after 100 min 15 s; both preflights also exited 0.
-Formal and stage completion receipts, Trainer state and the saved final/cp718
-inventories agree on completion. This completes alignment training only.
+The isolated **a6 suite worker is Running** in the bounded observation ending at
+**08:38:25 Beijing time** (00:38:25 UTC). Its exact Job/Pod identity matches the
+single submission, with zero restarts. One normal-priority stream node provides
+eight B300 GPUs. STARTUP and the engineering `gpu_gate` passed. **1/185 operational
+tasks** is complete; this is not a scientific completion percentage. The active
+claim restores accepted historical R4 seed17 alignment. No new optimizer update,
+scientific training completion or model/benchmark result is observed in this snapshot.
+Public source main is synchronized at `a114a4c`.
 
-The enclosing Job **Failed at 11:27:04 Beijing time on November 20**, with
-container exit1, after a process-metadata permission error during archival.
-The archive child received SIGTERM; external preemption is not established.
-The original Job remains Failed. A separate recovery uploaded **158 objects /
-17,233,643,424 bytes**, preserving the existing 82 objects. The complete archive
-contains **240 objects / 18,149,863,235 bytes**: 239 original payloads and their
-original manifest. All objects passed full GET/SHA verification and a separate
-independent audit, followed by archive acceptance at **03:19:10 Beijing time on
-November 21**. The final checkpoint has **18 files / 8,589,657,473 bytes**.
-The completed final was also successfully imported into native suite history.
-The recovery acceptance is separate; no native `ARCHIVED.json` was fabricated.
-**Do not repeat alignment training.** Matched Smol SFT and evaluations remain
-pending. There is no new Smol SFT completion or held-out result.
-Evidence hashes and dated observation scopes are recorded in [status.json](status.json).
+At **08:32:28**, independent v10 admission accepted the complete 185-task binding,
+CPU checks and server dry-run, including 52 exact empty archive prefixes and no
+active project Job. Private scratch is 100 GiB; the isolated home overlay keeps
+old home and shared filesystem inputs read-only. The parent allocation retains a
+48,000,000,000-byte reservation. The admission home projection was
+**120,429,007,416 / 150,000,000,000 bytes**. This is a dated projection, not current
+actual use. Capacity is checked per operation; OSS has no configured capacity limit.
 
-Latest code is synchronized at `65e562c`. The v6 repair uses bounded,
-paginated server metadata queries and exact project-object reads; **137 scoped
-CPU tests** passed. Earlier 190-test and full-repository records remain dated history.
-The full 185-task candidate passed CPU admission at **04:25:13 Beijing time on
-November 21**: 68 checks passed, four F4/F16 cache shapes were explicitly deferred,
-and no check failed. The **04:28:09** server dry-run passed with 52 exact empty
-archive prefixes and no duplicate Job UID; independent admission passed at **04:30:30**. The reviewed
-worst checkpoint-chain peak is **142,546,098,993 bytes**, leaving
-**7,453,901,007 bytes** below the 150 GB home limit. Capacity is rechecked per task.
+The GPU gate recorded new synthetic weighted-pooling microbenchmarks on one device.
+At input shape [8,729,1152], G4, the reference → Triton median CUDA-event times are
+**0.249408 → 0.096992 ms (2.5714×)** for BF16 and
+**0.242176 → 0.097776 ms (2.4768×)** for FP32. Both numerical checks passed, with
+maximum absolute errors 1.19209e-7 and 1.49012e-7. Each backend used 25 warmups and
+100 measured calls in alternating order. Timing includes output allocation and
+excludes the gate and projector. No checkpoint was loaded. These are pooling
+operator measurements, not full-model inference, training speedup or quality results.
+The original November 19 CUDA results remain a separate historical record.
 
-The replacement **attempt-2 Job and Pod are observed Failed** at **04:36:26 Beijing time**,
-with the exact identity returned by the successful single submission, **exit1 and
-zero restarts**. Its eight-device hardware report passed the B300 identity contract
-(compute capability 10.3, 267.69 GiB per device), BF16 attention forward/backward
-and all-reduce. The new controller startup acceptance receipt is present.
-The first engineering `gpu_gate` task was claimed and failed during Triton
-`cuda_utils` initialization: the default `/.triton` cache directory was not writable.
-The intended numerical kernel had not launched; this is not a CUDA numerical
-discrepancy. **No training/evaluation task, scientific completion or new optimizer
-update is observed.** An explicit task-owned cache-directory repair is being prepared.
-The failed allocation used one normal-priority stream worker, one node and eight GPUs.
+Both original Video-MME and TempCompass **F8 caches remain READY**. At
+**08:33:49**, Video-MME899 F4 had **629 cache metadata entries, 2,516 PNGs and
+3,146 objects / 996,822,917 bytes**. No completion marker, READY or PREPARED_ASSET
+receipt was present. The other three F4/F16 shapes had zero observed objects and
+no READY. These counts are preparation progress, not accepted clips or completed
+benchmark questions. Each evaluation waits for its own verified READY receipt.
 
-The first worker remains Failed after the 03:52:38 controller query timeout;
-its 03:54:45 terminal observation and passed startup are retained as history.
-It produced no scientific task or checkpoint. Its small failure archive now has
-**18 objects / 103,783 bytes**, verified by complete GET/SHA. The stopped worker's
-lease was retired before the separate v6 attempt. Original files are preserved.
+Accepted scientific totals remain **6 training stages, 2 complete two-stage models,
+4 model/benchmark evaluations and 0 full-model latency runs**. Smol alignment a6
+completed 718/718 steps, including all 368 updates from checkpoint350. Its training
+child and both preflights exited 0. The original Job then Failed during archival;
+that original failure is unchanged. Separate recovery and full GET/SHA acceptance
+at **03:19:10 Beijing time on November 21** verified **240 objects /
+18,149,863,235 bytes**, including all 239 original payloads and the original manifest.
+The final is 18 files / 8,589,657,473 bytes and has been imported into suite history.
+Do not repeat its alignment. Matched Smol SFT and evaluations remain pending.
 
-Both Video-MME and TempCompass **F8 caches remain READY**. The F4/F16 decoder and
-publisher have restarted under controlled CPU recovery; no new shape READY has
-been observed. Their earlier `_UnverifiedMarker` failure is retained separately.
-Training proceeds through its own input and capacity gates; every evaluation
-waits for its own READY receipt. Checkpoint-chain backpressure covers 17 components
-and permits one training claim at a time. A local checkpoint is retired only after
-verified durable archival and all evaluation/latency/other consumers complete.
+R4 SFT checkpoint600 has accepted full-archive and native-metadata checks. Runtime
+model/optimizer/scheduler/RNG restoration and its final **118 updates** are still
+pending. The full plan retains 18 models, 34 training stages, 36 model/benchmark
+evaluations, 15 full-model latency runs, 12 comparisons and 185 operational tasks.
+Remaining work is **27 fresh training stages plus R4's 118 updates, 32 new
+evaluations, 15 latency runs and 12 comparisons**. Local checkpoints are retired
+only after verified archival and every dependent consumer completes.
 
-After accepting a6 alignment, the remaining model work is **27 new training
-stages plus 118 R4 SFT updates**, and **32 new model/benchmark evaluations**.
-Full-model latency measurements and comparative statistics also remain open.
-
-At **01:13 Beijing time on November 21**, independently checked cleanup removed
-six already archived old checkpoint weight files, releasing **17,116,975,648 bytes**.
-All a6 files were preserved and its old 42 GB reservation was released.
-The accounted home roots measured **62,504,292,995 bytes**; all other active
-reservations were retained. This dated snapshot is not GPU admission.
-
-The recovery precheck's **01:18:26** workload snapshot found all **five project
-Jobs and three Pods terminal**. It does not measure available GPU nodes or
-authorize a new submission.
-
-The following attempt 5 paragraph is retained as history, superseded by the
-a6 training completion and separate archive failure above.
-
-Smol attempt 5 **Failed on November 18 at 02:37:32 Beijing time (UTC+08:00)**
-after actually resuming from checkpoint300 and reaching logged step
-**354/718**, or **54 new optimizer updates**. Its actual GPU submission
-handshake, eight-device identity checks, eight-rank BF16/NCCL checks and
-training preflight passed. The controller records interruption by SIGTERM;
-the signal source is unconfirmed. The November 19 **18:29:22** exact readback
-found its original Pod absent and all **six project Jobs and three Pods
-terminal**, with no active or queued project workload at that time. Checkpoint350's complete
-29-file payload passed full SHA and native CPU metadata/contract checks; it was
-a candidate for the remaining **368 updates** at that observation. Its later
-authenticated continuation is a6, which completed those updates. Attempt 5
-itself has no final model, training-completion receipt or new held-out result.
-
-CUDA pooling QA attempt 3 **Succeeded on November 14 at 13:51:28 Beijing
-time (UTC+08:00)**, with container exit code 0 and no restarts. The November
-17 readback confirms that all eight ranks passed BF16 attention
-forward/backward and NCCL all-reduce. The pooling test suite passed **13 tests,
-including one explicit GPU numerical test**; both BF16 and FP32 operator
-microbenchmarks completed with real Triton kernel events recorded.
-
-For this single-device synthetic weighted-pooling workload, the ratios of
-reference to Triton median CUDA-event time were **2.41× for BF16** and
-**2.28× for FP32**. These measure the pooling operator only. They do not measure
-full-model inference, training speed or held-out quality. The complete
-**56-object / 2,518,835-byte** archive passed independent full GET/SHA checks,
-and the timing statistics were recomputed from every recorded call.
-
-The actual submission and atomically published READY receipt passed independent
-review. Earlier attempt-3 and attempt-4 failure archives are independently
-accepted and remain distinct from this new run; original source/checkpoint
-files were preserved. The historical attempt 5 continuation did not complete alignment or establish
-numerical resume equivalence; the newer a6 training completion is recorded above.
-
-The full-suite worker was submitted and failed at its first engineering gate. R4 SFT still needs its final 118
-updates from the authenticated cp600 archive binding. Smol SFT and new-model
-evaluation remain pending; the a6 alignment result is not a complete two-stage
-model or a held-out quality result.
+The previous workers' failures remain historical evidence; their startup and
+archive recovery do not imply scientific completion. In particular, the earlier
+attempt-2 cache-initialization failure is superseded as the current workload by
+this separately admitted a6 allocation. The [progress-v6 package](releases/2026-11-21-progress-v6/README.md)
+records independent runtime, cache and admission timestamps, opaque evidence pins,
+and unchanged GPU summary JSONs. [status.json](status.json) preserves dated prior
+observations. The accepted [November 19 result package](releases/2026-11-19/README.md)
+and all earlier sealed releases are unchanged; no new held-out score is claimed.
 
 ## Completed
 
@@ -189,11 +138,10 @@ restart policy Never and no forced node. The server dry-run object was **not
 created**; its temporary UID is not an actual Job identity.
 
 After fresh submission checks, attempt 3 was submitted once at **12:36:14** as
-`jinhaopeng-dpvlm-p1-smollm2-s29-align-a3-n1-bdff2`. The client exited 0, and the actual Job
+`withheld-private-job-identity`. The client exited 0, and the actual Job
 contract matches stream/low, one node, eight GPUs, restartNever and no forced
 node. The final submission-side capacity projection was **75,879,399,133
-bytes**, still below 99 GB. This actual Job is distinct from the earlier
-dry-run name ending in `792fb`.
+bytes**, still below 99 GB. This actual Job is distinct from the earlier, uncreated dry-run object.
 
 At **12:37:10**, the Job had `Created=True` and its exact Pod was
 **Pending/Unschedulable** because matching nodes lacked sufficient CPU, memory
@@ -261,11 +209,10 @@ at **00:48:09**. The two roots contain **49,916,338,246 bytes**; the additional
 99 GB without crediting future cleanup. The exact new OSS prefix is empty,
 all six project Jobs and three Pods were terminal, and client/server dry-runs
 verified stream/low, one node, eight GPUs, restart Never and no forced node.
-The server dry-run object was not created; its name ending `8abcf` is not an
-actual Job identity.
+The server dry-run object was not created and is not an actual Job identity.
 
 The one-shot submit client exited0 and confirmed the actual Job
-`jinhaopeng-dpvlm-p1-smollm2-s29-align-a4-n1-0aece`, created at **00:52:31**. The actual
+`withheld-private-job-identity`, created at **00:52:31**. The actual
 contract matches stream/low, one node, eight GPUs, restart Never and no forced
 node. Submission freshly rechecked a **77,200,944,069-byte** capacity projection
 and bound its durable intent before the single create.
@@ -305,7 +252,7 @@ created no actual Job. The scientific recipe and checkpoint300 recovery
 source remain unchanged.
 
 After fresh submission checks, the one-shot client exited0 and created
-`jinhaopeng-dpvlm-p1-smollm2-s29-align-a5-n1-6e7fe`, at **01:19:04**. The actual allocation
+`withheld-private-job-identity`, at **01:19:04**. The actual allocation
 contract matches stream/low, one node, eight GPUs, restart Never and no forced
 node. Submission remeasured **49,932,063,109 bytes** plus the same reserve,
 for a **77,216,609,373-byte** projection. The durable intent preceded the one
@@ -323,8 +270,8 @@ CPU/submission records are retained as history.
 The same Job became Running at **02:18:19** and Failed at **02:37:32 Beijing
 time on November 18**. The November 19 **18:29:22** exact readback confirms
 the original UID and terminal condition. Its original Pod is `NotFound`, so
-the original container exit code is unavailable. The current project inventory
-contains six Jobs and three Pods, all terminal; earlier attempt-1/2 Jobs are
+the original container exit code is unavailable. That November 19 inventory
+contained six Jobs and three Pods, all terminal; earlier attempt-1/2 Jobs were
 no longer listed, which does not change their historical outcomes.
 
 The actual GPU startup handshake recorded `ROOT_SUBMISSION_HANDSHAKE_ACCEPTED`
@@ -421,7 +368,9 @@ Model headers and optimizer/scheduler/eight-rank RNG presence checks previously
 passed. Actual optimizer/RNG deserialization and a GPU resume have not been
 accepted. Recovery from step 600 requires 118 further updates. The November 11
 capacity analysis retains the checkpoint and projects 122,687,970,220 bytes,
-above the 99,000,000,000-byte limit, so the R4 recovery job remains gated.
+above the then-applicable 99,000,000,000-byte limit, so recovery was gated at
+that observation. The November 21 a6 allocation has separate 150 GB admission
+and runtime recovery requirements, recorded in the current snapshot above.
 
 The November 17 readback found the exact R4 Job and original Pod **NotFound**;
 this does not change its previously observed failure. Five model/optimizer
@@ -486,7 +435,7 @@ review, an exact server-side dry-run and independent submission review passed
 before/after the one-shot create as recorded in their individual receipts.
 
 The attempt-2 exact job
-`jinhaopeng-dpvlm-cuda-pool-qa-20261113-a2-n1-772f8`, was created at **00:26:08 on November
+`withheld-private-job-identity`, was created at **00:26:08 on November
 13** (UTC November 12, 16:26:08). The **00:26**, **00:27** and **00:31 Pending**
 observations remain in history. It subsequently became Running at **01:11:09**
 and Failed at **01:14:39**. The original Pod is still present; its container
@@ -546,7 +495,7 @@ repair, both test outputs and baseline proof are pinned separately under
 ### Attempt 1 retained as failed history
 
 The earlier synthetic pooling QA job
-`jinhaopeng-dpvlm-cuda-pool-qa-20261112-a1-n1-bb1e7` was created at **20:46:10
+`withheld-private-job-identity` was created at **20:46:10
 on November 12**, became Running at **20:55:46**, and Failed at **20:56:31**.
 Exact Pod-UID events confirm **external preemption at 20:56:29**, followed by
 container termination. The earlier **20:47:41 Pending** observation is retained
@@ -609,13 +558,13 @@ history and must not be repeated.
 
 ## Remaining work
 
-1. Repair the task-owned Triton cache directory and pass fresh admission before
-   launching a separate replacement. Hardware/startup already passed on attempt 2.
-2. Run Smol SFT and evaluations from the accepted a6 final; restore R4 cp600,
-   verify runtime recovery and complete its remaining 118 SFT updates.
+1. Continue the running a6 worker through historical R4 alignment restoration and
+   archive acceptance, then verify R4 cp600 runtime recovery and finish 118 SFT updates.
+2. Complete R4 evaluations and full-model latency/comparisons, then matched Smol SFT
+   and evaluations from its accepted final. Do not repeat historical alignment.
 3. Finish F4/F16 cache READY publication. Both F8 caches are already accepted.
-4. Complete 27 new training stages, 32 new evaluations, 15 latency runs,
-   12 comparisons, verified archival/consumer cleanup and final aggregation.
+4. Complete the remaining 27 fresh training stages, 32 new evaluations, 15 latency
+   runs, 12 comparisons, verified archival/consumer cleanup and final aggregation.
 
 MVBench has no accepted result in this release. Its authorization/media status
 was not reverified in this check. Existing benchmark timings do not constitute

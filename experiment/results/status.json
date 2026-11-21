@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
-  "observed_at_utc": "2026-11-20T20:36:26.404126+00:00",
+  "observed_at_utc": "2026-11-21T00:38:25.078184+00:00",
   "display_timezone": "Asia/Shanghai",
-  "observation_note": "The repaired v6 full185 attempt-2 worker is confirmed Failed at 2026-11-20T20:36:26.404126+00:00, with the same Job UID as its successful one-shot submission, exit 1 and zero restarts. Its eight-device hardware report passed, including BF16 attention forward/backward and all-reduce. The new controller startup acceptance receipt is present. The first engineering gpu_gate task was claimed, then failed during Triton cuda_utils initialization because its default /.triton cache directory was not writable. The intended numerical kernel had not launched; this is not a CUDA numerical discrepancy. No training/evaluation claim, scientific completion or new optimizer update is observed. An explicit task-owned cache-directory repair is being prepared. The original worker remains Failed; its small failure archive is accepted. Both F8 caches remain READY; F4/F16 CPU recovery is active but none of its four READY descriptors has been observed. Accepted a6 alignment/archive/history and R1/R2 quality results are unchanged.",
+  "observation_note": "Bounded non-atomic a6 runtime observation at 00:38:23–00:38:25 UTC, with separate cache preparation observation at 00:33:49 and admission at 00:32:28. Earlier observations remain dated history.",
   "new_held_out_results": false,
   "runs": {
     "dp-p1-ouro-r4-f8-g4-s17-sft-a1": {
@@ -1166,14 +1166,14 @@
           "available_in_github": false
         }
       },
-      "historical_cpu_dryrun_job_name": "jinhaopeng-dpvlm-p1-smollm2-s29-align-a3-n1-792fb",
+      "historical_cpu_dryrun_job_name": "withheld_private_cluster_identity",
       "submission_client_exit_code": 0,
       "submission_client_error": null,
       "submission_client_started_at_utc": "2026-11-17T04:32:27.935073+00:00",
       "submission_client_completed_at_utc": "2026-11-17T04:36:49.104906+00:00",
       "submission_outcome_recorded_at_utc": "2026-11-17T04:36:14.585555+00:00",
       "submission_durable_intent_sha256": "29bc37f07bfad826a0f6a296336bba8cb2626f371371db4102c1c86fba3533ad",
-      "exact_job": "jinhaopeng-dpvlm-p1-smollm2-s29-align-a3-n1-bdff2",
+      "exact_job": "withheld_private_cluster_identity",
       "job_created_at_utc": "2026-11-17T04:36:14Z",
       "job_condition": "Failed",
       "pod_phase": null,
@@ -1323,7 +1323,7 @@
       "submission_outcome_confirmed": true,
       "gpu_submitted": true,
       "job_uid": "withheld_from_public_status",
-      "exact_job": "jinhaopeng-dpvlm-p1-smollm2-s29-align-a4-n1-0aece",
+      "exact_job": "withheld_private_cluster_identity",
       "control_package_sha256": "93c962a60465ff72952c2592ab7ddb9bbd33eec9792eb650ca85ed8343e881e8",
       "cpu_admission_passed": true,
       "cpu_admission_independently_accepted": true,
@@ -1512,7 +1512,7 @@
       "client_and_server_dryrun_contracts_verified": true,
       "server_dryrun_object_not_created": true,
       "server_dryrun_uid_is_not_real_job_identity": true,
-      "historical_cpu_dryrun_job_name": "jinhaopeng-dpvlm-p1-smollm2-s29-align-a4-n1-8abcf",
+      "historical_cpu_dryrun_job_name": "withheld_private_cluster_identity",
       "native_resume_metadata_import": {
         "cuda_initialized": false,
         "modeling_or_training_module_imported": false,
@@ -1625,7 +1625,7 @@
       "submission_outcome_confirmed": true,
       "gpu_submitted": true,
       "job_uid": "withheld_from_public_status",
-      "exact_job": "jinhaopeng-dpvlm-p1-smollm2-s29-align-a5-n1-6e7fe",
+      "exact_job": "withheld_private_cluster_identity",
       "control_package_sha256": "5dbb98c55a92edaf7b9188f368edae41181a84f93d33d16fdfc238c1fa92fab5",
       "cpu_admission_passed": true,
       "cpu_admission_independently_accepted": true,
@@ -1937,7 +1937,7 @@
       "client_and_server_dryrun_contracts_verified": true,
       "server_dryrun_object_not_created": true,
       "server_dryrun_uid_is_not_real_job_identity": true,
-      "historical_cpu_dryrun_job_name": "jinhaopeng-dpvlm-p1-smollm2-s29-align-a5-n1-5069a",
+      "historical_cpu_dryrun_job_name": "withheld_private_cluster_identity",
       "native_resume_metadata_import": {
         "cuda_initialized": false,
         "modeling_or_training_module_imported": false,
@@ -1997,7 +1997,7 @@
         "automatic_retry": false,
         "elapsed_seconds": 0.016577724367380142,
         "intent_sha256": "7bde3f18e043a07b8f2b76f258bfe25bb29544e8f85170ad8bcf68ba7147b4ae",
-        "job": "jinhaopeng-dpvlm-p1-smollm2-s29-align-a5-n1-6e7fe",
+        "job": "withheld_private_cluster_identity",
         "job_created_at_utc": "2026-11-17T17:19:04Z",
         "package_sha256": "5dbb98c55a92edaf7b9188f368edae41181a84f93d33d16fdfc238c1fa92fab5",
         "polls": 1,
@@ -2132,7 +2132,7 @@
       "run_id": "dp-p1-smollm2-f8-g4-s29-alignment-a6",
       "stage": "alignment",
       "observed_at_utc": "2026-11-20T19:19:10.078909+00:00",
-      "job_name": "jinhaopeng-dpvlm-p1-smollm2-s29-align-a6-n1-16f41",
+      "job_name": "withheld_private_cluster_identity",
       "job_uid": "withheld_from_public_status",
       "status": "Failed",
       "container_exit_code": 1,
@@ -2380,14 +2380,13 @@
     }
   },
   "remaining_work": [
-    "Repair the task-owned Triton cache path after attempt-2 gpu_gate failure; preserve failure evidence and pass fresh admission before a separate replacement.",
-    "Run matched Smol SFT and evaluations from the accepted a6 final; do not repeat its completed alignment.",
-    "Restore and verify R4 checkpoint600 model/optimizer/scheduler/RNG runtime state, then complete 118 remaining SFT updates and evaluations.",
-    "Finish F4/F16 cache recovery and per-shape READY publication. Both accepted F8 caches remain available.",
-    "Finish 27 new training stages, 32 new evaluations, 15 full-model latency runs and 12 comparisons, plus the separate R4 continuation and final aggregate. Retire local checkpoints only after verified archive and all consumers complete."
+    "Continue the running a6 suite through historical R4 alignment restoration and archival, then verify checkpoint600 runtime state and complete its remaining 118 SFT updates.",
+    "Run matched Smol SFT and evaluations from its accepted alignment final; do not repeat completed historical alignment.",
+    "Finish F4/F16 per-shape cache READY publication. Both accepted F8 caches remain available.",
+    "Finish 27 fresh training stages, 32 new evaluations, 15 full-model latency runs and 12 comparisons, plus the separate R4 continuation and final aggregate. Retire local checkpoints only after verified archive and all dependent consumers complete."
   ],
-  "active_run_id": null,
-  "active_run_observation": "The repaired v6 full185 attempt-2 worker is confirmed Failed at 2026-11-20T20:36:26.404126+00:00, with the same Job UID as its successful one-shot submission, exit 1 and zero restarts. Its eight-device hardware report passed, including BF16 attention forward/backward and all-reduce. The new controller startup acceptance receipt is present. The first engineering gpu_gate task was claimed, then failed during Triton cuda_utils initialization because its default /.triton cache directory was not writable. The intended numerical kernel had not launched; this is not a CUDA numerical discrepancy. No training/evaluation claim, scientific completion or new optimizer update is observed. An explicit task-owned cache-directory repair is being prepared. The original worker remains Failed; its small failure archive is accepted. Both F8 caches remain READY; F4/F16 CPU recovery is active but none of its four READY descriptors has been observed. Accepted a6 alignment/archive/history and R1/R2 quality results are unchanged.",
+  "active_run_id": "suite-isolated-worker-a6",
+  "active_run_observation": "At 2026-11-21T00:38:25.078184+00:00 the separately admitted isolated a6 worker Job and Pod were Running with zero restarts, one normal-priority stream node and eight B300 GPUs. STARTUP and gpu_gate passed; 1 of 185 operational tasks was complete. The active R4 alignment claim restores accepted historical weights; it is not new alignment training. No new optimizer update, scientific completion, or model/benchmark result was observed. Both F8 caches remain READY. F4/F16 preparation is separately dated and incomplete.",
   "engineering_qa": {
     "run_id": "dp-cuda-pool-qa-20261114-a3",
     "scope": "synthetic CUDA weighted-pooling correctness and microbenchmark; no model training or quality evaluation",
@@ -2399,7 +2398,7 @@
     "job_created_at_utc": "2026-11-14T04:14:46Z",
     "job_status": "Succeeded",
     "pod_phase": "Succeeded",
-    "exact_job": "jinhaopeng-dpvlm-cuda-pool-qa-20261114-a3-n1-abd5f",
+    "exact_job": "withheld_private_cluster_identity",
     "job_uid": "withheld_from_public_status",
     "pod_uid": "withheld_from_public_status",
     "allocation": {
@@ -2741,7 +2740,7 @@
     "archive_scope": "Synthetic startup, numerical and operator-microbenchmark evidence; no model checkpoint or held-out quality result."
   },
   "training_observed_at_utc": "2026-11-20T14:57:36.375748+00:00",
-  "serial_suite_preparation": {
+  "historical_serial_suite_preparation_20261120T203626Z": {
     "status": "FULL185_V6_ATTEMPT2_FAILED_TRITON_CACHE_PERMISSION",
     "plan_path": "experiment/configs/experiment_suite.json",
     "plan_sha256": "be12c2aa1f48699fe603be9f84ccc83e7b843b315bfa14495464813337e93cd0",
@@ -3684,6 +3683,188 @@
       }
     }
   },
+  "serial_suite_preparation": {
+    "status": "A6_RUNNING_GPU_GATE_ACCEPTED_HISTORICAL_R4_ALIGNMENT_RESTORE_ACTIVE",
+    "public_run_label": "suite-isolated-worker-a6",
+    "public_code_commit": "a114a4cd9e026af42cf480c0e68724cdea4063a4",
+    "source_manifest_sha256": "632c0f9aa84ae55dbe23dee8bb4379298f7eb123b73231a8fcc3990167c3784b",
+    "plan_sha256": "5d073f4b663a8bfae28684696b84c34700c7cd303f15592953819e6c30bea8a7",
+    "planned_scope": {
+      "scientific_model_configs": 18,
+      "training_stages": 34,
+      "model_benchmark_evaluations": 36,
+      "latency_runs": 15,
+      "latency_comparisons": 12
+    },
+    "planned_dag_tasks": 185,
+    "full_suite_gpu_submitted": true,
+    "gpu_running_confirmed": true,
+    "current_runtime": {
+      "attempt": "a6",
+      "job_status": "Running",
+      "pod_status": "Running",
+      "exact_identity_verified": true,
+      "worker_count": 1,
+      "priority": "normal",
+      "queue": "stream",
+      "nodes_per_worker": 1,
+      "gpus_per_worker": 8,
+      "restart_policy": "Never",
+      "container_restart_count": 0,
+      "container_started_at_utc": "2026-11-21T00:34:25Z",
+      "startup_accepted": true,
+      "gpu_gate_accepted": true,
+      "completed_operational_task_count": 1,
+      "completed_operational_tasks": [
+        "gpu_gate"
+      ],
+      "completed_task_count_scope": "Engineering gate only; not a scientific completion percentage.",
+      "active_task": "train__ouro_r4_s17__alignment",
+      "active_task_scope": "Restore accepted historical R4 seed17 alignment; the active claim is not a new alignment completion.",
+      "active_claim_observed": true,
+      "new_optimizer_updates_verified": false,
+      "optimizer_step_observed": null,
+      "scientific_task_completion_observed": false,
+      "automatic_resubmit": false,
+      "public_run_label": "suite-isolated-worker-a6",
+      "hardware_admission_passed": true,
+      "hardware_contract": "NVIDIA-B300"
+    },
+    "latest_gate_observed_at_utc": "2026-11-21T00:38:25.078184+00:00",
+    "admission": {
+      "reviewed_at_utc": "2026-11-21T00:32:28.524046+00:00",
+      "accepted": true,
+      "cpu_admitted": true,
+      "server_dry_run_accepted": true,
+      "exact_empty_archive_prefix_count": 52,
+      "active_project_jobs_at_admission": 0,
+      "projected_home_bytes": 120429007416,
+      "home_limit_bytes": 150000000000,
+      "parent_reserved_bytes": 48000000000,
+      "oss_limit_bytes": null,
+      "capacity_scope": "Admission-time projection, not current actual disk use. Capacity must be checked again per operation.",
+      "private_scratch_bytes": 107374182400,
+      "isolated_home_overlay": true,
+      "old_home_and_vepfs_read_only": true,
+      "parent_reservation_lifetime": "Allocation lifetime; retained until all owned work and export activity have stopped."
+    },
+    "frame_cache_preparation": {
+      "observed_at_utc": "2026-11-21T00:33:49.827925+00:00",
+      "shapes": {
+        "videomme899-f4": {
+          "frames": 4,
+          "cache_entries_observed": 629,
+          "pngs_observed": 2516,
+          "objects_observed": 3146,
+          "bytes_observed": 996822917,
+          "complete_marker_observed": false,
+          "ready_receipt_observed": false,
+          "prepared_asset_observed": false
+        },
+        "tempcompass_mc-f4": {
+          "frames": 4,
+          "cache_entries_observed": 0,
+          "pngs_observed": 0,
+          "objects_observed": 0,
+          "bytes_observed": 0,
+          "complete_marker_observed": false,
+          "ready_receipt_observed": false,
+          "prepared_asset_observed": false
+        },
+        "videomme899-f16": {
+          "frames": 16,
+          "cache_entries_observed": 0,
+          "pngs_observed": 0,
+          "objects_observed": 0,
+          "bytes_observed": 0,
+          "complete_marker_observed": false,
+          "ready_receipt_observed": false,
+          "prepared_asset_observed": false
+        },
+        "tempcompass_mc-f16": {
+          "frames": 16,
+          "cache_entries_observed": 0,
+          "pngs_observed": 0,
+          "objects_observed": 0,
+          "bytes_observed": 0,
+          "complete_marker_observed": false,
+          "ready_receipt_observed": false,
+          "prepared_asset_observed": false
+        }
+      },
+      "entry_count_scope": "Entries count cache metadata objects; they are not PNG counts, QA counts, or independently accepted READY clips.",
+      "all_new_shapes_ready": false,
+      "evaluation_requires_own_ready_receipt": true,
+      "original_f8_caches": {
+        "videomme899": "READY",
+        "tempcompass_mc": "READY"
+      }
+    },
+    "remaining_scientific_scope": {
+      "models": 18,
+      "operational_tasks": 185,
+      "task_kinds": {
+        "gate": 1,
+        "train": 34,
+        "archive": 52,
+        "evaluate": 36,
+        "latency": 15,
+        "compare_latency": 12,
+        "cleanup": 34,
+        "aggregate": 1
+      },
+      "new_training_stages": 27,
+      "r4_sft_remaining_optimizer_updates": 118,
+      "new_model_benchmark_evaluations": 32,
+      "remaining_work_scope": "Pending work after accepted historical reuse, not work completed by this allocation.",
+      "plan_sha256": "5d073f4b663a8bfae28684696b84c34700c7cd303f15592953819e6c30bea8a7",
+      "source_manifest_sha256": "632c0f9aa84ae55dbe23dee8bb4379298f7eb123b73231a8fcc3990167c3784b"
+    },
+    "accepted_scientific_totals": {
+      "training_stages": 6,
+      "complete_two_stage_models": 2,
+      "model_benchmark_evaluations": 4,
+      "full_model_latency_runs": 0
+    },
+    "evidence": {
+      "submission": {
+        "bytes": 1535,
+        "sha256": "2c9196a0bf315f44a5e211f84a5dad236a92822554eca60ae4f492d4bcab0bc2",
+        "available_in_github": false
+      },
+      "submission_review": {
+        "bytes": 3152,
+        "sha256": "d6f2045e0bb68dfa852afbf8e17ac1535a184ab53446601fd73ab9649e27da1b",
+        "available_in_github": false
+      },
+      "runtime_observation": {
+        "bytes": 16665,
+        "sha256": "6375b71e9a03f205fa3f0533309e1302ddb3606c63950d9967e3a29b5a578a33",
+        "available_in_github": false
+      },
+      "cache_observation": {
+        "bytes": 18859,
+        "sha256": "f977da2c84f2dd793e4822862cf08690a1263067ac104315a9d57760b302df79",
+        "available_in_github": false
+      },
+      "bound_plan": {
+        "bytes": 90952,
+        "sha256": "5d073f4b663a8bfae28684696b84c34700c7cd303f15592953819e6c30bea8a7",
+        "available_in_github": false
+      },
+      "bound_runtime_inputs": {
+        "bytes": 446571,
+        "sha256": "c8af2f5cc4ca8f173fc01a92ec59c1feae909bb42b94109659a7a881ef872073",
+        "available_in_github": false
+      },
+      "startup": {
+        "bytes": 4760,
+        "sha256": "36fe623381555ec0151e3e6fcb7f63e24146ca0d804606a28fe017de24edfa37",
+        "available_in_github": false
+      }
+    },
+    "snapshot_path": "experiment/results/releases/2026-11-21-progress-v6/progress.json"
+  },
   "engineering_qa_history": [
     {
       "run_id": "dp-cuda-pool-qa-20261112-a1",
@@ -3745,7 +3926,7 @@
           "evidence_key": "historical_pending_exact_job_pod"
         }
       ],
-      "exact_job": "jinhaopeng-dpvlm-cuda-pool-qa-20261112-a1-n1-bb1e7",
+      "exact_job": "withheld_private_cluster_identity",
       "job_uid": "withheld_from_public_status",
       "last_observed_pod_uid": "withheld_from_public_status",
       "running_at_utc": "2026-11-12T12:55:46Z",
@@ -3772,7 +3953,7 @@
       "job_created_at_utc": "2026-11-12T16:26:08Z",
       "job_status": "Failed",
       "pod_phase": "Failed",
-      "exact_job": "jinhaopeng-dpvlm-cuda-pool-qa-20261113-a2-n1-772f8",
+      "exact_job": "withheld_private_cluster_identity",
       "job_uid": "withheld_from_public_status",
       "pod_uid": "withheld_from_public_status",
       "allocation": {
@@ -4133,7 +4314,7 @@
         "continuation_empty": true,
         "all_project_workloads_terminal": false,
         "all_other_project_workloads_terminal": true,
-        "sole_nonterminal_job": "jinhaopeng-dpvlm-p1-smollm2-s29-align-a3-n1-bdff2",
+        "sole_nonterminal_job": "withheld_private_cluster_identity",
         "sole_nonterminal_job_uid": "withheld_from_public_status",
         "observed_at_utc": "2026-11-17T04:37:10.526227+00:00",
         "scope": "Complete project Job/Pod projections plus the exact submitted Job and Pod; Pending is counted as nonterminal. Raw cluster outputs remain private.",
@@ -4202,7 +4383,7 @@
         "continuation_empty": true,
         "all_project_workloads_terminal": false,
         "all_other_project_workloads_terminal": true,
-        "sole_nonterminal_job": "jinhaopeng-dpvlm-p1-smollm2-s29-align-a5-n1-6e7fe",
+        "sole_nonterminal_job": "withheld_private_cluster_identity",
         "sole_nonterminal_job_uid": "withheld_from_public_status",
         "observed_at_utc": "2026-11-17T17:20:07.089216+00:00",
         "scope": "Complete project Job/Pod projections plus exact attempt5 Job/Pod; Pending counts as nonterminal. All other project workloads are terminal. Raw cluster outputs remain private.",
@@ -4228,7 +4409,7 @@
         "continuation_empty": true,
         "all_project_workloads_terminal": false,
         "all_other_project_workloads_terminal": true,
-        "sole_nonterminal_job": "jinhaopeng-dpvlm-p1-smollm2-s29-align-a5-n1-6e7fe",
+        "sole_nonterminal_job": "withheld_private_cluster_identity",
         "sole_nonterminal_job_uid": "withheld_from_public_status",
         "observed_at_utc": "2026-11-17T17:22:49.591658+00:00",
         "scope": "Complete project Job/Pod projections plus exact attempt5 Job/Pod; Pending counts as nonterminal. All other project workloads are terminal. Raw cluster outputs remain private.",
@@ -4236,6 +4417,27 @@
           "source_path": "experiment/docs/operations/evidence/smollm2-resume-a5-20261118/job-readback-v2/stdout.json",
           "bytes": 2839920,
           "sha256": "7eb281ce8bfc1422a30a33ffc82d7645099b30dd4f6579c99962ad4f7f4abf64",
+          "available_in_github": false
+        }
+      }
+    },
+    {
+      "observed_at_utc": "2026-11-20T20:36:26.404126+00:00",
+      "active_run_id": null,
+      "observation": "The repaired v6 full185 attempt-2 worker is confirmed Failed at 2026-11-20T20:36:26.404126+00:00, with the same Job UID as its successful one-shot submission, exit 1 and zero restarts. Its eight-device hardware report passed, including BF16 attention forward/backward and all-reduce. The new controller startup acceptance receipt is present. The first engineering gpu_gate task was claimed, then failed during Triton cuda_utils initialization because its default /.triton cache directory was not writable. The intended numerical kernel had not launched; this is not a CUDA numerical discrepancy. No training/evaluation claim, scientific completion or new optimizer update is observed. An explicit task-owned cache-directory repair is being prepared. The original worker remains Failed; its small failure archive is accepted. Both F8 caches remain READY; F4/F16 CPU recovery is active but none of its four READY descriptors has been observed. Accepted a6 alignment/archive/history and R1/R2 quality results are unchanged.",
+      "project_workload_observation": {
+        "observed_at_utc": "2026-11-20T20:36:26.404126+00:00",
+        "job_count": 1,
+        "pod_count": 1,
+        "active_jobs_including_pending_or_unknown": 0,
+        "active_pods_including_pending_or_unknown": 0,
+        "job_status": "Failed",
+        "pod_status": "Failed",
+        "restart_count": 0,
+        "scope": "Exact attempt-2 Job and owned Pod; not a complete inventory of other projects or a free-node forecast.",
+        "evidence": {
+          "bytes": 27205,
+          "sha256": "7966f4d9affaafd5453fb5b94a5c64087cd5be4b7e6d3d5e8bc84f6c416652e7",
           "available_in_github": false
         }
       }
@@ -4315,18 +4517,18 @@
     }
   ],
   "project_workload_observation": {
-    "observed_at_utc": "2026-11-20T20:36:26.404126+00:00",
+    "observed_at_utc": "2026-11-21T00:38:25.078184+00:00",
     "job_count": 1,
     "pod_count": 1,
-    "active_jobs_including_pending_or_unknown": 0,
-    "active_pods_including_pending_or_unknown": 0,
-    "job_status": "Failed",
-    "pod_status": "Failed",
+    "active_jobs_including_pending_or_unknown": 1,
+    "active_pods_including_pending_or_unknown": 1,
+    "job_status": "Running",
+    "pod_status": "Running",
     "restart_count": 0,
-    "scope": "Exact attempt-2 Job and owned Pod; not a complete inventory of other projects or a free-node forecast.",
+    "scope": "Exact a6 worker Job and owned Pod only. The separate admission found no active prior project Jobs; this is not a current inventory of other projects or available GPU nodes.",
     "evidence": {
-      "bytes": 27205,
-      "sha256": "7966f4d9affaafd5453fb5b94a5c64087cd5be4b7e6d3d5e8bc84f6c416652e7",
+      "bytes": 16665,
+      "sha256": "6375b71e9a03f205fa3f0533309e1302ddb3606c63950d9967e3a29b5a578a33",
       "available_in_github": false
     }
   },
@@ -4408,7 +4610,7 @@
       "observed_oss_utc": "2026-11-17T03:16:52.620816+00:00",
       "runs": {
         "dp-p1-ouro-r4-f8-g4-s17-sft-a1": {
-          "exact_job": "jinhaopeng-dpvlm-p1-ouro-r4-s17-sft-a1-n1-261109132642",
+          "exact_job": "withheld_private_cluster_identity",
           "expected_job_uid": "withheld_from_public_status",
           "current_job_status": "NotFound",
           "current_job_uid_verified": false,
@@ -4529,7 +4731,7 @@
           "claim_limits": "Checkpoint metadata/stat and OSS listing only; no fresh full-weight SHA or restore readiness acceptance."
         },
         "dp-p1-smollm2-f8-g4-s29-alignment-a2": {
-          "exact_job": "jinhaopeng-dpvlm-p1-smollm2-s29-align-a2-n1-74182",
+          "exact_job": "withheld_private_cluster_identity",
           "expected_job_uid": "withheld_from_public_status",
           "current_job_status": "Failed",
           "current_job_uid_verified": true,
@@ -4600,7 +4802,7 @@
       "observed_remote_utc": "2026-11-17T15:16:12.944130+00:00",
       "terminal_details_observed_utc": "2026-11-17T15:18:48.324188+00:00",
       "run_id": "dp-p1-smollm2-f8-g4-s29-alignment-a3",
-      "exact_job": "jinhaopeng-dpvlm-p1-smollm2-s29-align-a3-n1-bdff2",
+      "exact_job": "withheld_private_cluster_identity",
       "job_uid": "withheld_from_public_status",
       "job_running_at_utc": "2026-11-17T06:20:58Z",
       "job_failed_at_utc": "2026-11-17T06:25:50Z",
@@ -4814,7 +5016,7 @@
       "available_in_github": false
     }
   },
-  "project_workload_observation_scope_note": "Latest exact attempt-2 Job and owned Pod only. Prior terminal/Running observations remain dated history.",
+  "project_workload_observation_scope_note": "Exact a6 worker Job and owned Pod only. The separate admission found no active prior project Jobs; this is not a current inventory of other projects or available GPU nodes.",
   "historical_project_workload_observations": [
     {
       "job_count": 6,
@@ -4890,13 +5092,75 @@
         "sha256": "51ef56d22f27ca2708b4eecaaa8558c92ccb7296e4e2ef13dc20402a1655a0dd",
         "available_in_github": false
       }
+    },
+    {
+      "observed_at_utc": "2026-11-20T20:36:26.404126+00:00",
+      "job_count": 1,
+      "pod_count": 1,
+      "active_jobs_including_pending_or_unknown": 0,
+      "active_pods_including_pending_or_unknown": 0,
+      "job_status": "Failed",
+      "pod_status": "Failed",
+      "restart_count": 0,
+      "scope": "Exact attempt-2 Job and owned Pod; not a complete inventory of other projects or a free-node forecast.",
+      "evidence": {
+        "bytes": 27205,
+        "sha256": "7966f4d9affaafd5453fb5b94a5c64087cd5be4b7e6d3d5e8bc84f6c416652e7",
+        "available_in_github": false
+      }
     }
   ],
-  "public_identifier_policy": "Private home paths, exact object-storage prefixes and internal Job UIDs are withheld; original raw evidence remains private and is bound by opaque SHA256 digests.",
-  "public_code_commit": "65e562c67d0adfd1573c99dca722082b231c03a2",
-  "active_workload_kind": null,
+  "public_identifier_policy": "Private filesystem paths, exact object-storage prefixes, internal cluster Job names, UIDs and node identities are withheld; original raw evidence remains private and is bound by opaque SHA256 digests.",
+  "public_code_commit": "a114a4cd9e026af42cf480c0e68724cdea4063a4",
+  "active_workload_kind": "single_node_full_experiment_suite",
   "public_identifier_redactions": {
     "archive_keys_withheld": 5,
-    "replacement": "Object filename plus original-key SHA256; scientific facts and original private evidence digests preserved."
+    "replacement": "Object filename plus original-key SHA256; scientific facts and original private evidence digests preserved.",
+    "additional_internal_job_fields_withheld": 17
+  },
+  "latest_operator_microbenchmark": {
+    "scope": "Single-device synthetic weighted pooling, including output allocation; gate and projector excluded. No model checkpoint loaded.",
+    "new_operator_measurements": true,
+    "full_model_or_training_speedup_claim": false,
+    "quality_measured": false,
+    "input_shape": [
+      8,
+      729,
+      1152
+    ],
+    "pool_grid": 4,
+    "warmup_calls_per_backend": 25,
+    "measured_calls_per_backend": 100,
+    "pair_order": "reference,triton on even repeats; triton,reference on odd repeats",
+    "dtypes": {
+      "bf16": {
+        "completed_at_utc": "2026-11-21T00:36:56.696788+00:00",
+        "reference_median_cuda_event_ms": 0.24940799921751022,
+        "triton_median_cuda_event_ms": 0.09699199721217155,
+        "reference_over_triton_median_ratio": 2.5714286372712403,
+        "numerical_parity_passed": true,
+        "max_abs_error": 1.1920928955078125e-07,
+        "summary": {
+          "path": "experiment/results/releases/2026-11-21-progress-v6/cuda_pool/bf16/SUMMARY.json",
+          "bytes": 3493,
+          "sha256": "e31c78d2567efca076b37d6ae5c46cc8ee94dcfd417181ae9eb6c72f539ae929",
+          "unchanged_copy_of_original": true
+        }
+      },
+      "fp32": {
+        "completed_at_utc": "2026-11-21T00:37:08.265307+00:00",
+        "reference_median_cuda_event_ms": 0.24217600375413895,
+        "triton_median_cuda_event_ms": 0.09777599945664406,
+        "reference_over_triton_median_ratio": 2.476845085705566,
+        "numerical_parity_passed": true,
+        "max_abs_error": 1.4901161193847656e-07,
+        "summary": {
+          "path": "experiment/results/releases/2026-11-21-progress-v6/cuda_pool/fp32/SUMMARY.json",
+          "bytes": 3495,
+          "sha256": "d1ff9fa3a805396fdc2464610d0866730544a9f361c4747fe11a1e8a98177586",
+          "unchanged_copy_of_original": true
+        }
+      }
+    }
   }
 }
