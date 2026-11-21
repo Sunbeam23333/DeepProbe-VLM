@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
-  "observed_at_utc": "2026-11-21T00:38:25.078184+00:00",
+  "observed_at_utc": "2026-11-21T01:01:02.799264+00:00",
   "display_timezone": "Asia/Shanghai",
-  "observation_note": "Bounded non-atomic a6 runtime observation at 00:38:23–00:38:25 UTC, with separate cache preparation observation at 00:33:49 and admission at 00:32:28. Earlier observations remain dated history.",
+  "observation_note": "Dated exact a6 terminal observation, with separate cache, archive and hold-retirement timestamps. No fresh remote query or replacement launch is claimed by this publication.",
   "new_held_out_results": false,
   "runs": {
     "dp-p1-ouro-r4-f8-g4-s17-sft-a1": {
@@ -2385,8 +2385,8 @@
     "Finish F4/F16 per-shape cache READY publication. Both accepted F8 caches remain available.",
     "Finish 27 fresh training stages, 32 new evaluations, 15 full-model latency runs and 12 comparisons, plus the separate R4 continuation and final aggregate. Retire local checkpoints only after verified archive and all dependent consumers complete."
   ],
-  "active_run_id": "suite-isolated-worker-a6",
-  "active_run_observation": "At 2026-11-21T00:38:25.078184+00:00 the separately admitted isolated a6 worker Job and Pod were Running with zero restarts, one normal-priority stream node and eight B300 GPUs. STARTUP and gpu_gate passed; 1 of 185 operational tasks was complete. The active R4 alignment claim restores accepted historical weights; it is not new alignment training. No new optimizer update, scientific completion, or model/benchmark result was observed. Both F8 caches remain READY. F4/F16 preparation is separately dated and incomplete.",
+  "active_run_id": null,
+  "active_run_observation": "The exact a6 worker was terminal Failed at the 01:01:02 UTC observation, after container exit1 at 00:59:43 and Job Failed condition at 00:59:45. Three operational tasks completed through historical alignment archival. No new optimizer update or scientific completion is verified. No present-time fleet-wide activity claim is made.",
   "engineering_qa": {
     "run_id": "dp-cuda-pool-qa-20261114-a3",
     "scope": "synthetic CUDA weighted-pooling correctness and microbenchmark; no model training or quality evaluation",
@@ -3684,9 +3684,9 @@
     }
   },
   "serial_suite_preparation": {
-    "status": "A6_RUNNING_GPU_GATE_ACCEPTED_HISTORICAL_R4_ALIGNMENT_RESTORE_ACTIVE",
+    "status": "A6_FAILED_TERMINAL_METADATA_ARCHIVED_HOLD_RETIRED",
     "public_run_label": "suite-isolated-worker-a6",
-    "public_code_commit": "a114a4cd9e026af42cf480c0e68724cdea4063a4",
+    "public_code_commit": "1b3af0174a4c23c9e0333e6ffd5c7999273caf88",
     "source_manifest_sha256": "632c0f9aa84ae55dbe23dee8bb4379298f7eb123b73231a8fcc3990167c3784b",
     "plan_sha256": "5d073f4b663a8bfae28684696b84c34700c7cd303f15592953819e6c30bea8a7",
     "planned_scope": {
@@ -3698,39 +3698,40 @@
     },
     "planned_dag_tasks": 185,
     "full_suite_gpu_submitted": true,
-    "gpu_running_confirmed": true,
+    "gpu_running_confirmed": false,
     "current_runtime": {
       "attempt": "a6",
-      "job_status": "Running",
-      "pod_status": "Running",
+      "public_run_label": "suite-isolated-worker-a6",
+      "observed_from_utc": "2026-11-21T01:01:01.464321+00:00",
+      "observed_at_utc": "2026-11-21T01:01:02.799264+00:00",
+      "job_status": "Failed",
+      "pod_status": "Failed",
+      "job_failed_at_utc": "2026-11-21T00:59:45Z",
+      "container_finished_at_utc": "2026-11-21T00:59:43Z",
+      "container_exit_code": 1,
+      "container_restart_count": 0,
       "exact_identity_verified": true,
       "worker_count": 1,
       "priority": "normal",
       "queue": "stream",
       "nodes_per_worker": 1,
       "gpus_per_worker": 8,
-      "restart_policy": "Never",
-      "container_restart_count": 0,
-      "container_started_at_utc": "2026-11-21T00:34:25Z",
       "startup_accepted": true,
       "gpu_gate_accepted": true,
-      "completed_operational_task_count": 1,
+      "completed_operational_task_count": 3,
       "completed_operational_tasks": [
-        "gpu_gate"
+        "gpu_gate",
+        "train__ouro_r4_s17__alignment",
+        "archive__ouro_r4_s17__alignment"
       ],
-      "completed_task_count_scope": "Engineering gate only; not a scientific completion percentage.",
-      "active_task": "train__ouro_r4_s17__alignment",
-      "active_task_scope": "Restore accepted historical R4 seed17 alignment; the active claim is not a new alignment completion.",
-      "active_claim_observed": true,
+      "completed_task_count_scope": "Engineering gate plus restored historical alignment and its archive; not fresh alignment training or a scientific completion percentage.",
+      "failed_task": "train__ouro_r4_s17__sft",
       "new_optimizer_updates_verified": false,
-      "optimizer_step_observed": null,
-      "scientific_task_completion_observed": false,
-      "automatic_resubmit": false,
-      "public_run_label": "suite-isolated-worker-a6",
-      "hardware_admission_passed": true,
-      "hardware_contract": "NVIDIA-B300"
+      "original_training_exception_confirmed": false,
+      "missing_training_stderr_recovered": false,
+      "replacement_submission_claimed": false
     },
-    "latest_gate_observed_at_utc": "2026-11-21T00:38:25.078184+00:00",
+    "latest_gate_observed_at_utc": "2026-11-21T01:01:02.799264+00:00",
     "admission": {
       "reviewed_at_utc": "2026-11-21T00:32:28.524046+00:00",
       "accepted": true,
@@ -3746,17 +3747,18 @@
       "private_scratch_bytes": 107374182400,
       "isolated_home_overlay": true,
       "old_home_and_vepfs_read_only": true,
-      "parent_reservation_lifetime": "Allocation lifetime; retained until all owned work and export activity have stopped."
+      "parent_reservation_lifetime": "Allocation lifetime; retained until all owned work and export activity have stopped.",
+      "scope": "Preserved historical a6 admission only; its parent reservation was later released as recorded separately."
     },
     "frame_cache_preparation": {
-      "observed_at_utc": "2026-11-21T00:33:49.827925+00:00",
+      "observed_at_utc": "2026-11-21T01:02:04.406695+00:00",
       "shapes": {
         "videomme899-f4": {
           "frames": 4,
-          "cache_entries_observed": 629,
-          "pngs_observed": 2516,
-          "objects_observed": 3146,
-          "bytes_observed": 996822917,
+          "cache_entries_observed": 677,
+          "pngs_observed": 2708,
+          "objects_observed": 3386,
+          "bytes_observed": 1072916095,
           "complete_marker_observed": false,
           "ready_receipt_observed": false,
           "prepared_asset_observed": false
@@ -3792,7 +3794,7 @@
           "prepared_asset_observed": false
         }
       },
-      "entry_count_scope": "Entries count cache metadata objects; they are not PNG counts, QA counts, or independently accepted READY clips.",
+      "scope": "Dated non-atomic metadata listing, not accepted clips, completed evaluations, or current producer liveness.",
       "all_new_shapes_ready": false,
       "evaluation_requires_own_ready_receipt": true,
       "original_f8_caches": {
@@ -3827,43 +3829,60 @@
       "full_model_latency_runs": 0
     },
     "evidence": {
-      "submission": {
-        "bytes": 1535,
-        "sha256": "2c9196a0bf315f44a5e211f84a5dad236a92822554eca60ae4f492d4bcab0bc2",
-        "available_in_github": false
-      },
-      "submission_review": {
-        "bytes": 3152,
-        "sha256": "d6f2045e0bb68dfa852afbf8e17ac1535a184ab53446601fd73ab9649e27da1b",
-        "available_in_github": false
-      },
-      "runtime_observation": {
-        "bytes": 16665,
-        "sha256": "6375b71e9a03f205fa3f0533309e1302ddb3606c63950d9967e3a29b5a578a33",
+      "terminal_runtime": {
+        "bytes": 25647,
+        "sha256": "8c97fc90bf1799310f0c517ec513e65e94797d3ee42a64392181da2e708fd859",
         "available_in_github": false
       },
       "cache_observation": {
-        "bytes": 18859,
-        "sha256": "f977da2c84f2dd793e4822862cf08690a1263067ac104315a9d57760b302df79",
+        "bytes": 18876,
+        "sha256": "b3c3a709a5c2279685fb5c28d9a6e83b8ef6dd060421cc4d4b9d37adacf3dadb",
         "available_in_github": false
       },
-      "bound_plan": {
-        "bytes": 90952,
-        "sha256": "5d073f4b663a8bfae28684696b84c34700c7cd303f15592953819e6c30bea8a7",
+      "metadata_archive_acceptance": {
+        "bytes": 279358,
+        "sha256": "6090f3a56a598bf4b3028cbd6a51391c8f81b927ddd5434e5426b9725527e621",
         "available_in_github": false
       },
-      "bound_runtime_inputs": {
-        "bytes": 446571,
-        "sha256": "c8af2f5cc4ca8f173fc01a92ec59c1feae909bb42b94109659a7a881ef872073",
+      "hold_retirement": {
+        "bytes": 9504,
+        "sha256": "2f8a299ccf0ca17c3fc248383b5dcdb84d87bbc9f229fd6b33f908d21741fc63",
         "available_in_github": false
       },
-      "startup": {
-        "bytes": 4760,
-        "sha256": "36fe623381555ec0151e3e6fcb7f63e24146ca0d804606a28fe017de24edfa37",
+      "independent_archive_and_retirement_audit": {
+        "bytes": 13202,
+        "sha256": "0fe549b3c91ba61d63c9a8859fa312f5ec1525cf5a787a1b7ce46b8b17ac9d81",
+        "available_in_github": false
+      },
+      "diagnostic_regression": {
+        "bytes": 2215,
+        "sha256": "26115afe1df815ce2792b66e957bf5d602a9b85104580eda773b594e82427837",
         "available_in_github": false
       }
     },
-    "snapshot_path": "experiment/results/releases/2026-11-21-progress-v6/progress.json"
+    "snapshot_path": "experiment/results/releases/2026-11-21-progress-v7/progress.json",
+    "hold_retirement": {
+      "released_at_utc": "2026-11-21T01:23:36.547327+00:00",
+      "reservation_bytes_released": 48000000000,
+      "unchanged_other_reservations": 42,
+      "unchanged_artifacts": 1,
+      "prior_events_preserved": 91,
+      "new_release_events": 1,
+      "cpu_reservations_still_active_at_retirement": 3,
+      "namespace_retained": true,
+      "new_hold_created": false,
+      "payload_files_deleted": false,
+      "scope": "Reservation accounting release; not deletion of 48 GB of files and not a current CPU liveness observation."
+    },
+    "dated_capacity": {
+      "observed_at_utc": "2026-11-21T01:24:53.376509+00:00",
+      "actual_home_bytes": 70172344228,
+      "active_home_reservation_bytes": 270532608,
+      "projected_home_bytes_including_safety": 72442876836,
+      "home_limit_bytes": 150000000000,
+      "oss_limit_bytes": null,
+      "scope": "Historical snapshot before the 9,504-byte retirement receipt was written; not current capacity or a new admission."
+    }
   },
   "engineering_qa_history": [
     {
@@ -4441,6 +4460,12 @@
           "available_in_github": false
         }
       }
+    },
+    {
+      "observed_at_utc": "2026-11-21T00:38:25.078184+00:00",
+      "active_run_id": "suite-isolated-worker-a6",
+      "active_run_observation": "At 2026-11-21T00:38:25.078184+00:00 the separately admitted isolated a6 worker Job and Pod were Running with zero restarts, one normal-priority stream node and eight B300 GPUs. STARTUP and gpu_gate passed; 1 of 185 operational tasks was complete. The active R4 alignment claim restores accepted historical weights; it is not new alignment training. No new optimizer update, scientific completion, or model/benchmark result was observed. Both F8 caches remain READY. F4/F16 preparation is separately dated and incomplete.",
+      "active_workload_kind": "single_node_full_experiment_suite"
     }
   ],
   "recovery_capacity_observations": [
@@ -4517,18 +4542,18 @@
     }
   ],
   "project_workload_observation": {
-    "observed_at_utc": "2026-11-21T00:38:25.078184+00:00",
+    "observed_at_utc": "2026-11-21T01:01:02.799264+00:00",
     "job_count": 1,
     "pod_count": 1,
-    "active_jobs_including_pending_or_unknown": 1,
-    "active_pods_including_pending_or_unknown": 1,
-    "job_status": "Running",
-    "pod_status": "Running",
+    "active_jobs_including_pending_or_unknown": 0,
+    "active_pods_including_pending_or_unknown": 0,
+    "job_status": "Failed",
+    "pod_status": "Failed",
     "restart_count": 0,
-    "scope": "Exact a6 worker Job and owned Pod only. The separate admission found no active prior project Jobs; this is not a current inventory of other projects or available GPU nodes.",
+    "scope": "Exact a6 Job and owned Pod only, not a present fleet inventory or available-node query.",
     "evidence": {
-      "bytes": 16665,
-      "sha256": "6375b71e9a03f205fa3f0533309e1302ddb3606c63950d9967e3a29b5a578a33",
+      "bytes": 25647,
+      "sha256": "8c97fc90bf1799310f0c517ec513e65e94797d3ee42a64392181da2e708fd859",
       "available_in_github": false
     }
   },
@@ -5108,11 +5133,27 @@
         "sha256": "7966f4d9affaafd5453fb5b94a5c64087cd5be4b7e6d3d5e8bc84f6c416652e7",
         "available_in_github": false
       }
+    },
+    {
+      "observed_at_utc": "2026-11-21T00:38:25.078184+00:00",
+      "job_count": 1,
+      "pod_count": 1,
+      "active_jobs_including_pending_or_unknown": 1,
+      "active_pods_including_pending_or_unknown": 1,
+      "job_status": "Running",
+      "pod_status": "Running",
+      "restart_count": 0,
+      "scope": "Exact a6 worker Job and owned Pod only. The separate admission found no active prior project Jobs; this is not a current inventory of other projects or available GPU nodes.",
+      "evidence": {
+        "bytes": 16665,
+        "sha256": "6375b71e9a03f205fa3f0533309e1302ddb3606c63950d9967e3a29b5a578a33",
+        "available_in_github": false
+      }
     }
   ],
   "public_identifier_policy": "Private filesystem paths, exact object-storage prefixes, internal cluster Job names, UIDs and node identities are withheld; original raw evidence remains private and is bound by opaque SHA256 digests.",
-  "public_code_commit": "a114a4cd9e026af42cf480c0e68724cdea4063a4",
-  "active_workload_kind": "single_node_full_experiment_suite",
+  "public_code_commit": "1b3af0174a4c23c9e0333e6ffd5c7999273caf88",
+  "active_workload_kind": null,
   "public_identifier_redactions": {
     "archive_keys_withheld": 5,
     "replacement": "Object filename plus original-key SHA256; scientific facts and original private evidence digests preserved.",
@@ -5160,6 +5201,254 @@
           "sha256": "d1ff9fa3a805396fdc2464610d0866730544a9f361c4747fe11a1e8a98177586",
           "unchanged_copy_of_original": true
         }
+      }
+    }
+  },
+  "historical_serial_suite_runtime_20261121T003825Z": {
+    "status": "A6_RUNNING_GPU_GATE_ACCEPTED_HISTORICAL_R4_ALIGNMENT_RESTORE_ACTIVE",
+    "public_run_label": "suite-isolated-worker-a6",
+    "public_code_commit": "a114a4cd9e026af42cf480c0e68724cdea4063a4",
+    "source_manifest_sha256": "632c0f9aa84ae55dbe23dee8bb4379298f7eb123b73231a8fcc3990167c3784b",
+    "plan_sha256": "5d073f4b663a8bfae28684696b84c34700c7cd303f15592953819e6c30bea8a7",
+    "planned_scope": {
+      "scientific_model_configs": 18,
+      "training_stages": 34,
+      "model_benchmark_evaluations": 36,
+      "latency_runs": 15,
+      "latency_comparisons": 12
+    },
+    "planned_dag_tasks": 185,
+    "full_suite_gpu_submitted": true,
+    "gpu_running_confirmed": true,
+    "current_runtime": {
+      "attempt": "a6",
+      "job_status": "Running",
+      "pod_status": "Running",
+      "exact_identity_verified": true,
+      "worker_count": 1,
+      "priority": "normal",
+      "queue": "stream",
+      "nodes_per_worker": 1,
+      "gpus_per_worker": 8,
+      "restart_policy": "Never",
+      "container_restart_count": 0,
+      "container_started_at_utc": "2026-11-21T00:34:25Z",
+      "startup_accepted": true,
+      "gpu_gate_accepted": true,
+      "completed_operational_task_count": 1,
+      "completed_operational_tasks": [
+        "gpu_gate"
+      ],
+      "completed_task_count_scope": "Engineering gate only; not a scientific completion percentage.",
+      "active_task": "train__ouro_r4_s17__alignment",
+      "active_task_scope": "Restore accepted historical R4 seed17 alignment; the active claim is not a new alignment completion.",
+      "active_claim_observed": true,
+      "new_optimizer_updates_verified": false,
+      "optimizer_step_observed": null,
+      "scientific_task_completion_observed": false,
+      "automatic_resubmit": false,
+      "public_run_label": "suite-isolated-worker-a6",
+      "hardware_admission_passed": true,
+      "hardware_contract": "NVIDIA-B300"
+    },
+    "latest_gate_observed_at_utc": "2026-11-21T00:38:25.078184+00:00",
+    "admission": {
+      "reviewed_at_utc": "2026-11-21T00:32:28.524046+00:00",
+      "accepted": true,
+      "cpu_admitted": true,
+      "server_dry_run_accepted": true,
+      "exact_empty_archive_prefix_count": 52,
+      "active_project_jobs_at_admission": 0,
+      "projected_home_bytes": 120429007416,
+      "home_limit_bytes": 150000000000,
+      "parent_reserved_bytes": 48000000000,
+      "oss_limit_bytes": null,
+      "capacity_scope": "Admission-time projection, not current actual disk use. Capacity must be checked again per operation.",
+      "private_scratch_bytes": 107374182400,
+      "isolated_home_overlay": true,
+      "old_home_and_vepfs_read_only": true,
+      "parent_reservation_lifetime": "Allocation lifetime; retained until all owned work and export activity have stopped."
+    },
+    "frame_cache_preparation": {
+      "observed_at_utc": "2026-11-21T00:33:49.827925+00:00",
+      "shapes": {
+        "videomme899-f4": {
+          "frames": 4,
+          "cache_entries_observed": 629,
+          "pngs_observed": 2516,
+          "objects_observed": 3146,
+          "bytes_observed": 996822917,
+          "complete_marker_observed": false,
+          "ready_receipt_observed": false,
+          "prepared_asset_observed": false
+        },
+        "tempcompass_mc-f4": {
+          "frames": 4,
+          "cache_entries_observed": 0,
+          "pngs_observed": 0,
+          "objects_observed": 0,
+          "bytes_observed": 0,
+          "complete_marker_observed": false,
+          "ready_receipt_observed": false,
+          "prepared_asset_observed": false
+        },
+        "videomme899-f16": {
+          "frames": 16,
+          "cache_entries_observed": 0,
+          "pngs_observed": 0,
+          "objects_observed": 0,
+          "bytes_observed": 0,
+          "complete_marker_observed": false,
+          "ready_receipt_observed": false,
+          "prepared_asset_observed": false
+        },
+        "tempcompass_mc-f16": {
+          "frames": 16,
+          "cache_entries_observed": 0,
+          "pngs_observed": 0,
+          "objects_observed": 0,
+          "bytes_observed": 0,
+          "complete_marker_observed": false,
+          "ready_receipt_observed": false,
+          "prepared_asset_observed": false
+        }
+      },
+      "entry_count_scope": "Entries count cache metadata objects; they are not PNG counts, QA counts, or independently accepted READY clips.",
+      "all_new_shapes_ready": false,
+      "evaluation_requires_own_ready_receipt": true,
+      "original_f8_caches": {
+        "videomme899": "READY",
+        "tempcompass_mc": "READY"
+      }
+    },
+    "remaining_scientific_scope": {
+      "models": 18,
+      "operational_tasks": 185,
+      "task_kinds": {
+        "gate": 1,
+        "train": 34,
+        "archive": 52,
+        "evaluate": 36,
+        "latency": 15,
+        "compare_latency": 12,
+        "cleanup": 34,
+        "aggregate": 1
+      },
+      "new_training_stages": 27,
+      "r4_sft_remaining_optimizer_updates": 118,
+      "new_model_benchmark_evaluations": 32,
+      "remaining_work_scope": "Pending work after accepted historical reuse, not work completed by this allocation.",
+      "plan_sha256": "5d073f4b663a8bfae28684696b84c34700c7cd303f15592953819e6c30bea8a7",
+      "source_manifest_sha256": "632c0f9aa84ae55dbe23dee8bb4379298f7eb123b73231a8fcc3990167c3784b"
+    },
+    "accepted_scientific_totals": {
+      "training_stages": 6,
+      "complete_two_stage_models": 2,
+      "model_benchmark_evaluations": 4,
+      "full_model_latency_runs": 0
+    },
+    "evidence": {
+      "submission": {
+        "bytes": 1535,
+        "sha256": "2c9196a0bf315f44a5e211f84a5dad236a92822554eca60ae4f492d4bcab0bc2",
+        "available_in_github": false
+      },
+      "submission_review": {
+        "bytes": 3152,
+        "sha256": "d6f2045e0bb68dfa852afbf8e17ac1535a184ab53446601fd73ab9649e27da1b",
+        "available_in_github": false
+      },
+      "runtime_observation": {
+        "bytes": 16665,
+        "sha256": "6375b71e9a03f205fa3f0533309e1302ddb3606c63950d9967e3a29b5a578a33",
+        "available_in_github": false
+      },
+      "cache_observation": {
+        "bytes": 18859,
+        "sha256": "f977da2c84f2dd793e4822862cf08690a1263067ac104315a9d57760b302df79",
+        "available_in_github": false
+      },
+      "bound_plan": {
+        "bytes": 90952,
+        "sha256": "5d073f4b663a8bfae28684696b84c34700c7cd303f15592953819e6c30bea8a7",
+        "available_in_github": false
+      },
+      "bound_runtime_inputs": {
+        "bytes": 446571,
+        "sha256": "c8af2f5cc4ca8f173fc01a92ec59c1feae909bb42b94109659a7a881ef872073",
+        "available_in_github": false
+      },
+      "startup": {
+        "bytes": 4760,
+        "sha256": "36fe623381555ec0151e3e6fcb7f63e24146ca0d804606a28fe017de24edfa37",
+        "available_in_github": false
+      }
+    },
+    "snapshot_path": "experiment/results/releases/2026-11-21-progress-v6/progress.json"
+  },
+  "latest_terminal_archive_and_hold_retirement": {
+    "metadata_archive": {
+      "objects": 458,
+      "bytes": 1946568,
+      "checkpoint_payload_uploaded_or_deleted": false
+    },
+    "hold_retirement": {
+      "released_at_utc": "2026-11-21T01:23:36.547327+00:00",
+      "reservation_bytes_released": 48000000000,
+      "unchanged_other_reservations": 42,
+      "unchanged_artifacts": 1,
+      "prior_events_preserved": 91,
+      "new_release_events": 1,
+      "cpu_reservations_still_active_at_retirement": 3,
+      "namespace_retained": true,
+      "new_hold_created": false,
+      "payload_files_deleted": false,
+      "scope": "Reservation accounting release; not deletion of 48 GB of files and not a current CPU liveness observation."
+    },
+    "dated_capacity": {
+      "observed_at_utc": "2026-11-21T01:24:53.376509+00:00",
+      "actual_home_bytes": 70172344228,
+      "active_home_reservation_bytes": 270532608,
+      "projected_home_bytes_including_safety": 72442876836,
+      "home_limit_bytes": 150000000000,
+      "oss_limit_bytes": null,
+      "scope": "Historical snapshot before the 9,504-byte retirement receipt was written; not current capacity or a new admission."
+    },
+    "independent_archive_audit": {
+      "observed_at_utc": "2026-11-21T01:28:41.539831+00:00",
+      "checks_passed": 30,
+      "referenced_files_rehashed": 17
+    },
+    "evidence": {
+      "terminal_runtime": {
+        "bytes": 25647,
+        "sha256": "8c97fc90bf1799310f0c517ec513e65e94797d3ee42a64392181da2e708fd859",
+        "available_in_github": false
+      },
+      "cache_observation": {
+        "bytes": 18876,
+        "sha256": "b3c3a709a5c2279685fb5c28d9a6e83b8ef6dd060421cc4d4b9d37adacf3dadb",
+        "available_in_github": false
+      },
+      "metadata_archive_acceptance": {
+        "bytes": 279358,
+        "sha256": "6090f3a56a598bf4b3028cbd6a51391c8f81b927ddd5434e5426b9725527e621",
+        "available_in_github": false
+      },
+      "hold_retirement": {
+        "bytes": 9504,
+        "sha256": "2f8a299ccf0ca17c3fc248383b5dcdb84d87bbc9f229fd6b33f908d21741fc63",
+        "available_in_github": false
+      },
+      "independent_archive_and_retirement_audit": {
+        "bytes": 13202,
+        "sha256": "0fe549b3c91ba61d63c9a8859fa312f5ec1525cf5a787a1b7ce46b8b17ac9d81",
+        "available_in_github": false
+      },
+      "diagnostic_regression": {
+        "bytes": 2215,
+        "sha256": "26115afe1df815ce2792b66e957bf5d602a9b85104580eda773b594e82427837",
+        "available_in_github": false
       }
     }
   }

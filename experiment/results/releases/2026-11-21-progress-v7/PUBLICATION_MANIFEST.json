@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "release_id": "2026-11-21-progress-v7",
+  "kind": "CURATED_EXPERIMENT_RESULTS",
+  "created_utc": "2026-11-21T03:27:55.374423+00:00",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 4559,
+      "sha256": "6b96973cd58d48a8c824524bbdb3b05e5535e87734330007fceede39f7725b65"
+    },
+    {
+      "path": "progress.json",
+      "bytes": 7375,
+      "sha256": "7ab980b578a157e2aec0bcc34260f05f8882edb59ca94f5122d6e89f3f35368a"
+    }
+  ],
+  "file_count": 2,
+  "payload_bytes": 11934,
+  "provenance": {
+    "source_commit": "1b3af0174a4c23c9e0333e6ffd5c7999273caf88",
+    "runtime_observed_at_utc": "2026-11-21T01:01:02.799264+00:00",
+    "hold_released_at_utc": "2026-11-21T01:23:36.547327+00:00",
+    "evidence": {
+      "terminal_runtime": {
+        "bytes": 25647,
+        "sha256": "8c97fc90bf1799310f0c517ec513e65e94797d3ee42a64392181da2e708fd859",
+        "available_in_github": false
+      },
+      "cache_observation": {
+        "bytes": 18876,
+        "sha256": "b3c3a709a5c2279685fb5c28d9a6e83b8ef6dd060421cc4d4b9d37adacf3dadb",
+        "available_in_github": false
+      },
+      "metadata_archive_acceptance": {
+        "bytes": 279358,
+        "sha256": "6090f3a56a598bf4b3028cbd6a51391c8f81b927ddd5434e5426b9725527e621",
+        "available_in_github": false
+      },
+      "hold_retirement": {
+        "bytes": 9504,
+        "sha256": "2f8a299ccf0ca17c3fc248383b5dcdb84d87bbc9f229fd6b33f908d21741fc63",
+        "available_in_github": false
+      },
+      "independent_archive_and_retirement_audit": {
+        "bytes": 13202,
+        "sha256": "0fe549b3c91ba61d63c9a8859fa312f5ec1525cf5a787a1b7ce46b8b17ac9d81",
+        "available_in_github": false
+      },
+      "diagnostic_regression": {
+        "bytes": 2215,
+        "sha256": "26115afe1df815ce2792b66e957bf5d602a9b85104580eda773b594e82427837",
+        "available_in_github": false
+      }
+    },
+    "fresh_cluster_query": false,
+    "new_training_or_evaluation_completion": false,
+    "old_releases_unchanged": true
+  },
+  "scope": "Results and documents only; no media, weights or private cluster snapshots."
+}

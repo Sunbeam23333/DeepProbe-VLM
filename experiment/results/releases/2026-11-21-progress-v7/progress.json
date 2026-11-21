@@ -1,0 +1,204 @@
+{
+  "schema_version": 1,
+  "release_id": "2026-11-21-progress-v7",
+  "curated_at_utc": "2026-11-21T03:26:05.820033+00:00",
+  "observation_is_atomic": false,
+  "fresh_remote_query_performed_for_this_publication": false,
+  "scope": "Dated terminal, archive and reservation records; no replacement-worker launch or new scientific result is claimed.",
+  "public_code_commit": "1b3af0174a4c23c9e0333e6ffd5c7999273caf88",
+  "new_held_out_results": false,
+  "new_scientific_training_completions": 0,
+  "new_model_benchmark_evaluation_completions": 0,
+  "suite_execution": {
+    "attempt": "a6",
+    "public_run_label": "suite-isolated-worker-a6",
+    "observed_from_utc": "2026-11-21T01:01:01.464321+00:00",
+    "observed_at_utc": "2026-11-21T01:01:02.799264+00:00",
+    "job_status": "Failed",
+    "pod_status": "Failed",
+    "job_failed_at_utc": "2026-11-21T00:59:45Z",
+    "container_finished_at_utc": "2026-11-21T00:59:43Z",
+    "container_exit_code": 1,
+    "container_restart_count": 0,
+    "exact_identity_verified": true,
+    "worker_count": 1,
+    "priority": "normal",
+    "queue": "stream",
+    "nodes_per_worker": 1,
+    "gpus_per_worker": 8,
+    "startup_accepted": true,
+    "gpu_gate_accepted": true,
+    "completed_operational_task_count": 3,
+    "completed_operational_tasks": [
+      "gpu_gate",
+      "train__ouro_r4_s17__alignment",
+      "archive__ouro_r4_s17__alignment"
+    ],
+    "completed_task_count_scope": "Engineering gate plus restored historical alignment and its archive; not fresh alignment training or a scientific completion percentage.",
+    "failed_task": "train__ouro_r4_s17__sft",
+    "new_optimizer_updates_verified": false,
+    "original_training_exception_confirmed": false,
+    "missing_training_stderr_recovered": false,
+    "replacement_submission_claimed": false
+  },
+  "bound_plan": {
+    "models": 18,
+    "operational_tasks": 185,
+    "task_kinds": {
+      "gate": 1,
+      "train": 34,
+      "archive": 52,
+      "evaluate": 36,
+      "latency": 15,
+      "compare_latency": 12,
+      "cleanup": 34,
+      "aggregate": 1
+    },
+    "new_training_stages": 27,
+    "r4_sft_remaining_optimizer_updates": 118,
+    "new_model_benchmark_evaluations": 32,
+    "remaining_work_scope": "Pending work after accepted historical reuse, not work completed by this allocation.",
+    "plan_sha256": "5d073f4b663a8bfae28684696b84c34700c7cd303f15592953819e6c30bea8a7",
+    "source_manifest_sha256": "632c0f9aa84ae55dbe23dee8bb4379298f7eb123b73231a8fcc3990167c3784b"
+  },
+  "accepted_scientific_totals": {
+    "training_stages": 6,
+    "complete_two_stage_models": 2,
+    "model_benchmark_evaluations": 4,
+    "full_model_latency_runs": 0
+  },
+  "metadata_archive": {
+    "objects": 458,
+    "bytes": 1946568,
+    "checkpoint_payload_uploaded_or_deleted": false
+  },
+  "historical_alignment_archive": {
+    "objects": 23,
+    "bytes": 7482820366,
+    "new_training_completion_claim": false
+  },
+  "hold_retirement": {
+    "released_at_utc": "2026-11-21T01:23:36.547327+00:00",
+    "reservation_bytes_released": 48000000000,
+    "unchanged_other_reservations": 42,
+    "unchanged_artifacts": 1,
+    "prior_events_preserved": 91,
+    "new_release_events": 1,
+    "cpu_reservations_still_active_at_retirement": 3,
+    "namespace_retained": true,
+    "new_hold_created": false,
+    "payload_files_deleted": false,
+    "scope": "Reservation accounting release; not deletion of 48 GB of files and not a current CPU liveness observation."
+  },
+  "dated_capacity": {
+    "observed_at_utc": "2026-11-21T01:24:53.376509+00:00",
+    "actual_home_bytes": 70172344228,
+    "active_home_reservation_bytes": 270532608,
+    "projected_home_bytes_including_safety": 72442876836,
+    "home_limit_bytes": 150000000000,
+    "oss_limit_bytes": null,
+    "scope": "Historical snapshot before the 9,504-byte retirement receipt was written; not current capacity or a new admission."
+  },
+  "benchmark_cache_preparation": {
+    "observed_at_utc": "2026-11-21T01:02:04.406695+00:00",
+    "shapes": {
+      "videomme899-f4": {
+        "frames": 4,
+        "cache_entries_observed": 677,
+        "pngs_observed": 2708,
+        "objects_observed": 3386,
+        "bytes_observed": 1072916095,
+        "complete_marker_observed": false,
+        "ready_receipt_observed": false,
+        "prepared_asset_observed": false
+      },
+      "tempcompass_mc-f4": {
+        "frames": 4,
+        "cache_entries_observed": 0,
+        "pngs_observed": 0,
+        "objects_observed": 0,
+        "bytes_observed": 0,
+        "complete_marker_observed": false,
+        "ready_receipt_observed": false,
+        "prepared_asset_observed": false
+      },
+      "videomme899-f16": {
+        "frames": 16,
+        "cache_entries_observed": 0,
+        "pngs_observed": 0,
+        "objects_observed": 0,
+        "bytes_observed": 0,
+        "complete_marker_observed": false,
+        "ready_receipt_observed": false,
+        "prepared_asset_observed": false
+      },
+      "tempcompass_mc-f16": {
+        "frames": 16,
+        "cache_entries_observed": 0,
+        "pngs_observed": 0,
+        "objects_observed": 0,
+        "bytes_observed": 0,
+        "complete_marker_observed": false,
+        "ready_receipt_observed": false,
+        "prepared_asset_observed": false
+      }
+    },
+    "scope": "Dated non-atomic metadata listing, not accepted clips, completed evaluations, or current producer liveness.",
+    "all_new_shapes_ready": false,
+    "evaluation_requires_own_ready_receipt": true,
+    "original_f8_caches": {
+      "videomme899": "READY",
+      "tempcompass_mc": "READY"
+    }
+  },
+  "diagnostics_code_repair": {
+    "commit": "1b3af0174a4c23c9e0333e6ffd5c7999273caf88",
+    "scoped_tests_passed": 39,
+    "scope": "Bounded failure-diagnostic retention, locally tested; does not establish the original training exception or repair training execution.",
+    "payload_limit_bytes": 786432,
+    "report_limit_bytes": 32768
+  },
+  "independent_archive_audit": {
+    "observed_at_utc": "2026-11-21T01:28:41.539831+00:00",
+    "checks_passed": 30,
+    "referenced_files_rehashed": 17
+  },
+  "evidence": {
+    "terminal_runtime": {
+      "bytes": 25647,
+      "sha256": "8c97fc90bf1799310f0c517ec513e65e94797d3ee42a64392181da2e708fd859",
+      "available_in_github": false
+    },
+    "cache_observation": {
+      "bytes": 18876,
+      "sha256": "b3c3a709a5c2279685fb5c28d9a6e83b8ef6dd060421cc4d4b9d37adacf3dadb",
+      "available_in_github": false
+    },
+    "metadata_archive_acceptance": {
+      "bytes": 279358,
+      "sha256": "6090f3a56a598bf4b3028cbd6a51391c8f81b927ddd5434e5426b9725527e621",
+      "available_in_github": false
+    },
+    "hold_retirement": {
+      "bytes": 9504,
+      "sha256": "2f8a299ccf0ca17c3fc248383b5dcdb84d87bbc9f229fd6b33f908d21741fc63",
+      "available_in_github": false
+    },
+    "independent_archive_and_retirement_audit": {
+      "bytes": 13202,
+      "sha256": "0fe549b3c91ba61d63c9a8859fa312f5ec1525cf5a787a1b7ce46b8b17ac9d81",
+      "available_in_github": false
+    },
+    "diagnostic_regression": {
+      "bytes": 2215,
+      "sha256": "26115afe1df815ce2792b66e957bf5d602a9b85104580eda773b594e82427837",
+      "available_in_github": false
+    }
+  },
+  "earlier_releases_unchanged": true,
+  "operator_measurements": {
+    "new_in_this_release": false,
+    "prior_release": "2026-11-21-progress-v6",
+    "full_model_or_training_speedup_claim": false
+  }
+}

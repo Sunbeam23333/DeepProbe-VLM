@@ -22,12 +22,62 @@ The `releases/2026-11-19/README.md` file explains the artifact layout and limita
 
 R4 SFT, SmolLM2, the remaining seeds and ablations, and formal full-model latency measurements remain incomplete in this snapshot. The current small result release is not a backup of model weights. Future fully verified model backups, if present, use a separate `artifacts/` prefix.
 
-The later [current GitHub status](https://github.com/Sunbeam23333/DeepProbe-VLM/blob/main/experiment/results/STATUS.md) and [November 21 progress-v6](https://github.com/Sunbeam23333/DeepProbe-VLM/tree/main/experiment/results/releases/2026-11-21-progress-v6) describe a separately admitted isolated a6 suite worker. At **November 21 08:38:25 Beijing time**, its Job and Pod were Running on one normal-priority stream node with eight B300 GPUs and zero restarts. STARTUP and the engineering `gpu_gate` passed. One of 185 operational tasks was complete; the active task was restoring accepted historical R4 alignment. No new optimizer update, scientific training completion or model/benchmark result was observed. Public source main is synchronized at `a114a4c`.
+The isolated **a6 suite worker failed**: its container exited 1 at
+**08:59:43 Beijing time on November 21** (00:59:43 UTC), and the Job's Failed
+condition was recorded two seconds later. The exact Job/Pod identities match
+the single submission, with zero restarts. The terminal observation ended at
+09:01:02 Beijing time. **3/185 operational tasks** completed: the GPU engineering
+gate, restoration of accepted historical R4 seed17 alignment, and its archive.
+This is not fresh alignment training or a scientific completion percentage.
+The R4 SFT task failed; no new optimizer update or scientific completion was
+verified. The original training exception remains unconfirmed because its
+private training stderr was not recovered. This publication uses dated stored
+evidence and does not claim a replacement worker has started.
 
-The new GPU gate measured synthetic weighted pooling at shape [8,729,1152], G4. Reference → Triton median CUDA-event time was **0.249408 → 0.096992 ms (2.5714×)** for BF16 and **0.242176 → 0.097776 ms (2.4768×)** for FP32; both numerical checks passed. Each backend used 25 warmups and 100 measured calls in alternating order. Timing includes output allocation, excludes the gate and projector, and uses no model checkpoint. These new operator measurements do not establish full-model or training speedup. The original November 19 measurements above are unchanged.
+Separate terminal-metadata preservation accepted **458 objects / 1,946,568 bytes**
+by full GET/SHA verification. The restored historical alignment archive retains
+**23 objects / 7,482,820,366 bytes**. At **09:23:36 Beijing time**, only the old
+**48,000,000,000-byte reservation** transitioned to RELEASED. The other 42
+reservations, one artifact entry, all 91 prior events and three active CPU
+reservation owners were preserved. The old namespace and checkpoint files were
+not deleted. This releases an accounting reservation, not 48 GB of disk files.
+The independent local audit passed 30 checks and rehashed 17 source artifacts.
 
-Accepted Smol alignment a6 reached 718 steps; its independent archive recovery and suite-history import are accepted, while the original archive-phase Job failure remains unchanged. R4 cp600 archive/metadata checks are accepted; runtime restoration and 118 remaining SFT updates are pending. Scientific totals remain 6 accepted training stages, 2 complete two-stage models, 4 evaluations and 0 full-model latency runs. Remaining work is 27 fresh training stages, R4's 118 updates, 32 new evaluations, 15 latency runs and 12 comparisons.
+The **09:24:53** capacity snapshot recorded **70,172,344,228 bytes** of actual
+project home use and a **72,442,876,836-byte** projection including active
+reservations and safety, under the 150,000,000,000-byte limit. It precedes the
+9,504-byte retirement receipt and is not current capacity or new admission.
+OSS has no configured capacity limit. A CPU reservation still being ACTIVE at
+retirement does not establish that its process is alive now.
 
-At 08:33:49, Video-MME899 F4 preparation had 629 cache metadata entries and 2,516 PNGs, totaling 3,146 objects / 996,822,917 bytes; READY was absent. The other three new F4/F16 shapes had zero observed objects. Both original F8 caches remain READY. The 08:32:28 admission projection was 120.429 GB under the 150 GB home budget, with private scratch and a retained parent reservation; this is not current disk use. OSS has no configured capacity limit. Each evaluation requires its own cache READY, and local checkpoints are retired only after verified archival and every dependent consumer completes. Earlier sealed releases and accepted November 19 scores remain unchanged.
+Public diagnostic-retention code is synchronized at `1b3af01`; its 39 scoped
+tests passed. It preserves bounded failure records (768 KiB payload plus a
+32 KiB report per attempt). These tests establish diagnostic handling, not
+successful training execution or the cause of the original a6 failure.
+
+Accepted scientific totals remain **6 training stages, 2 complete two-stage
+models, 4 model/benchmark evaluations and 0 full-model latency runs**. Smol
+alignment a6 completed 718 steps and its independent archive recovery/history
+import was accepted; its original archive-phase Job failure is preserved.
+The full plan retains 18 models, 34 training stages, 36 evaluations, 15 latency
+runs, 12 comparisons and 185 operational tasks. Remaining work is **27 fresh
+training stages plus R4's 118 updates, 32 new evaluations, 15 latency runs and
+12 comparisons**. Checkpoint600 archive/native metadata acceptance does not
+prove runtime optimizer, scheduler and RNG restoration or the remaining updates.
+
+At **09:02:04 Beijing time**, Video-MME899 F4 cache preparation had **677 metadata
+entries, 2,708 PNGs and 3,386 objects / 1,072,916,095 bytes**. No complete marker,
+READY or PREPARED_ASSET receipt was present. The other three F4/F16 shapes had
+zero observed objects and no READY. Both original F8 caches have accepted READY
+records. These dated counts are not accepted clips or completed questions;
+each evaluation requires its own verified READY receipt.
+
+The [progress-v7 package](https://github.com/Sunbeam23333/DeepProbe-VLM/blob/main/experiment/results/releases/2026-11-21-progress-v7/README.md) records these
+separate observation times and opaque evidence hashes. The sealed
+[progress-v6 package](https://github.com/Sunbeam23333/DeepProbe-VLM/blob/main/experiment/results/releases/2026-11-21-progress-v6/README.md) remains an unchanged
+00:38:25 UTC Running snapshot and retains the previously reported synthetic
+pooling measurements (BF16 2.5714×, FP32 2.4768×). They do not establish full-model
+or training speedup. No new held-out score or operator measurement is added here.
+The accepted [November 19 results](https://github.com/Sunbeam23333/DeepProbe-VLM/blob/main/experiment/results/releases/2026-11-19/README.md) are unchanged.
 
 Benchmark media is not redistributed here. Access and reuse of benchmark assets remain subject to their upstream licenses and terms.
