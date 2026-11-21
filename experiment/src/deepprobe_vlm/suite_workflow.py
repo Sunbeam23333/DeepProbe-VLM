@@ -208,6 +208,10 @@ def prepare_workflow(plan, candidate, output, *, prepare_assets=False, resume_as
     output = runner.safe(output)
     runner.require(candidate.get("schema_version") == 1 and isinstance(candidate.get("environment"), dict), "Invalid workflow candidate")
     env = deepcopy(candidate["environment"])
+    if 'isolated_storage' in env:
+        from .suite_isolated_storage import require_output
+        require_output(env, output)
+        require_output(env, candidate['state_root'])
     report = workflow_report(plan, candidate)
     if env.get("run_root"):
         declared_root = runner.safe(env["run_root"])

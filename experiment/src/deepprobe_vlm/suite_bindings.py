@@ -266,7 +266,7 @@ def remaining_summary(plan, environment):
 def validate_environment(environment, plan):
     require = runner.require
     require(isinstance(environment, dict) and REQUIRED_ENVIRONMENT_FIELDS <= set(environment)
-            and set(environment) <= REQUIRED_ENVIRONMENT_FIELDS | {"task_reserve_by_id", "execution_profile", "benchmark_preparations", "modelscope_token_file", "machine_identity", "legacy_private_resume"},
+            and set(environment) <= REQUIRED_ENVIRONMENT_FIELDS | {"task_reserve_by_id", "execution_profile", "benchmark_preparations", "modelscope_token_file", "machine_identity", "legacy_private_resume", "isolated_storage"},
             "invalid suite machine environment fields")
     require(type(environment["schema_version"]) is int and environment["schema_version"] == 1,
             "unsupported suite environment")
@@ -282,6 +282,9 @@ def validate_environment(environment, plan):
     if "execution_profile" in environment:
         from .suite_fleet import validate_execution_profile
         validate_execution_profile(environment["execution_profile"], suite_id=environment["suite_id"])
+    if 'isolated_storage' in environment:
+        from .suite_isolated_storage import validate_isolation
+        validate_isolation(environment)
     if 'legacy_private_resume' in environment:
         _pin_shape(environment['legacy_private_resume'])
         require(environment.get('execution_profile', {}).get('schema_version') == 3
@@ -424,6 +427,10 @@ def build_binding(plan, environment, *, plan_path, plan_sha256, environment_path
         from .suite_fleet import profile_allocation
         binding.update(schema_version=2, execution_profile=deepcopy(environment["execution_profile"]),
                        allocation=profile_allocation(environment["execution_profile"]))
+    if 'isolated_storage' in environment:
+        runner.require(runner.read(environment['isolated_storage']['coordinator_hold']['path'])['plan_sha256'] == plan_sha256,
+                       'Lifetime hold belongs to another scientific plan')
+        binding['isolated_storage'] = deepcopy(environment['isolated_storage'])
     return runner.validate_binding(plan, binding, plan_sha256=plan_sha256)
 
 

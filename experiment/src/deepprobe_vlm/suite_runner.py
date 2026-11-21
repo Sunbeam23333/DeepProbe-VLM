@@ -35,11 +35,11 @@ ALLOCATION = {"cluster": "ali-gpu", "queue": "stream", "priority": "low",
 OFFLINE = {"HF_HUB_OFFLINE": "1", "TRANSFORMERS_OFFLINE": "1", "HF_DATASETS_OFFLINE": "1",
            "PYTHONNOUSERSITE": "1", "PYTHONDONTWRITEBYTECODE": "1", "PYTHONUNBUFFERED": "1"}
 ENVIRONMENT_KEYS = set(OFFLINE) | {
-    "PATH", "PYTHONPATH", "HF_HOME", "HF_HUB_CACHE", "TRANSFORMERS_CACHE",
+    "PATH", "PYTHONPATH", "HF_HOME", "HF_HUB_CACHE", "HF_MODULES_CACHE", "TRANSFORMERS_CACHE",
     "OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS",
     "TORCH_EXTENSIONS_DIR", "TRITON_CACHE_DIR", "TMPDIR", "NCCL_DEBUG",
     "NCCL_IB_TIMEOUT", "NCCL_NET_PLUGIN", "TORCH_NCCL_ASYNC_ERROR_HANDLING",
-    "NCCL_ASYNC_ERROR_HANDLING", "TOKENIZERS_PARALLELISM",
+    "NCCL_ASYNC_ERROR_HANDLING", "TOKENIZERS_PARALLELISM", "DP_SUITE_KUBECTL_CACHE",
 }
 CONTEXT_NAMES = {"state_root", "invocation_dir", "task_id", "task_attempt_dir"}
 FORBIDDEN_EXECUTABLES = {"sh", "bash", "zsh", "dash", "fish", "csh", "tcsh",
@@ -228,9 +228,14 @@ def _validate_command(command, *, startup=False):
 def validate_binding(plan, binding, *, plan_sha256):
     require(isinstance(binding, dict) and set(binding) == {
         "schema_version", "suite_id", "plan_sha256", "allocation", "source_files", "storage",
-        "environment", "startup", "tasks"} | ({"execution_profile"} if binding.get("schema_version") == 2 else set()), "invalid execution binding fields")
+        "environment", "startup", "tasks"} | ({"execution_profile"} if binding.get("schema_version") == 2 else set())
+        | ({"isolated_storage"} if 'isolated_storage' in binding else set()), "invalid execution binding fields")
     require(binding["schema_version"] in {1, 2} and type(binding["schema_version"]) is int,
             "unsupported suite execution binding")
+    if 'isolated_storage' in binding:
+        require(binding['schema_version'] == 2, 'Isolated storage requires a private fleet binding')
+        from .suite_isolated_storage import contract
+        contract(binding)
     require(isinstance(binding["suite_id"], str) and ID.fullmatch(binding["suite_id"]), "invalid suite id")
     require(binding["plan_sha256"] == plan_sha256 and SHA.fullmatch(plan_sha256), "binding refers to another plan")
     expected_allocation = ALLOCATION
@@ -733,6 +738,16 @@ def run_fleet_worker(plan, binding, *, plan_sha256, binding_sha256, state_root, 
     require(any(state_root != safe(root) and state_root.is_relative_to(safe(root))
                 for root in binding['storage']['roots']), 'Fleet state escapes accounted home roots')
     environment = machine_environment(binding)
+    if 'isolated_storage' in environment:
+        from .suite_isolated_storage import require_output, validate_isolation
+        require(environment['isolated_storage'] == binding.get('isolated_storage'), 'Isolated environment/binding differ')
+        validate_isolation(environment)
+        require(read(environment['isolated_storage']['coordinator_hold']['path'])['plan_sha256'] == plan_sha256,
+                'Lifetime hold belongs to another scientific plan')
+        require_output(environment, state_root)
+        from .suite_isolated_pod import inspect_isolated_mounts
+        from .suite_scratch import _mounts
+        inspect_isolated_mounts(environment, _mounts())
     if environment.get('modelscope_token_file'):
         from .suite_bindings import load_modelscope_token_file
         load_modelscope_token_file(environment['modelscope_token_file'])
@@ -782,6 +797,10 @@ def run_fleet_worker(plan, binding, *, plan_sha256, binding_sha256, state_root, 
                 'live': scratch_live, 'inspection': scratch_proof, 'run_root': str(run_root),
                 'profile_sha256': digest(binding['execution_profile'])})
             private_budget = PrivateScratchBudget(binding['execution_profile'], worker_id, scratch_live, state_root)
+            if 'isolated_storage' in environment:
+                from .suite_isolated_storage import IsolatedWorkerBudget
+                budget = IsolatedWorkerBudget(environment, scratch_live, state_root)
+                worker_environment['DP_SUITE_STORAGE_LEDGER'] = str(budget.root)
             budget = TieredTaskBudget(budget, private_budget, {task['id']: task for task in plan['tasks']})
             caches = safe(binding['execution_profile']['scratch']['mount_path']) / 'runtime-cache' / worker_id
             for key, name in {'TMPDIR': 'tmp', 'CUDA_CACHE_PATH': 'cuda', 'TRITON_CACHE_DIR': 'triton',
@@ -855,7 +874,8 @@ def run_fleet_worker(plan, binding, *, plan_sha256, binding_sha256, state_root, 
                     release_if_quiet(claim['storage_token'], attempt)
                 raise
     except BaseException as exc:
-        with project_transaction(binding['storage']):
+        from .suite_isolated_storage import coordination_storage
+        with project_transaction(coordination_storage(binding)):
             write_once(invocation / 'STOPPED.json', {'status': 'EXPERIMENT_SUITE_STOPPED', 'worker_id': worker_id,
                 'error_type': type(exc).__name__, 'error': str(exc), 'utc': utc(), 'automatic_retry': False,
                 'automatic_requeue': False, 'claims_and_uncertain_reservations_preserved': True})

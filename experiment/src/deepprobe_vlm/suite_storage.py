@@ -94,6 +94,10 @@ def capacity_violations(snapshot, config, *, additional_home_bytes=0):
             continue
         projected = snapshot['projected_bytes'][domain]
         require(nonnegative(projected), 'Capped domain has no measured storage projection: ' + domain)
+        if domain == 'home' and 'delegated_home_limit_bytes' in snapshot:
+            delegated = snapshot['delegated_home_limit_bytes']
+            require(type(delegated) is int and 0 < delegated <= limit, 'Invalid delegated home ceiling')
+            limit = min(limit, delegated)
         if projected + (additional_home_bytes if domain == 'home' else 0) >= limit:
             blocked.append(domain)
     return blocked
@@ -636,5 +640,8 @@ class OssutilInventory:
 
 
 def budget_for(environment):
+    if 'isolated_storage' in environment:
+        from .suite_isolated_storage import budget_for_isolated
+        return budget_for_isolated(environment)
     config, tools = environment['storage'], environment['tools']
     return SharedBudget(config, OssutilInventory(tools['ossutil'], tools['oss_config'], config['oss_prefixes']))

@@ -37,13 +37,25 @@ class _TransientQueryError(Exception):
     pass
 
 
+def _cache_args():
+    """A frozen isolated worker must not write kubectl discovery into old home."""
+    value = os.environ.get('DP_SUITE_KUBECTL_CACHE')
+    if value is None:
+        return []
+    from .suite_runner import safe
+    path = safe(value)
+    require(str(path) == value, 'Explicit kubectl cache must be a canonical physical path')
+    path.mkdir(parents=True, exist_ok=True)
+    return ['--cache-dir', str(path)]
+
+
 @contextmanager
 def _metadata_connection(tools, deadline, clock):
     """Expose only a short-lived loopback proxy, using kubectl's existing auth."""
     process = None
     with tempfile.TemporaryFile() as errors:
         try:
-            process = subprocess.Popen([tools['kubectl'], '--kubeconfig', tools['kubeconfig'],
+            process = subprocess.Popen([tools['kubectl'], '--kubeconfig', tools['kubeconfig'], *_cache_args(),
                 '--request-timeout=25s', 'proxy', '--port=0', '--address=127.0.0.1',
                 '--accept-hosts=^127\\.0\\.0\\.1$'], stdout=subprocess.PIPE, stderr=errors,
                 start_new_session=True)
@@ -209,7 +221,7 @@ def list_workloads(tools, *, project_name_prefixes, command=None, timeout_second
 
     def request(args):
         def get(timeout):
-            argv = [tools['kubectl'], '--kubeconfig', tools['kubeconfig'],
+            argv = [tools['kubectl'], '--kubeconfig', tools['kubeconfig'], *_cache_args(),
                     '--request-timeout=' + str(max(1, min(25, int(timeout)))) + 's', *args]
             result = command(argv, capture_output=True, text=True, timeout=timeout)
             if result.returncode == 0:

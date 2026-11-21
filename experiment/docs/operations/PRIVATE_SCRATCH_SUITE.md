@@ -1,5 +1,34 @@
 # Private disk execution for the remaining experiment suite
 
+The current deployment uses one private-disk worker to drain the complete
+185-task DAG. On November 21, real two-node CPU probes showed that the shared
+home mount did not provide cross-node `flock` exclusion and could return an old
+generation after another node replaced a file. The multiworker shared-journal
+profile is therefore not admitted on that mount.
+
+The optional `isolated_storage` contract reserves the worker's entire home
+allowance once in the existing coordinator ledger. Existing CPU cache producers
+continue using that ledger on the development machine. The GPU keeps its own
+mutable budget ledger on private disk and counts all retained output in a new
+home namespace against the delegated allowance. The parent hold never expires
+or releases automatically. Immutable observations preserve the worker's budget
+history for recovery without a shared mutable pointer.
+
+In the isolated Pod, the old home and both vePFS aliases are read-only. A single
+writable host-path overlay exposes the new home namespace; checkpoints and
+CUDA caches use private disk. The accepted offline Hub remains a read-only
+model input. Python module and Kubernetes discovery caches have separate writable
+locations. Prepared Pod validation and live kernel mount checks enforce this
+layout before any worker state or lease is written. Benchmark consumers hydrate
+and retire PNGs in the new namespace while preserving the original cache READY
+receipts and scientific protocol.
+
+The current allowance is 48 GB, including a 1 GB namespace safety reserve,
+under the independent 150 GB project-home limit. This is storage admission,
+not a filesystem quota. Future allowance release requires exact worker
+quiescence and a final namespace inventory. Scientific completions still require
+their training/evaluation receipts; a passed isolation test is not such a result.
+
 The scientific plan remains the complete 185-task DAG. Execution profile v2
 keeps the existing shared-home, one-resident-chain scheduler. Opt-in profile v3
 binds one to four independent eight-GPU workers, each with a 100 GiB disk

@@ -71,6 +71,9 @@ def prepare_worker_jobs(template, environment, plan_pin, binding_pin, state_root
         if profile['schema_version'] == 3:
             from .suite_scratch import configure_scratch_pod
             configure_scratch_pod(spec, profile, machine)
+        if 'isolated_storage' in environment:
+            from .suite_isolated_pod import configure_isolated_pod
+            configure_isolated_pod(spec, environment)
         argv = runner_argv(environment, plan_pin, binding_pin, state_root, worker_id=worker['worker_id'])
         container['command'], container['args'] = argv, []
         container['workingDir'] = environment['experiment_root']

@@ -239,6 +239,8 @@ class Actions:
     def __init__(self, plan, environment, state_root, *, resume=False):
         self.plan, self.env = plan, environment
         self.state = safe(state_root)
+        from .suite_isolated_storage import require_output
+        require_output(environment, self.state)
         self.root = safe(environment['experiment_root'])
         self.run_root = safe(environment['run_root'])
         self.private_scratch = environment.get('execution_profile', {}).get('schema_version') == 3
@@ -294,7 +296,8 @@ class Actions:
         if budget is None:
             return runner.capacity({'storage': self.env['storage']}, extra)
         token = os.environ.get('DP_SUITE_STORAGE_TOKEN')
-        require(token and os.environ.get('DP_SUITE_STORAGE_LEDGER') == self.env['storage']['ledger_root'],
+        expected_ledger = str(budget.root) if 'isolated_storage' in self.env else self.env['storage']['ledger_root']
+        require(token and os.environ.get('DP_SUITE_STORAGE_LEDGER') == expected_ledger,
                 'Parallel actions require the shared ledger reservation from their worker')
         private_token = os.environ.get('DP_SUITE_SCRATCH_TOKEN')
         if self.private_scratch and private_token:
@@ -852,6 +855,8 @@ class Actions:
             data = ready['asset']
         else:
             data = self.env['assets']['benchmarks'][task['benchmark']][str(task['frames'])]
+        from .suite_isolated_assets import isolate_benchmark_asset
+        data = isolate_benchmark_asset(self.env, task, data)
         if 'cache' not in data:
             yield {'data': data, 'release_receipt': None}
             return

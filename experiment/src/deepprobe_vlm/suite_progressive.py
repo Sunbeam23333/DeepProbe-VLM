@@ -89,6 +89,12 @@ def _cache_workflow_identity(path):
     tree = ast.parse(Path(path).read_text(encoding='utf-8'))
     prepare = _function(tree, 'prepare_workflow')
     _normalize_exact(prepare.body, """
+if 'isolated_storage' in env:
+    from .suite_isolated_storage import require_output
+    require_output(env, output)
+    require_output(env, candidate['state_root'])
+""")
+    _normalize_exact(prepare.body, """
 if env.get('run_root'):
     declared_root = runner.safe(env['run_root'])
     runner.require(output != declared_root and not output.is_relative_to(declared_root)
@@ -143,6 +149,40 @@ def _cache_runner_identity(path):
     """
     tree = ast.parse(Path(path).read_text(encoding='utf-8'))
     _normalize_exact(tree.body, '''
+ENVIRONMENT_KEYS = set(OFFLINE) | {
+    "PATH", "PYTHONPATH", "HF_HOME", "HF_HUB_CACHE", "HF_MODULES_CACHE", "TRANSFORMERS_CACHE",
+    "OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS",
+    "TORCH_EXTENSIONS_DIR", "TRITON_CACHE_DIR", "TMPDIR", "NCCL_DEBUG",
+    "NCCL_IB_TIMEOUT", "NCCL_NET_PLUGIN", "TORCH_NCCL_ASYNC_ERROR_HANDLING",
+    "NCCL_ASYNC_ERROR_HANDLING", "TOKENIZERS_PARALLELISM", "DP_SUITE_KUBECTL_CACHE",
+}
+''', '''
+ENVIRONMENT_KEYS = set(OFFLINE) | {
+    "PATH", "PYTHONPATH", "HF_HOME", "HF_HUB_CACHE", "TRANSFORMERS_CACHE",
+    "OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS",
+    "TORCH_EXTENSIONS_DIR", "TRITON_CACHE_DIR", "TMPDIR", "NCCL_DEBUG",
+    "NCCL_IB_TIMEOUT", "NCCL_NET_PLUGIN", "TORCH_NCCL_ASYNC_ERROR_HANDLING",
+    "NCCL_ASYNC_ERROR_HANDLING", "TOKENIZERS_PARALLELISM",
+}
+''')
+    validation = _function(tree, 'validate_binding')
+    _normalize_exact(validation.body, '''
+require(isinstance(binding, dict) and set(binding) == {
+    "schema_version", "suite_id", "plan_sha256", "allocation", "source_files", "storage",
+    "environment", "startup", "tasks"} | ({"execution_profile"} if binding.get("schema_version") == 2 else set())
+    | ({"isolated_storage"} if 'isolated_storage' in binding else set()), "invalid execution binding fields")
+''', '''
+require(isinstance(binding, dict) and set(binding) == {
+    "schema_version", "suite_id", "plan_sha256", "allocation", "source_files", "storage",
+    "environment", "startup", "tasks"} | ({"execution_profile"} if binding.get("schema_version") == 2 else set()), "invalid execution binding fields")
+''')
+    _normalize_exact(validation.body, '''
+if 'isolated_storage' in binding:
+    require(binding['schema_version'] == 2, 'Isolated storage requires a private fleet binding')
+    from .suite_isolated_storage import contract
+    contract(binding)
+''')
+    _normalize_exact(tree.body, '''
 def completion_path(state_root, task_id):
     """Keep a typed import distinct from a task executed by this fleet."""
     require(isinstance(task_id, str) and ID.fullmatch(task_id), "unsafe task id")
@@ -161,6 +201,18 @@ value = read(path)
 ''', 'value = read(safe(state_root) / "tasks" / task_id / "COMPLETED.json")')
     _function(tree, '_fleet_live').body = [ast.Pass()]
     worker = _function(tree, 'run_fleet_worker')
+    _normalize_exact(worker.body, '''
+if 'isolated_storage' in environment:
+    from .suite_isolated_storage import require_output, validate_isolation
+    require(environment['isolated_storage'] == binding.get('isolated_storage'), 'Isolated environment/binding differ')
+    validate_isolation(environment)
+    require(read(environment['isolated_storage']['coordinator_hold']['path'])['plan_sha256'] == plan_sha256,
+            'Lifetime hold belongs to another scientific plan')
+    require_output(environment, state_root)
+    from .suite_isolated_pod import inspect_isolated_mounts
+    from .suite_scratch import _mounts
+    inspect_isolated_mounts(environment, _mounts())
+''')
     _normalize_exact(_function(worker, 'execute').body, """
 tokens = ({'DP_SUITE_STORAGE_TOKEN': token['home'],
            **({'DP_SUITE_SCRATCH_TOKEN': token['scratch']} if token['scratch'] else {})}
@@ -188,6 +240,23 @@ if token in released_tokens:
             _normalize_exact(node.body, 'released_tokens.add(token_key)', 'released_tokens.add(token)')
     for node in worker.body:
         if isinstance(node, ast.Try):
+            for private in node.body:
+                if isinstance(private, ast.If):
+                    _normalize_exact(private.body, '''
+if 'isolated_storage' in environment:
+    from .suite_isolated_storage import IsolatedWorkerBudget
+    budget = IsolatedWorkerBudget(environment, scratch_live, state_root)
+    worker_environment['DP_SUITE_STORAGE_LEDGER'] = str(budget.root)
+''')
+            for handler in node.handlers:
+                _normalize_exact(handler.body, 'from .suite_isolated_storage import coordination_storage')
+                for guarded in handler.body:
+                    if isinstance(guarded, ast.With):
+                        for item in guarded.items:
+                            if ast.dump(item.context_expr, include_attributes=False) == ast.dump(
+                                    ast.parse("project_transaction(coordination_storage(binding))", mode='eval').body,
+                                    include_attributes=False):
+                                item.context_expr = ast.parse("project_transaction(binding['storage'])", mode='eval').body
             _normalize_exact(node.body, """
 if binding['execution_profile'].get('schema_version') == 3:
     from .suite_scratch import inspect_scratch, worker_run_root

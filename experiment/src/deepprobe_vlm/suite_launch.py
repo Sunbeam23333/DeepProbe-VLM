@@ -104,6 +104,9 @@ def validate_job(job, environment, argv, *, worker_id=None, binding_sha256=None)
         require(security.get('runAsUser') == machine['uid'] and security.get('runAsGroup') == machine['gid']
                 and security.get('runAsNonRoot') is True, 'Worker must run as the exact project UID/GID')
     require(spec.get('restartPolicy', 'Never') == 'Never', 'Pod must not restart automatically')
+    if 'isolated_storage' in environment:
+        from .suite_isolated_pod import validate_isolated_pod
+        validate_isolated_pod(spec, environment)
     return job
 
 

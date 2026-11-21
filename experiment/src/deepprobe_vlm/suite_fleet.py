@@ -190,13 +190,15 @@ class FleetState:
     def __init__(self, plan, binding, state_root, *, plan_sha256, binding_sha256):
         self.plan, self.binding, self.state = plan, binding, safe(state_root)
         self.profile = validate_execution_profile(binding['execution_profile'], binding['suite_id'])
+        from .suite_isolated_storage import coordination_storage
+        self.transaction_storage = coordination_storage(binding)
         self.plan_sha, self.binding_sha = plan_sha256, binding_sha256
         self.identity = {'schema_version': 2, 'suite_id': binding['suite_id'], 'plan_sha256': plan_sha256,
                          'binding_sha256': binding_sha256, 'source_identity_sha256': runner.source_identity(binding),
                          'execution_profile_sha256': runner.digest(self.profile)}
 
     def initialize(self):
-        with project_transaction(self.binding['storage']) as locks:
+        with project_transaction(self.transaction_storage) as locks:
             lease_dir = locks / 'fleet-leases'
             lease_dir.mkdir(exist_ok=True)
             lease_path = lease_dir / (self.profile['fleet_id'] + '.json')
@@ -221,7 +223,7 @@ class FleetState:
 
     def join(self, worker_id):
         worker_identity(self.profile, worker_id)
-        with project_transaction(self.binding['storage']):
+        with project_transaction(self.transaction_storage):
             root = self.state / 'workers' / worker_id
             root.mkdir(exist_ok=True)
             require(not (root / 'WORKER_CLAIM.json').exists(), 'Worker already claimed; no duplicate or automatic restart')
@@ -233,7 +235,7 @@ class FleetState:
             return claim, invocation
 
     def register(self, worker_id, startup):
-        with project_transaction(self.binding['storage']):
+        with project_transaction(self.transaction_storage):
             path = self.state / 'workers' / worker_id / 'JOB_OBSERVED.json'
             runner.write_once(path, {'worker_id': worker_id, 'job_uid': startup['job_uid'],
                                     'pod_uid': startup['pod_uid'], 'node': startup['node'], 'utc': runner.utc()})
@@ -244,7 +246,7 @@ class FleetState:
         A private per-node directory can never pass this rendezvous, even when
         its absolute path happens to match the coordinator's reviewed path.
         """
-        with project_transaction(self.binding['storage']):
+        with project_transaction(self.transaction_storage):
             require(not list((self.state / 'invocations').glob('*/STOPPED.json')), 'A worker stopped before shared-state rendezvous')
             workers = []
             for worker in self.profile['workers']:
@@ -285,7 +287,7 @@ class FleetState:
     def claim(self, worker_id, job_uid, reserve, readiness=None):
         """reserve(task, owner) atomically admits a shared budget or raises StorageError."""
         from .suite_storage import StorageError
-        with project_transaction(self.binding['storage']):
+        with project_transaction(self.transaction_storage):
             require(not list((self.state / 'invocations').glob('*/STOPPED.json')),
                     'Fleet stopped after a worker failure; explicit recovery required')
             failures = list((self.state / 'tasks').glob('*/FAILED.json'))
@@ -355,20 +357,20 @@ class FleetState:
                     'chain_pending_task_ids': chain_pending, 'training_chain': chain}
 
     def finish(self, task, claim, completion):
-        with project_transaction(self.binding['storage']):
+        with project_transaction(self.transaction_storage):
             root = self.state / 'tasks' / task['id']
             require(read(root / 'CLAIM.json') == claim, 'Task claim changed before acceptance')
             runner.write_once(root / 'COMPLETED.json', completion)
             runner._journal(self.state, {'event': 'TASK_ACCEPTED', 'task_id': task['id'], 'worker_id': claim['owner']['worker_id']})
 
     def fail(self, task, claim, error):
-        with project_transaction(self.binding['storage']):
+        with project_transaction(self.transaction_storage):
             runner.write_once(self.state / 'tasks' / task['id'] / 'FAILED.json', {
                 'task_id': task['id'], 'claim_id': claim['owner']['claim_id'], 'error_type': type(error).__name__,
                 'error': str(error), 'utc': runner.utc(), 'automatic_retry': False})
 
     def complete(self, worker_id):
-        with project_transaction(self.binding['storage']):
+        with project_transaction(self.transaction_storage):
             completed = self.completions()
             require(len(completed) == len(self.plan['tasks']), 'Cannot complete an unfinished fleet')
             result = {'status': 'EXPERIMENT_SUITE_COMPLETE', 'identity': self.identity, 'utc': runner.utc(),

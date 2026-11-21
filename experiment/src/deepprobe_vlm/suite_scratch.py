@@ -185,6 +185,9 @@ def _pod_for_live(environment, live):
                    and any(r.get('uid') == live['job_uid'] and r.get('kind') == 'PyTorchJob'
                            for r in pod['metadata'].get('ownerReferences', [])), 'Scratch Pod identity or owner changed')
     validate_scratch_pod(pod['spec'], profile)
+    if 'isolated_storage' in environment:
+        from .suite_isolated_pod import validate_isolated_pod
+        validate_isolated_pod(pod['spec'], environment)
     return pod
 
 
@@ -211,6 +214,10 @@ def inspect_scratch(environment, live):
                        'Node-local scratch must not overlap accounted shared home roots')
     pod = _pod_for_live(environment, live)
     contract = validate_scratch_pod(pod['spec'], profile)
+    isolation = None
+    if 'isolated_storage' in environment:
+        from .suite_isolated_pod import inspect_isolated_mounts
+        isolation = inspect_isolated_mounts(environment, _mounts())
     runner.require((contract['uid'], contract['gid']) == (machine['uid'], machine['gid']), 'Live scratch Pod UID/GID differs')
     matches = [row for row in _mounts() if Path(row['mount_path']).is_relative_to(mount)]
     runner.require(len(matches) == 1 and matches[0]['mount_path'] == str(mount),
@@ -244,5 +251,6 @@ def inspect_scratch(environment, live):
             'free_guard_bytes': config['free_guard_bytes'], 'safety_bytes': config['safety_bytes'],
             'shared_home_reserve_bytes': config['shared_home_reserve_bytes'],
             'pod_spec_sha256': runner.digest(pod['spec']), 'local_directories_created': False,
+            **({'isolated_input_mounts': isolation} if isolation is not None else {}),
             'interrupted_local_checkpoint_survives_pod_loss': False,
             'recovery_scope': 'only independently verified remote checkpoints'}
