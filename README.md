@@ -42,6 +42,10 @@ python -m pytest -q
 
 从旧目录布局升级后，需要从 `experiment/` 重新执行 editable 安装。已有数据、缓存和运行目录不会自动迁移；保留原目录，使用明确路径，或自行安排存储迁移。不要因拉取代码而覆盖已有检查点。
 
+## 迁移与备份
+
+完整代码、数据、检查点及关键日志正在迁移到 [ModelScope 模型仓库](https://modelscope.ai/models/JasonJin/DeepProbe-VLM/files)。首批数据计划为 **226.68 GB**，已验收的本地代码与日志快照包含 **17,090 个文件**。下载、校验和换机恢复方法见[迁移说明](experiment/docs/MIGRATION.md)。数据传输尚未全部完成。
+
 ## 当前状态
 
 **2026-11-21北京时间22:08最新核验**：R4 SFT 的718步训练、原生检查点导出及完整阶段归档均已验收（70个归档对象、29.80 GB，逐文件回读校验）。a11随后在调度器评测缓存校验时失败，修复 `57dd36a` 通过142项测试及真实导入回归。**a12已Running并通过8卡GPU门槛**，复用R4最终权重，无需重跑训练。完整实验仍未完成。见[恢复快照](experiment/results/A12_RECOVERY_20261121.json)和[完整状态记录](experiment/results/STATUS.md)。
