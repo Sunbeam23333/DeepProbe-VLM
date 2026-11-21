@@ -1,5 +1,25 @@
 # Experiment status — 2026-11-21
 
+## Migration preservation and R4 evaluations — November 21, 22:43 Beijing snapshot
+
+R4 seed17 completed both declared evaluations on the original a12 worker:
+Video-MME899 **550/2697 QA (20.3930%)**, and TempCompass multiple choice
+**877/1580 QA (55.5063%)**. These are the declared protocols and subset, not a
+claim of official full-dataset Video-MME performance. Both tasks have accepted
+completion receipts and checkpoint SHA verification. Full per-item outputs are
+preserved in the remote code/config/log migration snapshot.
+
+Totals are now **7/34 training stages, 3/18 complete models and 6/36 evaluations**.
+The reference latency task was still running at this observation. The scientific
+suite is incomplete. See [accepted evaluation summary](R4_EVALUATION_20261121.json).
+
+At the user's request, complete code and key logs are being preserved for a new
+machine. The first pinned data/checkpoint transfer plan is **226.68 GB / 877
+shards** in the ModelScope **model** repository; it is still in progress.
+See [migration and restore instructions](../docs/MIGRATION.md). Existing jobs,
+source checkpoints and OSS data are retained.
+
+
 ## R4 archive accepted and fleet recovered — November 21, 22:08 Beijing time
 
 R4 seed17 SFT training and native checkpoint export remain accepted. Its full

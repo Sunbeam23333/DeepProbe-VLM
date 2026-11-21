@@ -1,0 +1,183 @@
+{
+  "schema_version": 1,
+  "model": "ouro_r4_s17",
+  "observed_utc": "2026-11-21T14:43:28.868688+00:00",
+  "evaluations": {
+    "evaluate__ouro_r4_s17__videomme899": {
+      "status": "SUITE_EVALUATION_COMPLETE",
+      "qa": 2697,
+      "failed_units": 0,
+      "sampling_scope": "original_video_uniform_frames",
+      "summary": {
+        "accuracy": 0.2039302929180571,
+        "correct": 550,
+        "qa": 2697,
+        "scope": "videomme899_reference_multiple_choice"
+      },
+      "evaluation_file_sha256": "737859adf1b0d6f182a5a28e97d19c87fa39fa6d93508d5985d3dd13e85ae218",
+      "completion_sha256": "e6415eb39ddd883517d0a184f03750d25684fb5b66502d403a6f27d96b3f111f",
+      "all_checkpoint_files_sha256_verified": true
+    },
+    "evaluate__ouro_r4_s17__tempcompass_mc": {
+      "status": "SUITE_EVALUATION_COMPLETE",
+      "qa": 1580,
+      "failed_units": 0,
+      "sampling_scope": "original_video_uniform_frames",
+      "summary": {
+        "all_predictions_included": true,
+        "dimension_macro_accuracy": 0.5518703532605469,
+        "dimensions": {
+          "action": {
+            "accuracy": 0.8994082840236687,
+            "correct": 304,
+            "count": 338,
+            "official_accuracy_percent_1dp": 89.9,
+            "rule_match_count": 332,
+            "rule_match_rate": 0.9822485207100592
+          },
+          "attribute_change": {
+            "accuracy": 0.5381944444444444,
+            "correct": 155,
+            "count": 288,
+            "official_accuracy_percent_1dp": 53.8,
+            "rule_match_count": 287,
+            "rule_match_rate": 0.9965277777777778
+          },
+          "direction": {
+            "accuracy": 0.3641791044776119,
+            "correct": 122,
+            "count": 335,
+            "official_accuracy_percent_1dp": 36.4,
+            "rule_match_count": 322,
+            "rule_match_rate": 0.9611940298507463
+          },
+          "order": {
+            "accuracy": 0.5033112582781457,
+            "correct": 152,
+            "count": 302,
+            "official_accuracy_percent_1dp": 50.3,
+            "rule_match_count": 302,
+            "rule_match_rate": 1.0
+          },
+          "speed": {
+            "accuracy": 0.45425867507886436,
+            "correct": 144,
+            "count": 317,
+            "official_accuracy_percent_1dp": 45.4,
+            "rule_match_count": 315,
+            "rule_match_rate": 0.9936908517350158
+          }
+        },
+        "fine_grained_dimensions": {
+          "absolute speed": {
+            "accuracy": 0.5241935483870968,
+            "correct": 65,
+            "count": 124,
+            "official_accuracy_percent_1dp": 52.4,
+            "rule_match_count": 123,
+            "rule_match_rate": 0.9919354838709677
+          },
+          "camera motion": {
+            "accuracy": 0.34782608695652173,
+            "correct": 32,
+            "count": 92,
+            "official_accuracy_percent_1dp": 34.8,
+            "rule_match_count": 88,
+            "rule_match_rate": 0.9565217391304348
+          },
+          "coarse-grained action": {
+            "accuracy": 0.9243243243243243,
+            "correct": 171,
+            "count": 185,
+            "official_accuracy_percent_1dp": 92.4,
+            "rule_match_count": 180,
+            "rule_match_rate": 0.972972972972973
+          },
+          "color & light change": {
+            "accuracy": 0.6282051282051282,
+            "correct": 49,
+            "count": 78,
+            "official_accuracy_percent_1dp": 62.8,
+            "rule_match_count": 77,
+            "rule_match_rate": 0.9871794871794872
+          },
+          "combined change": {
+            "accuracy": 0.45,
+            "correct": 27,
+            "count": 60,
+            "official_accuracy_percent_1dp": 45.0,
+            "rule_match_count": 60,
+            "rule_match_rate": 1.0
+          },
+          "fine-grained action": {
+            "accuracy": 0.869281045751634,
+            "correct": 133,
+            "count": 153,
+            "official_accuracy_percent_1dp": 86.9,
+            "rule_match_count": 152,
+            "rule_match_rate": 0.9934640522875817
+          },
+          "object motion": {
+            "accuracy": 0.37037037037037035,
+            "correct": 90,
+            "count": 243,
+            "official_accuracy_percent_1dp": 37.0,
+            "rule_match_count": 234,
+            "rule_match_rate": 0.9629629629629629
+          },
+          "order": {
+            "accuracy": 0.5033112582781457,
+            "correct": 152,
+            "count": 302,
+            "official_accuracy_percent_1dp": 50.3,
+            "rule_match_count": 302,
+            "rule_match_rate": 1.0
+          },
+          "other change": {
+            "accuracy": 0.5555555555555556,
+            "correct": 10,
+            "count": 18,
+            "official_accuracy_percent_1dp": 55.6,
+            "rule_match_count": 18,
+            "rule_match_rate": 1.0
+          },
+          "relative speed": {
+            "accuracy": 0.40932642487046633,
+            "correct": 79,
+            "count": 193,
+            "official_accuracy_percent_1dp": 40.9,
+            "rule_match_count": 192,
+            "rule_match_rate": 0.9948186528497409
+          },
+          "size & shape change": {
+            "accuracy": 0.5227272727272727,
+            "correct": 69,
+            "count": 132,
+            "official_accuracy_percent_1dp": 52.3,
+            "rule_match_count": 132,
+            "rule_match_rate": 1.0
+          }
+        },
+        "model_provenance_admission_performed": false,
+        "official_avg_is_qa_micro_accuracy": true,
+        "official_scorer_sha256": "ccffa4f717a3e2a29435b2bbe440109bf2def589cea73fde9fd44fd262fb379a",
+        "official_summary_sha256": "514f728e6a4e273db7db2c3feab316c129ebcc08901e62352d5af71efb4e964c",
+        "overall": {
+          "accuracy": 0.5550632911392405,
+          "correct": 877,
+          "count": 1580,
+          "official_accuracy_percent_1dp": 55.5,
+          "rule_match_count": 1558,
+          "rule_match_rate": 0.9860759493670886
+        },
+        "protocol": "tempcompass-official-disable-llm-v1",
+        "quality_claim_scope": "Scores only the SHA-bound predictions. The evaluation runner must separately attest model and inference provenance."
+      },
+      "evaluation_file_sha256": "0991bc6a3707844fe38b8f1c296a58d1d3d8de6a0e883e448e3fde9b51355b43",
+      "completion_sha256": "b77b0295315760f9a8b6230d0f214caf2f7f78ec1220945b7fda655962d90b83",
+      "all_checkpoint_files_sha256_verified": true
+    }
+  },
+  "scientific_suite_complete": false,
+  "full_rows_preserved_in": "migration/2026-11-21/remote-code-config-logs.tar.gz"
+}
