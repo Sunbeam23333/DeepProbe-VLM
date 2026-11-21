@@ -157,7 +157,21 @@ def _marker_environment(pid, row, already_owned):
     stable same-user process still requires a readable marker before quiescence
     can be established; do not blindly skip PermissionError.
     """
-    for attempt in range(2):
+    # Back-to-back reads cannot outlast an exit/exec dumpability transition.
+    # Bound the total grace period to 375 ms; persistent unknown processes
+    # still fail closed. Revalidate identity before every delayed read so a
+    # reused PID cannot donate its marker to the original inventory row.
+    for attempt, delay in enumerate((0, 0.025, 0.05, 0.1, 0.2)):
+        if delay:
+            time.sleep(delay)
+            try:
+                current = _linux_identity(pid)
+            except (FileNotFoundError, ProcessLookupError):
+                return None
+            except PermissionError as exc:
+                raise GroupCleanupError('process identity unreadable during marker retry') from exc
+            if current['start'] != row['start'] or current['state'] in {'Z', 'X'}:
+                return None
         try:
             return _read_environment(pid)
         except (FileNotFoundError, ProcessLookupError):
@@ -175,10 +189,13 @@ def _marker_environment(pid, row, already_owned):
                 return None
             # procfs st_uid can change when dumpability changes; it does not
             # prove this live process is unrelated to the tracked command.
-            # One bounded retry permits transient access changes. Recheck stat
-            # after both failures, so exit during the retry is also tolerated.
-            if attempt:
-                raise _UnverifiedMarker('process marker unreadable; ownership unverified') from denied
+            # Recheck stat after each failure as well as before delayed reads.
+            if attempt == 4:
+                raise _UnverifiedMarker(
+                    'process marker unreadable; ownership unverified '
+                    f"pid={pid} start={row['start']} state={current['state']} "
+                    f"uid={current['uid']} errno={denied.errno} attempts=5"
+                ) from denied
 
 
 def _descendants(rows, owned):

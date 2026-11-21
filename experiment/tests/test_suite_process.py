@@ -155,6 +155,7 @@ class SuiteProcessPermissionTest(unittest.TestCase):
         stack.enter_context(mock.patch.object(process, 'process_table', return_value=rows))
         stack.enter_context(mock.patch.object(process, '_linux_identity', side_effect=identity))
         stack.enter_context(mock.patch('builtins.open', side_effect=environment))
+        stack.enter_context(mock.patch.object(process.time, 'sleep'))
         return stack
 
     def test_procfs_permission_race_with_exit_or_reused_pid_does_not_adopt_new_identity(self):
@@ -187,6 +188,33 @@ class SuiteProcessPermissionTest(unittest.TestCase):
         with self.contexts({self.pid: row}, lambda pid: row, environment):
             self.assertEqual(set(tree.refresh()), {self.pid})
         self.assertEqual(calls, ['/proc/93421/environ'] * 2)
+
+    def test_marker_retry_waits_for_transient_access_to_recover(self):
+        row = self.row()
+        raw = SuiteProcessAncestryTest.encoded({process.MARKER: self.token})
+        results = [PermissionError('transition')] * 4 + [io.BytesIO(raw)]
+        with self.contexts({self.pid: row}, lambda pid: row, results):
+            self.assertEqual(set(self.make_tree().refresh()), {self.pid})
+            self.assertEqual(process.time.sleep.call_args_list,
+                             [mock.call(x) for x in (0.025, 0.05, 0.1, 0.2)])
+
+    def test_pid_reuse_during_delay_is_checked_before_reading_new_environment(self):
+        row = self.row()
+        identities = [row, {**row, 'start': 'replacement'}]
+        with self.contexts({self.pid: row}, identities, PermissionError('transition')):
+            tree = self.make_tree()
+            self.assertEqual(tree.refresh(), {})
+            self.assertNotIn(self.pid, tree.identities)
+            self.assertEqual(process.time.sleep.call_args_list, [mock.call(0.025)])
+
+    def test_persistent_denial_has_bounded_retries_and_identity_diagnostics(self):
+        row = self.row()
+        with self.contexts({self.pid: row}, lambda pid: row, PermissionError(13, 'denied')):
+            with self.assertRaisesRegex(process.GroupCleanupError,
+                                        'pid=93421 .*errno=13 attempts=5'):
+                self.make_tree().refresh()
+            self.assertEqual(process.time.sleep.call_args_list,
+                             [mock.call(x) for x in (0.025, 0.05, 0.1, 0.2)])
 
     def test_unknown_live_process_still_denied_blocks_quiescence_even_after_proc_uid_change(self):
         row = self.row()
