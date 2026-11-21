@@ -1,28 +1,18 @@
 {
   "schema_version": 1,
-  "r4_resume_checkpoint_step": 600,
-  "r4_target_step": 718,
-  "scientific_totals_unchanged": {
-    "training_stages": 6,
-    "complete_two_stage_models": 2,
-    "evaluations": 4,
-    "full_model_latency_runs": 0
-  },
-  "a6_original_training_exception_confirmed": false,
-  "oss_limit_bytes": null,
-  "completion_claim": false,
-  "observed_at_utc": "2026-11-21T09:51:04.380405+00:00",
-  "attempt": "a10",
-  "source_commit": "87c3423",
-  "status": "RUNNING_RECOVERY",
+  "observed_at_utc": "2026-11-21T11:52:44.137651+00:00",
+  "attempt": "a11",
+  "source_commit": "9beeee6",
+  "status": "RUNNING_RECOVERY_AFTER_PARENT_EXPORT_IMPORT_FIX",
   "exact_job_and_pod_identity_verified": true,
+  "startup_accepted": true,
+  "gpu_gate_passed": true,
   "allocation": {
     "queue": "stream",
     "priority": "normal",
     "nodes": 1,
     "gpus": 8
   },
-  "gpu_gate_passed": true,
   "operational_tasks_completed": 1,
   "operational_tasks_planned": 185,
   "completed_task_ids": [
@@ -31,35 +21,55 @@
   "active_tasks": [
     "train__ouro_r4_s17__alignment"
   ],
-  "new_optimizer_updates_observed": false,
-  "new_scientific_stage_or_evaluation_completed": false,
-  "previous_attempt": {
-    "attempt": "a9",
-    "failed_utc": "2026-11-21T09:22:45.543768+00:00",
-    "failure": "Transient process marker read denial aborted alignment archive; no new optimizer updates observed. Exact originating process role is unconfirmed.",
-    "metadata_archive_full_readback_verified": true,
-    "metadata_files_plus_manifest": 85,
-    "home_reservation_released_bytes": 48000000000,
-    "original_files_retained": true
+  "new_attempt_optimizer_updates_observed": false,
+  "r4_resume_checkpoint_step": 600,
+  "r4_target_step": 718,
+  "scientific_totals_unchanged": {
+    "training_stages": 6,
+    "complete_two_stage_models": 2,
+    "evaluations": 4,
+    "full_model_latency_runs": 0
   },
-  "fix": "Process marker permission failures now receive up to 375 ms of identity-checked retries. Persistent unclassified processes still block completion. Scientific recipe, historical training source and cache contracts are unchanged.",
+  "previous_attempt": {
+    "attempt": "a10",
+    "native_training_exit_code": 0,
+    "formal_training_completed_step": 718,
+    "native_training_process_quiescence_verified": true,
+    "suite_failed_utc": "2026-11-21T11:09:48.845527+00:00",
+    "failure": "In-process native checkpoint export imported Transformers without a private TorchInductor cache; numeric UID passwd lookup failed.",
+    "native_checkpoint_718_oss_export_accepted": false,
+    "native_checkpoint_718_oss_payload_objects": 0,
+    "original_private_run_directory_unavailable_on_exact_node_probe": true,
+    "metadata_archive_files_plus_manifest": 109,
+    "metadata_archive_full_readback_verified": true,
+    "original_pod_record_preserved": true,
+    "old_reservation_released_bytes": 48000000000,
+    "recovery": "Restore the accepted checkpoint 600 and repeat 118 updates to reconstruct unavailable model payloads. No weight recovery at 718 is claimed."
+  },
+  "fix": "The action process now binds TORCHINDUCTOR_CACHE_DIR beneath the verified private TMPDIR before in-process export, in addition to its training children. Scientific recipe and legacy training source unchanged.",
   "tests": {
-    "passed": 128,
-    "subtests_passed": 32,
-    "real_linux_dumpability_regression_cases": 3
+    "passed": 91,
+    "actual_parent_import_regression": {
+      "baseline_returncode": 1,
+      "fixed_returncode": 0
+    }
   },
   "f4_and_f8_benchmark_cache_ready_accepted": true,
   "f16_caches_deferred": true,
   "home_capacity_at_admission": {
-    "observed_at_utc": "2026-11-21T09:42:25.641538+00:00",
-    "actual_bytes": 70262273590,
-    "projected_with_reservations_and_safety_bytes": 120532806198,
+    "observed_at_utc": "2026-11-21T11:43:46.094788+00:00",
+    "actual_bytes": 70285216214,
+    "projected_with_reservations_and_safety_bytes": 120555748822,
     "limit_bytes": 150000000000
   },
+  "oss_limit_bytes": null,
   "evidence_sha256": {
-    "runtime_observation": "93d980e1771f4eb196c0f3c301a9b065765c5fc2163a5635be2c166dd2622d00",
-    "source_manifest": "80c14664093d8bc0cd9e01f7b283b55c3f1263512264b43943f9166d32dbd90e",
-    "a9_terminal_metadata_archive": "3d3326fa88831eac0523354a6f370003ae681c451ee73095213daea958c25467",
-    "a9_hold_retirement": "986f24eb0eaa39e961987b6dd547dd6d3d0375571bae58e53ed660f958010b0e"
-  }
+    "runtime_observation": "074a7c9278cdb1f9efcc888561799af7b516c09e1b8ceb0cbdb615c0024d8d58",
+    "source_manifest": "0a53d8d2bb5108a07e0ca113c24f3d29ceb5c13f0949cbdf1682ed1c3bafadde",
+    "a10_formal_training_completion": "76540850e7b8c23db8e49de9a5a745279575ad5a27f80dd7c204dee6b742aa37",
+    "a10_native_training_exit": "4d82ceedae435ea002e31ae7e4502db1f1f3f5aa0bf8af32a25d67c0b316ad0f",
+    "a10_terminal_metadata_archive": "e1ba46e767be7c69a5888284dd6669048a211adfff6a461774c9efc333ea7287",
+    "parent_import_regression": "e089b41c6920db5f505b1253cff6522b3f39a8fb58c5bf0105f4fcaee2fbeb61"
+  },
+  "completion_claim": false
 }

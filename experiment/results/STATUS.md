@@ -1,25 +1,30 @@
 # Experiment status — 2026-11-21
 
-## Recovery update — November 21, 17:51 Beijing time
+## Recovery update — November 21, 19:52 Beijing time
 
-Replacement **a10** is Running with its exact Job/Pod identities and eight-GPU
-gate verified. The complete 185-task plan, 11 accepted historical bindings and
-six cache contracts are retained. **No new optimizer update or scientific
-completion is claimed.** R4 SFT still needs checkpoint600 to step718 recovery.
+**a10 completed the 718-step training calculation and exited 0**, with formal
+completion and process-quiescence records retained. Its outer checkpoint export
+then failed at **19:09:48**: importing Transformers triggered a numeric-UID
+passwd lookup because only the training child had an explicit Inductor cache.
+No native checkpoint 718 payload reached OSS. A read-only CPU probe on the exact
+original node found the original private run directory unavailable. This attempt
+is therefore **not accepted as a recoverable completed model**.
 
-Attempt a9 failed at **17:22:45** during the restored alignment archive because
-a process marker became unreadable. Code `87c3423` adds bounded, identity-checked
-permission retries; persistent unknown processes still block completion. A real
-Linux reproduction fails with the old code and passes with the fix; persistent
-denial remains rejected. 128 tests and 32 subtests passed. The exact role of the
-original transient process is unconfirmed.
+Fix `9beeee6` binds the cache in the action process as well. 91 tests passed; an
+actual production-runtime parent-import regression failed before the fix and
+passed after it. The failed attempt's 108 metadata files plus archive manifest
+were verified by full GET/SHA. Its original Failed Pod record is retained; only
+the missing-status controller was retired with orphan propagation, then its
+48 GB reservation was released. No checkpoint files were deleted by recovery.
 
-The a9 terminal archive contains 84 metadata files plus its manifest, verified
-by full GET/SHA. Only its 48 GB home reservation was released; original files and
-other reservations remain. New admission accounts for approximately
-120.53 GB including reservations and safety, below the 150 GB limit.
-F4/F8 caches remain READY; F16 preparation is still running. Scientific totals
-and the November 19 release are unchanged.
+Replacement **a11 is Running and passed the eight-GPU gate**. It restores the
+accepted checkpoint 600 and must repeat 118 updates to reconstruct the unavailable
+weights. The full 185-task plan and accepted scientific recipes remain unchanged.
+No new accepted model, benchmark score or full-model latency result is claimed.
+Admission accounts for 120.56 GB including reservations and safety, below 150 GB.
+F4/F8 caches remain READY; F16 is deferred. Scientific release totals remain
+6 accepted training stages, 2 complete models, 4 evaluations and 0 full-model
+latency runs. The November 19 scored release is unchanged.
 
 See [dated recovery evidence](RECOVERY_20261121.json).
 
