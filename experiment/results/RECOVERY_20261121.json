@@ -1,11 +1,20 @@
 {
   "schema_version": 1,
-  "observed_at_utc": "2026-11-21T09:11:02.361853+00:00",
-  "attempt": "a9",
-  "source_commit": "d5d6e3d",
-  "status": "RUNNING_RECOVERY_ALIGNMENT_ARCHIVE",
-  "job_created_utc": "2026-11-21T09:03:10Z",
-  "job_running_utc": "2026-11-21T09:03:15Z",
+  "r4_resume_checkpoint_step": 600,
+  "r4_target_step": 718,
+  "scientific_totals_unchanged": {
+    "training_stages": 6,
+    "complete_two_stage_models": 2,
+    "evaluations": 4,
+    "full_model_latency_runs": 0
+  },
+  "a6_original_training_exception_confirmed": false,
+  "oss_limit_bytes": null,
+  "completion_claim": false,
+  "observed_at_utc": "2026-11-21T09:51:04.380405+00:00",
+  "attempt": "a10",
+  "source_commit": "87c3423",
+  "status": "RUNNING_RECOVERY",
   "exact_job_and_pod_identity_verified": true,
   "allocation": {
     "queue": "stream",
@@ -13,46 +22,44 @@
     "nodes": 1,
     "gpus": 8
   },
-  "startup_accepted": true,
   "gpu_gate_passed": true,
-  "operational_tasks_completed": 2,
+  "operational_tasks_completed": 1,
   "operational_tasks_planned": 185,
   "completed_task_ids": [
-    "gpu_gate",
+    "gpu_gate"
+  ],
+  "active_tasks": [
     "train__ouro_r4_s17__alignment"
   ],
-  "alignment_completion_kind": "restoration_of_accepted_historical_checkpoint",
-  "active_task": "archive__ouro_r4_s17__alignment",
   "new_optimizer_updates_observed": false,
-  "r4_resume_checkpoint_step": 600,
-  "r4_target_step": 718,
   "new_scientific_stage_or_evaluation_completed": false,
-  "scientific_totals_unchanged": {
-    "training_stages": 6,
-    "complete_two_stage_models": 2,
-    "evaluations": 4,
-    "full_model_latency_runs": 0
+  "previous_attempt": {
+    "attempt": "a9",
+    "failed_utc": "2026-11-21T09:22:45.543768+00:00",
+    "failure": "Transient process marker read denial aborted alignment archive; no new optimizer updates observed. Exact originating process role is unconfirmed.",
+    "metadata_archive_full_readback_verified": true,
+    "metadata_files_plus_manifest": 85,
+    "home_reservation_released_bytes": 48000000000,
+    "original_files_retained": true
   },
-  "fix": "Explicit TorchInductor cache under the bound private TMPDIR avoids numeric-UID passwd lookup during library import; legacy cache validation and scientific training sources unchanged.",
+  "fix": "Process marker permission failures now receive up to 375 ms of identity-checked retries. Persistent unclassified processes still block completion. Scientific recipe, historical training source and cache contracts are unchanged.",
   "tests": {
-    "passed": 112,
-    "subtests_passed": 7,
-    "actual_frozen_source_integration_checks_included": 2
+    "passed": 128,
+    "subtests_passed": 32,
+    "real_linux_dumpability_regression_cases": 3
   },
-  "a6_original_training_exception_confirmed": false,
   "f4_and_f8_benchmark_cache_ready_accepted": true,
   "f16_caches_deferred": true,
   "home_capacity_at_admission": {
-    "observed_at_utc": "2026-11-21T08:58:07.296028+00:00",
-    "actual_bytes": 70233426202,
-    "projected_with_reservations_and_safety_bytes": 120503958810,
+    "observed_at_utc": "2026-11-21T09:42:25.641538+00:00",
+    "actual_bytes": 70262273590,
+    "projected_with_reservations_and_safety_bytes": 120532806198,
     "limit_bytes": 150000000000
   },
-  "oss_limit_bytes": null,
   "evidence_sha256": {
-    "runtime_observation": "88b133271e963b9e5ac645bfe34ffd43c0b3ed7af83bc00c322a619ede6d258c",
-    "cpu_preflight": "54849ee93df7cd8cfa3fade83fd6535ce9ced993f4353658a8b109f2e464f55c",
-    "source_manifest": "39150ab0aa1bf1dbd4ff7977e08cb5ea74ee66919f846068dec144548c4b7ace"
-  },
-  "completion_claim": false
+    "runtime_observation": "93d980e1771f4eb196c0f3c301a9b065765c5fc2163a5635be2c166dd2622d00",
+    "source_manifest": "80c14664093d8bc0cd9e01f7b283b55c3f1263512264b43943f9166d32dbd90e",
+    "a9_terminal_metadata_archive": "3d3326fa88831eac0523354a6f370003ae681c451ee73095213daea958c25467",
+    "a9_hold_retirement": "986f24eb0eaa39e961987b6dd547dd6d3d0375571bae58e53ed660f958010b0e"
+  }
 }

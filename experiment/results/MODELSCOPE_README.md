@@ -6,22 +6,28 @@ license: Apache License 2.0
 
 Verified results and reproducibility records for DeepProbe-VLM. The repository visibility is unchanged.
 
-## Recovery update — November 21, 17:11 Beijing time
+## Recovery update — November 21, 17:51 Beijing time
 
-Replacement **a9** was submitted once at 17:03:10 and entered Running at
-17:03:15. The exact Job/Pod identities, startup and eight-GPU gate are verified.
-The accepted historical R4 alignment checkpoint has been restored; its archive
-is in progress. **No new optimizer update or scientific completion is claimed.**
-The next training operation resumes R4 SFT checkpoint600 to step718.
+Replacement **a10** is Running with its exact Job/Pod identities and eight-GPU
+gate verified. The complete 185-task plan, 11 accepted historical bindings and
+six cache contracts are retained. **No new optimizer update or scientific
+completion is claimed.** R4 SFT still needs checkpoint600 to step718 recovery.
 
-Code `d5d6e3d` fixes the reproduced numeric-UID TorchInductor cache import error
-without changing the scientific recipe or legacy training source. 112 tests
-and 7 subtests passed, including actual frozen-source cache compatibility.
-Both F4 and F8 benchmark shapes passed READY checks; F16 preparation continues.
-The original a6 training exception is still unconfirmed. Accepted result totals
-and the November 19 scientific release are unchanged.
+Attempt a9 failed at **17:22:45** during the restored alignment archive because
+a process marker became unreadable. Code `87c3423` adds bounded, identity-checked
+permission retries; persistent unknown processes still block completion. A real
+Linux reproduction fails with the old code and passes with the fix; persistent
+denial remains rejected. 128 tests and 32 subtests passed. The exact role of the
+original transient process is unconfirmed.
 
-See [recovery evidence](https://modelscope.ai/datasets/JasonJin/DeepProbe-VLM/files?branch=master&path=progress%2F2026-11-21-recovery-a9.json).
+The a9 terminal archive contains 84 metadata files plus its manifest, verified
+by full GET/SHA. Only its 48 GB home reservation was released; original files and
+other reservations remain. New admission accounts for approximately
+120.53 GB including reservations and safety, below the 150 GB limit.
+F4/F8 caches remain READY; F16 preparation is still running. Scientific totals
+and the November 19 release are unchanged.
+
+See [recovery evidence](https://modelscope.ai/datasets/JasonJin/DeepProbe-VLM/files?branch=master&path=progress%2F2026-11-21-recovery-a10.json).
 
 ## Latest release
 
