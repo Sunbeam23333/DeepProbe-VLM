@@ -6,6 +6,25 @@ license: Apache License 2.0
 
 Verified results and reproducibility records for DeepProbe-VLM. The repository visibility is unchanged.
 
+## R4 SFT accepted — November 21, 21:28 Beijing time
+
+R4 seed17 SFT completed all **718 optimizer steps** and was accepted at
+**21:08:16 Beijing time**, after resuming checkpoint 600 and replaying 118 updates.
+Native training exited 0. The native checkpoint is now durable in OSS:
+**31 payload files / 22,317,165,602 bytes**, plus MANIFEST and READY (33 objects).
+The export receipt confirms full GET/SHA256 verification of every payload;
+this follow-up independently read back both metadata objects and checked the
+exact object names and sizes. The parent-process cache fix passed the actual
+checkpoint export path.
+
+Accepted totals are now **7/34 training stages, 3/18 complete two-stage models,
+4/36 benchmark evaluations, 0/15 full-model latency runs and 0/12 comparisons**.
+The full SFT stage archive is still running on the original worker. Its archive
+acceptance and downstream evaluation remain pending; no R4 benchmark score is
+claimed. The suite is incomplete. The November 19 scored release is unchanged.
+
+See [training acceptance evidence](https://modelscope.ai/datasets/JasonJin/DeepProbe-VLM/files?branch=master&path=progress%2F2026-11-21-r4-sft-accepted.json).
+
 ## Recovery update — November 21, 19:52 Beijing time
 
 **a10 completed the 718-step training calculation and exited 0**, with formal

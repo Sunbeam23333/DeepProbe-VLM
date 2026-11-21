@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "observed_at_utc": "2026-11-21T13:28:52.306325+00:00",
+  "task_id": "train__ouro_r4_s17__sft",
+  "model": "ouro_r4_s17",
+  "status": "TRAINING_ACCEPTED_NATIVE_CHECKPOINT_OSS_READY",
+  "accepted_at_utc": "2026-11-21T13:08:16.374118+00:00",
+  "optimizer_steps": 718,
+  "resume_checkpoint_step": 600,
+  "replayed_optimizer_updates": 118,
+  "world_size": 8,
+  "training_exit_code": 0,
+  "source_fix_commit": "9beeee6",
+  "native_checkpoint": {
+    "payload_files": 31,
+    "payload_bytes": 22317165602,
+    "objects_including_manifest_and_ready": 33,
+    "all_payload_full_get_sha256_verified_by_exporter": true,
+    "metadata_independent_oss_readback_verified": true,
+    "exact_object_names_and_sizes_independently_verified": true,
+    "automatic_resume_authorized": false
+  },
+  "full_stage_archive_accepted": false,
+  "full_stage_archive_status": "RUNNING",
+  "benchmark_evaluations_added": 0,
+  "scientific_totals": {
+    "training_stages": 7,
+    "complete_two_stage_models": 3,
+    "evaluations": 4,
+    "full_model_latency_runs": 0,
+    "comparisons": 0
+  },
+  "declared_plan": {
+    "training_stages": 34,
+    "models": 18,
+    "evaluations": 36,
+    "full_model_latency_runs": 15,
+    "comparisons": 12
+  },
+  "remaining": {
+    "training_stages": 27,
+    "evaluations": 32,
+    "full_model_latency_runs": 15,
+    "comparisons": 12
+  },
+  "evidence_sha256": {
+    "task_acceptance": "5a156230e40e07ab902640287a925860fa4ddb03fc77902077210085a90fde4a",
+    "training_completion": "ff47cb90dba998355e4b967fc54ee7cf4955dd65f8f67f981987651c93809bba",
+    "formal_completion": "6391ec2e0661d62be3876944f226c0c681a0ebf7ce47f363800457e9a0ad1adf",
+    "export_acceptance": "49594e64a688afc206cc40c0cc50f6747a1917f6ef89dd7fbf6102dd4c9e8ddb",
+    "native_manifest": "0c07e741aeb9db119cd0304d963fc50e80f83e97feb1a6a5460c9de716322360",
+    "native_ready": "1899656c5d3150dba0e7c447edfb9d2c966a2a4270f14b054cf4634ba08a2cce",
+    "native_payload_inventory": "b940593e659b5c7f8e9145d1a668a8f0031a115c5601f292e0f3a5c48af56f70",
+    "runtime_observation": "6db7d97f8ac449ecf19d44a54070286a8879c6b3cd94565fe1c7db57971bc231"
+  },
+  "suite_complete": false,
+  "november19_scored_release_unchanged": true
+}
