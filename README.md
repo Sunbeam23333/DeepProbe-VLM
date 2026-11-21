@@ -44,7 +44,7 @@ python -m pytest -q
 
 ## 当前状态
 
-最新已核对的终态记录显示：完整套件 **a6 worker 于2026-11-21北京时间08:59:43退出，退出码1**，Job 于08:59:45记为 Failed。185个操作任务完成3项：GPU门槛、历史 R4 alignment 恢复及归档；没有证实新增 optimizer 更新、训练阶段或评测完成。原训练异常原因尚未确证。本页依据带时间的已有工件，不声称替代 worker 已启动。诊断记录保全修复已同步至 `1b3af01`，39项局部测试通过。见[终态与归档进度包](experiment/results/releases/2026-11-21-progress-v7/README.md)和[完整状态记录](experiment/results/STATUS.md)。
+**2026-11-21北京时间17:11最新核验**：替代作业 a9 已于17:03:10提交，17:03:15进入 Running，启动检查和8卡GPU门槛通过。历史 R4 alignment 检查点已恢复，正在归档校验；随后从 R4 SFT checkpoint600 续训至718。**尚未观察到新的 optimizer 更新，完整实验仍未完成。** 数字UID触发的 TorchInductor 缓存导入错误已修复并同步至 `d5d6e3d`，112项测试及7项子测试通过。F4/F8缓存均通过 READY 核验，F16仍在准备。见[本次恢复快照](experiment/results/RECOVERY_20261121.json)和[完整状态记录](experiment/results/STATUS.md)。此前 a6 失败及归档记录保留在[progress-v7](experiment/results/releases/2026-11-21-progress-v7/README.md)。
 
 已验收的科学结果仍为 **6 个训练阶段、2 个完整两阶段模型、4 项评测、0 项全模型延迟测量**。R1/R2 seed17 的 Video-MME 声明 899 视频子集准确率为 **6.3404% / 18.4650%**，TempCompass 多选准确率为 **42.5316% / 50.4430%**。Video-MME 有较高无效回答率，不代表官方全量成绩；协议、配对统计及局限见[结果记录](experiment/results/RESULTS.md)。
 

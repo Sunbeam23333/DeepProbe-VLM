@@ -6,6 +6,23 @@ license: Apache License 2.0
 
 Verified results and reproducibility records for DeepProbe-VLM. The repository visibility is unchanged.
 
+## Recovery update — November 21, 17:11 Beijing time
+
+Replacement **a9** was submitted once at 17:03:10 and entered Running at
+17:03:15. The exact Job/Pod identities, startup and eight-GPU gate are verified.
+The accepted historical R4 alignment checkpoint has been restored; its archive
+is in progress. **No new optimizer update or scientific completion is claimed.**
+The next training operation resumes R4 SFT checkpoint600 to step718.
+
+Code `d5d6e3d` fixes the reproduced numeric-UID TorchInductor cache import error
+without changing the scientific recipe or legacy training source. 112 tests
+and 7 subtests passed, including actual frozen-source cache compatibility.
+Both F4 and F8 benchmark shapes passed READY checks; F16 preparation continues.
+The original a6 training exception is still unconfirmed. Accepted result totals
+and the November 19 scientific release are unchanged.
+
+See [recovery evidence](https://modelscope.ai/datasets/JasonJin/DeepProbe-VLM/files?branch=master&path=progress%2F2026-11-21-recovery-a9.json).
+
 ## Latest release
 
 [2026-11-19 result package](https://modelscope.ai/datasets/JasonJin/DeepProbe-VLM/files?branch=master&path=releases%2F2026-11-19) · [GitHub source and experiment scripts](https://github.com/Sunbeam23333/DeepProbe-VLM)
@@ -21,6 +38,8 @@ The accepted quality comparison uses training seed17 only. Bootstrap intervals r
 The `releases/2026-11-19/README.md` file explains the artifact layout and limitations. `PUBLICATION_MANIFEST.json` pins all published payloads, `SOURCE_MAP.json` maps derivatives to original evidence digests, and `VALIDATION.json` records count and metric checks. Private model filesystem names in Video-MME predictions were replaced with public experiment identifiers. No scores were changed.
 
 R4 SFT, SmolLM2, the remaining seeds and ablations, and formal full-model latency measurements remain incomplete in this snapshot. The current small result release is not a backup of model weights. Future fully verified model backups, if present, use a separate `artifacts/` prefix.
+
+## Historical a6 terminal snapshot
 
 The isolated **a6 suite worker failed**: its container exited 1 at
 **08:59:43 Beijing time on November 21** (00:59:43 UTC), and the Job's Failed

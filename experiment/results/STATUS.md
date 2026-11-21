@@ -1,5 +1,24 @@
 # Experiment status — 2026-11-21
 
+## Recovery update — November 21, 17:11 Beijing time
+
+Replacement **a9** was submitted once at 17:03:10 and entered Running at
+17:03:15. The exact Job/Pod identities, startup and eight-GPU gate are verified.
+The accepted historical R4 alignment checkpoint has been restored; its archive
+is in progress. **No new optimizer update or scientific completion is claimed.**
+The next training operation resumes R4 SFT checkpoint600 to step718.
+
+Code `d5d6e3d` fixes the reproduced numeric-UID TorchInductor cache import error
+without changing the scientific recipe or legacy training source. 112 tests
+and 7 subtests passed, including actual frozen-source cache compatibility.
+Both F4 and F8 benchmark shapes passed READY checks; F16 preparation continues.
+The original a6 training exception is still unconfirmed. Accepted result totals
+and the November 19 scientific release are unchanged.
+
+See [dated recovery evidence](RECOVERY_20261121.json).
+
+## Historical a6 terminal snapshot
+
 The isolated **a6 suite worker failed**: its container exited 1 at
 **08:59:43 Beijing time on November 21** (00:59:43 UTC), and the Job's Failed
 condition was recorded two seconds later. The exact Job/Pod identities match
