@@ -37,7 +37,7 @@ OFFLINE = {"HF_HUB_OFFLINE": "1", "TRANSFORMERS_OFFLINE": "1", "HF_DATASETS_OFFL
 ENVIRONMENT_KEYS = set(OFFLINE) | {
     "PATH", "PYTHONPATH", "HF_HOME", "HF_HUB_CACHE", "HF_MODULES_CACHE", "TRANSFORMERS_CACHE",
     "OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS",
-    "TORCH_EXTENSIONS_DIR", "TRITON_CACHE_DIR", "TORCHINDUCTOR_CACHE_DIR", "TMPDIR", "NCCL_DEBUG",
+    "TORCH_EXTENSIONS_DIR", "TRITON_CACHE_DIR", "TMPDIR", "NCCL_DEBUG",
     "NCCL_IB_TIMEOUT", "NCCL_NET_PLUGIN", "TORCH_NCCL_ASYNC_ERROR_HANDLING",
     "NCCL_ASYNC_ERROR_HANDLING", "TOKENIZERS_PARALLELISM", "DP_SUITE_KUBECTL_CACHE",
 }
@@ -804,9 +804,6 @@ def run_fleet_worker(plan, binding, *, plan_sha256, binding_sha256, state_root, 
             budget = TieredTaskBudget(budget, private_budget, {task['id']: task for task in plan['tasks']})
             caches = safe(binding['execution_profile']['scratch']['mount_path']) / 'runtime-cache' / worker_id
             for key, name in {'TMPDIR': 'tmp', 'CUDA_CACHE_PATH': 'cuda', 'TRITON_CACHE_DIR': 'triton',
-                              # Numeric container UIDs may have no passwd entry;
-                              # PyTorch's default path calls getpass.getuser().
-                              'TORCHINDUCTOR_CACHE_DIR': 'torch-inductor',
                               'TORCH_EXTENSIONS_DIR': 'torch-extensions'}.items():
                 path = safe(caches / name)
                 path.mkdir(parents=True, mode=0o700, exist_ok=True)

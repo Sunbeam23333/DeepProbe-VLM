@@ -112,8 +112,7 @@ def test_legacy_save_without_private_token_is_unchanged(tmp_path, monkeypatch):
 def test_native_progress_logs_stay_in_owned_private_run(metadata, tmp_path, monkeypatch):
     state, task, _, _ = metadata
     private = tmp_path.resolve() / 'private-run'; private.mkdir()
-    for key in ('TMPDIR', 'CUDA_CACHE_PATH', 'TRITON_CACHE_DIR', 'TORCH_EXTENSIONS_DIR',
-                'TORCHINDUCTOR_CACHE_DIR'):
+    for key in ('TMPDIR', 'CUDA_CACHE_PATH', 'TRITON_CACHE_DIR', 'TORCH_EXTENSIONS_DIR'):
         monkeypatch.setenv(key, str(private))
     environment = {'experiment_root': str(tmp_path.resolve()), 'run_root': str(private),
                    'source_files': [], 'runtime_environment': {}}

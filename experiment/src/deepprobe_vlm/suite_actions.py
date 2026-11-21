@@ -347,10 +347,15 @@ class Actions:
         if self.private_scratch:
             # The action's machine environment cannot put runtime scratch back
             # on shared home after the worker has bound its private caches.
-            for key in ('TMPDIR', 'CUDA_CACHE_PATH', 'TRITON_CACHE_DIR', 'TORCH_EXTENSIONS_DIR',
-                        'TORCHINDUCTOR_CACHE_DIR'):
+            for key in ('TMPDIR', 'CUDA_CACHE_PATH', 'TRITON_CACHE_DIR', 'TORCH_EXTENSIONS_DIR'):
                 require(key in os.environ, 'Private runtime cache binding is missing: ' + key)
                 env[key] = os.environ[key]
+            # Numeric container UIDs may lack a passwd entry. PyTorch's
+            # default cache calls getpass.getuser(), even during import.
+            # Keep the explicit cache below the already bound private TMPDIR.
+            inductor = safe(env['TMPDIR']) / 'torch-inductor'
+            inductor.mkdir(mode=0o700, exist_ok=True)
+            env['TORCHINDUCTOR_CACHE_DIR'] = str(inductor)
         env['PYTHONPATH'] = os.pathsep.join(filter(None, [str((source_root or self.root) / 'src'),
                                                        self.env['runtime_environment'].get('PYTHONPATH', '')]))
         if extra_env:

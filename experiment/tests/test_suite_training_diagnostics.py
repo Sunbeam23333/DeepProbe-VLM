@@ -20,8 +20,7 @@ def action(metadata, tmp_path, monkeypatch):
     state, task, ledger, runtime = metadata
     private = tmp_path.resolve() / 'private-run'; private.mkdir()
     source = tmp_path.resolve() / 'scientific-source'; source.mkdir()
-    for key in ('TMPDIR', 'CUDA_CACHE_PATH', 'TRITON_CACHE_DIR', 'TORCH_EXTENSIONS_DIR',
-                'TORCHINDUCTOR_CACHE_DIR'):
+    for key in ('TMPDIR', 'CUDA_CACHE_PATH', 'TRITON_CACHE_DIR', 'TORCH_EXTENSIONS_DIR'):
         monkeypatch.setenv(key, str(private))
     environment = {'experiment_root': str(source), 'run_root': str(private),
                    'source_files': [], 'runtime_environment': {}}
@@ -209,5 +208,5 @@ def test_private_inductor_cache_overrides_shared_environment(action):
         'import os; from pathlib import Path; '
         'p=Path(os.environ["TORCHINDUCTOR_CACHE_DIR"])/"inductor-write-probe"; '
         'p.write_text("cache-writable")'], output, 'training')
-    assert (private / 'inductor-write-probe').read_text() == 'cache-writable'
+    assert (private / 'torch-inductor' / 'inductor-write-probe').read_text() == 'cache-writable'
     assert runner.read(proof['exit']['path'])['returncode'] == 0
