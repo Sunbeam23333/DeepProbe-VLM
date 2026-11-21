@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "observed_at_utc": "2026-11-21T14:08:06.113395+00:00",
+  "attempt": "a12",
+  "source_commit": "57dd36a",
+  "status": "RUNNING_AFTER_FLEET_SCHEDULER_CACHE_FIX",
+  "exact_job_and_pod_identity_verified": true,
+  "gpu_gate_passed": true,
+  "r4_training_accepted": true,
+  "r4_full_stage_archive_accepted": true,
+  "r4_stage_archive": {
+    "objects": 70,
+    "bytes": 29800298227,
+    "full_get_sha256_verified": true
+  },
+  "r4_native718_oss_ready": true,
+  "r4_history_mode": "accepted",
+  "r4_retraining_required": false,
+  "scientific_totals": {
+    "training_stages": 7,
+    "complete_two_stage_models": 3,
+    "evaluations": 4,
+    "full_model_latency_runs": 0,
+    "comparisons": 0
+  },
+  "previous_attempt": {
+    "attempt": "a11",
+    "stopped_utc": "2026-11-21T13:31:05.673383+00:00",
+    "failure": "Fleet scheduler imported evaluation code while checking benchmark cache readiness without an explicit Inductor cache; numeric UID passwd lookup failed.",
+    "training_and_archive_completed_before_failure": true,
+    "terminal_metadata_files_plus_manifest": 146,
+    "original_pod_record_preserved": true,
+    "old_hold_released_bytes": 48000000000
+  },
+  "fix": "Bind an isolated TorchInductor cache in the frozen launch environment so the scheduler and all descendants inherit it. Preserve exact old cache/scoring code through a narrowly matched AST compatibility rule.",
+  "tests": {
+    "passed": 142,
+    "actual_fleet_readiness_import_regression": {
+      "baseline_returncode": 1,
+      "fixed_returncode": 0
+    }
+  },
+  "all_six_benchmark_caches_cpu_admitted": true,
+  "full_plan_preserved": true,
+  "home_projected_bytes_at_admission": 120336529561,
+  "home_limit_bytes": 150000000000,
+  "evidence_sha256": {
+    "runtime_observation": "8591150411e6b8b094cb54d4c340fdea2c47192331f409c0d39996ee345d9e3b",
+    "r4_stage_archive": "9adbce33ccb3c98dc9d3de13683da974c40c3af7154f9cafe7fe58bb7768c82e",
+    "r4_history_acceptance": "c2335891b3436c10a9f47bc63b432c1eda6229c3bcd528e2468539407e56526c",
+    "source_manifest": "d634e8391c59a90cc88ebee7394a30a63e3becbf2308a1b1934953bf92fe0517",
+    "a11_terminal_archive": "141a43deedcc08c2f18e09f612ef8887acc4f65e63170f62c3c2c734bfbe8ac1"
+  },
+  "suite_complete": false,
+  "november19_scored_release_unchanged": true
+}

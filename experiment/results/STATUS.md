@@ -1,5 +1,31 @@
 # Experiment status — 2026-11-21
 
+## R4 archive accepted and fleet recovered — November 21, 22:08 Beijing time
+
+R4 seed17 SFT training and native checkpoint export remain accepted. Its full
+stage archive was also accepted at **21:30:48 Beijing time**: **70 objects /
+29,800,298,227 bytes**, all verified by full GET/SHA256. The final model has
+20 files / 7,482,814,700 bytes and is registered as accepted history at step 718.
+
+Worker a11 then stopped at **21:31:05** while the scheduler checked benchmark
+cache readiness: an evaluation-module import encountered the numeric-UID
+Inductor cache error outside the action process. Fix `57dd36a` binds the cache
+in the frozen launch environment. 142 tests and an actual production-runtime
+readiness-import regression passed. The original Failed Pod record is retained;
+145 metadata files plus manifest were archived and verified, and its 48 GB hold
+was released after exact terminal reconciliation.
+
+Replacement **a12 is Running and has passed the eight-GPU gate**. It restores
+accepted R4 final weights; **no R4 optimizer updates need replaying**. The full
+185-task plan is preserved. All six F4/F8/F16 benchmark caches passed CPU admission.
+Admission projects 120.34 GB including reservations
+and safety, below 150 GB. Accepted totals remain **7/34 training stages, 3/18
+complete two-stage models, 4/36 benchmark evaluations, 0/15 full-model latency
+runs and 0/12 comparisons**. Remaining training, benchmarks, latency and
+comparisons are incomplete. The November 19 scored release is unchanged.
+
+See [recovery evidence](A12_RECOVERY_20261121.json).
+
 ## R4 SFT accepted — November 21, 21:28 Beijing time
 
 R4 seed17 SFT completed all **718 optimizer steps** and was accepted at
