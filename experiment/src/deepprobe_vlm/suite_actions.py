@@ -357,8 +357,19 @@ class Actions:
         if list(argv[1:4]) == ['-B', '-m', 'torch.distributed.run']:
             env = single_node_torchrun_environment(env)
         if self.private_scratch and label == 'training':
-            from .suite_training_process import run_training
-            return run_training(list(map(str, argv)), cwd=source_root or self.root, env=env, logs_prefix=logs)
+            from .suite_training_process import run_training, note_failure
+            try:
+                return run_training(list(map(str, argv)), cwd=source_root or self.root, env=env, logs_prefix=logs)
+            except BaseException as error:
+                try:
+                    from .suite_training_diagnostics import retain_failure
+                    retain_failure(logs, private_run_root=log_directory.parent,
+                        destination=self.state / 'durable-metadata' / task_id,
+                        error_type=type(error).__name__)
+                except BaseException as diagnostic_error:
+                    note_failure(error, 'Training failure diagnostics could not be retained: '
+                                 + type(diagnostic_error).__name__)
+                raise
         save(logs.with_suffix('.intent.json'), {'argv': list(map(str, argv)), 'source_root': str(source_root or self.root)})
         lease = getattr(self, '_benchmark_lease', None) if label == 'evaluate' else None
         if lease is None:

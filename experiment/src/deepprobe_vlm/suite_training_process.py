@@ -17,6 +17,16 @@ FAILED = 'SUITE_TRAINING_PROCESS_FAILED'
 TIMEOUT_SECONDS = 30 * 24 * 3600
 
 
+def note_failure(error, message):
+    """Optional Python 3.11 notes must never replace the original exception."""
+    try:
+        add_note = getattr(error, 'add_note', None)
+        if callable(add_note):
+            add_note(message)
+    except BaseException:
+        pass
+
+
 def _pin(pin):
     runner.require(isinstance(pin, dict) and set(pin) == {'path', 'bytes', 'sha256'}
                    and type(pin['bytes']) is int and pin['bytes'] > 0,
@@ -28,6 +38,13 @@ def _pin(pin):
 def _log(path):
     # Empty stdout/stderr are valid and are not regular nonempty receipt pins.
     return {'path': str(path), 'bytes': path.stat().st_size, 'sha256': runner.sha(path)}
+
+
+def _failure_log(path):
+    # A failed process tree may still be writing. Do not hash an unbounded,
+    # moving file before the independently bounded diagnostic capture runs.
+    return {'path': str(path), 'observed_bytes': path.stat().st_size,
+            'full_source_sha256_recorded': False, 'bounded_diagnostic_capture_required': True}
 
 
 def run_training(argv, *, cwd, env, logs_prefix):
@@ -47,7 +64,7 @@ def run_training(argv, *, cwd, env, logs_prefix):
     args = list(argv); started = time.monotonic()
     intent = save(paths['intent.json'], {'schema_version': 1, 'status': 'SUITE_TRAINING_PROCESS_INTENT',
         'argv': args, 'argv_sha256': runner.digest(args), 'source_root': str(source), 'automatic_retry': False})
-    code, quiet, error = None, False, None
+    code, quiet, error, original_error = None, False, None, None
     try:
         with paths['stdout'].open('xb') as stdout, paths['stderr'].open('xb') as stderr:
             result = suite_process.run_group(args, stdout=stdout, stderr=stderr, env=env,
@@ -56,18 +73,27 @@ def run_training(argv, *, cwd, env, logs_prefix):
         runner.require(type(code) is int and code == 0, 'Training command exited unsuccessfully')
         runner.require(quiet, 'Training process tree is not proven quiescent')
     except BaseException as exc:
+        original_error = exc
         if code is None:
             code = getattr(exc, 'group_returncode', None)
         quiet = quiet or getattr(exc, 'group_cleanup_verified', False) is True
         error = type(exc).__name__
         raise
     finally:
-        exited = save(paths['exit.json'], {'schema_version': 1,
-            'status': ACCEPTED if error is None and type(code) is int and code == 0 and quiet else FAILED,
-            'intent': intent, 'argv_sha256': runner.digest(args), 'source_root': str(source),
-            'returncode': code, 'group_cleanup_verified': quiet, 'error_type': error,
-            'automatic_retry': False, 'elapsed_seconds': time.monotonic() - started,
-            'logs': {name: _log(paths[name]) for name in ('stdout', 'stderr') if paths[name].is_file()}})
+        try:
+            exited = save(paths['exit.json'], {'schema_version': 1,
+                'status': ACCEPTED if error is None and type(code) is int and code == 0 and quiet else FAILED,
+                'intent': intent, 'argv_sha256': runner.digest(args), 'source_root': str(source),
+                'returncode': code, 'group_cleanup_verified': quiet, 'error_type': error,
+                'automatic_retry': False, 'elapsed_seconds': time.monotonic() - started,
+                'logs': {name: (_log(paths[name]) if error is None and type(code) is int and code == 0 and quiet
+                                else _failure_log(paths[name]))
+                         for name in ('stdout', 'stderr') if paths[name].is_file()}})
+        except BaseException as receipt_error:
+            if original_error is None:
+                raise
+            note_failure(original_error, 'Private training exit evidence could not be retained: '
+                         + type(receipt_error).__name__)
     proof = {'exit': exited, 'intent': intent}
     verify_training_exit(proof, expected_source_root=source, expected_argv_sha256=runner.digest(args))
     return proof
