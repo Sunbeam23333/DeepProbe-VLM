@@ -327,6 +327,13 @@ class Actions:
             destination = destination / task_id
         return retain_pin(item, self.run_root, destination)
 
+    def private_inductor_cache(self):
+        require(self.private_scratch and 'TMPDIR' in os.environ,
+                'Private runtime TMPDIR binding is missing')
+        path = safe(os.environ['TMPDIR']) / 'torch-inductor'
+        path.mkdir(mode=0o700, exist_ok=True)
+        return str(path)
+
     def command(self, argv, directory, label, *, source_root=None, extra_env=None):
         directory = safe(directory)
         directory.mkdir(parents=True, exist_ok=True)
@@ -353,9 +360,7 @@ class Actions:
             # Numeric container UIDs may lack a passwd entry. PyTorch's
             # default cache calls getpass.getuser(), even during import.
             # Keep the explicit cache below the already bound private TMPDIR.
-            inductor = safe(env['TMPDIR']) / 'torch-inductor'
-            inductor.mkdir(mode=0o700, exist_ok=True)
-            env['TORCHINDUCTOR_CACHE_DIR'] = str(inductor)
+            env['TORCHINDUCTOR_CACHE_DIR'] = self.private_inductor_cache()
         env['PYTHONPATH'] = os.pathsep.join(filter(None, [str((source_root or self.root) / 'src'),
                                                        self.env['runtime_environment'].get('PYTHONPATH', '')]))
         if extra_env:
@@ -1211,6 +1216,12 @@ class Actions:
         for source in self.env['source_files']:
             verify_pin(source)
         self.live()
+        if self.private_scratch:
+            # Post-training export imports Transformers in this action process,
+            # after the training child has exited. Bind its cache here too;
+            # configuring only the child's environment leaves numeric UIDs
+            # without passwd entries unable to export a completed checkpoint.
+            os.environ['TORCHINDUCTOR_CACHE_DIR'] = self.private_inductor_cache()
         kind = task['kind']
         if kind == 'gate':
             directory = self.task_dir(task_id)

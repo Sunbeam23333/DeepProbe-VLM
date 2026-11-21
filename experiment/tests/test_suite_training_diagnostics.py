@@ -210,3 +210,22 @@ def test_private_inductor_cache_overrides_shared_environment(action):
         'p.write_text("cache-writable")'], output, 'training')
     assert (private / 'torch-inductor' / 'inductor-write-probe').read_text() == 'cache-writable'
     assert runner.read(proof['exit']['path'])['returncode'] == 0
+
+
+def test_action_process_has_private_cache_for_in_process_export(action, monkeypatch):
+    value, private, output, _, _, runtime = action
+    monkeypatch.setenv('TORCHINDUCTOR_CACHE_DIR', '/unwritable/shared/cache')
+    task_id = runtime['DP_SUITE_TASK_ID']
+    value.tasks[task_id] = {'id': task_id, 'kind': 'export_probe', 'dependencies': []}
+    value.live = lambda: None
+    def export_probe(task):
+        cache = Path(os.environ['TORCHINDUCTOR_CACHE_DIR'])
+        assert cache == private / 'torch-inductor'
+        proof = cache / 'export-probe.json'
+        proof.write_text('{"import_and_cache_write": true}')
+        return {'outputs': [runner.artifact(proof)]}
+    value.export_probe = export_probe
+    receipt = output / 'ACCEPTED.json'
+    value.run(task_id, receipt)
+    assert runner.read(receipt)['status'] == 'SUITE_TASK_ACCEPTED'
+    assert (private / 'torch-inductor/export-probe.json').is_file()
