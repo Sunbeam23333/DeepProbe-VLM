@@ -20,7 +20,8 @@ def action(metadata, tmp_path, monkeypatch):
     state, task, ledger, runtime = metadata
     private = tmp_path.resolve() / 'private-run'; private.mkdir()
     source = tmp_path.resolve() / 'scientific-source'; source.mkdir()
-    for key in ('TMPDIR', 'CUDA_CACHE_PATH', 'TRITON_CACHE_DIR', 'TORCH_EXTENSIONS_DIR'):
+    for key in ('TMPDIR', 'CUDA_CACHE_PATH', 'TRITON_CACHE_DIR', 'TORCH_EXTENSIONS_DIR',
+                'TORCHINDUCTOR_CACHE_DIR'):
         monkeypatch.setenv(key, str(private))
     environment = {'experiment_root': str(source), 'run_root': str(private),
                    'source_files': [], 'runtime_environment': {}}
@@ -199,3 +200,14 @@ def test_fifo_and_symlink_sources_are_rejected_without_blocking(tmp_path):
     alias = root / 'alias'; alias.symlink_to(ordinary)
     with pytest.raises(ValueError, match='symlink'):
         diagnostics._capture(alias, diagnostics.LOG_TAIL_BYTES)
+
+
+def test_private_inductor_cache_overrides_shared_environment(action):
+    value, private, output, _, _, _ = action
+    value.env['runtime_environment']['TORCHINDUCTOR_CACHE_DIR'] = '/unwritable/shared/cache'
+    proof = value.command([sys.executable, '-c',
+        'import os; from pathlib import Path; '
+        'p=Path(os.environ["TORCHINDUCTOR_CACHE_DIR"])/"inductor-write-probe"; '
+        'p.write_text("cache-writable")'], output, 'training')
+    assert (private / 'inductor-write-probe').read_text() == 'cache-writable'
+    assert runner.read(proof['exit']['path'])['returncode'] == 0

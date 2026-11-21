@@ -347,7 +347,8 @@ class Actions:
         if self.private_scratch:
             # The action's machine environment cannot put runtime scratch back
             # on shared home after the worker has bound its private caches.
-            for key in ('TMPDIR', 'CUDA_CACHE_PATH', 'TRITON_CACHE_DIR', 'TORCH_EXTENSIONS_DIR'):
+            for key in ('TMPDIR', 'CUDA_CACHE_PATH', 'TRITON_CACHE_DIR', 'TORCH_EXTENSIONS_DIR',
+                        'TORCHINDUCTOR_CACHE_DIR'):
                 require(key in os.environ, 'Private runtime cache binding is missing: ' + key)
                 env[key] = os.environ[key]
         env['PYTHONPATH'] = os.pathsep.join(filter(None, [str((source_root or self.root) / 'src'),
