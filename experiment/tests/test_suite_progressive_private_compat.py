@@ -100,6 +100,7 @@ def test_repinned_function_changes_remain_in_the_compatibility_comparison(old_ca
     ('suite_workflow', 'validate_run_root_location(env)', 'validate_run_root_location({})'),
     ('suite_runner', "token['scratch']", "token['different_scratch']"),
     ('suite_runner', "'TMPDIR': 'tmp'", "'TMPDIR': 'frames'"),
+    ('suite_runner', '"TORCHINDUCTOR_CACHE_DIR", "TMPDIR"', '"LD_PRELOAD", "TMPDIR"'),
     ('suite_runner', 'return get_task_import(state_root, task_id)', 'return {}'),
     ('suite_runner', 'artifact(completion_path(state_root, item))', 'artifact(completion_path(state_root, task_id))'),
 ])

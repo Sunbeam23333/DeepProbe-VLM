@@ -81,6 +81,7 @@ def validate_isolation(environment, *, verify_hold=True):
     runtime = environment.get('runtime_environment', {})
     namespace = runner.safe(value['namespace_root'])
     for key in ('HF_HOME', 'HF_MODULES_CACHE', 'TMPDIR', 'TORCH_EXTENSIONS_DIR', 'TRITON_CACHE_DIR',
+                'TORCHINDUCTOR_CACHE_DIR',
                 'DP_SUITE_KUBECTL_CACHE'):
         require(key in runtime and runner.safe(runtime[key]).is_relative_to(namespace),
                 'Isolated runtime cache escapes its lifetime namespace: ' + key)
@@ -110,6 +111,7 @@ def isolate_environment(environment, coordinator_hold):
     root = runner.safe(hold['namespace_root']) / 'runtime-cache'
     for key, suffix in {'HF_HOME': 'hf', 'HF_HUB_CACHE': 'hf/hub', 'HF_MODULES_CACHE': 'hf/modules', 'TMPDIR': 'tmp',
                         'TORCH_EXTENSIONS_DIR': 'extensions', 'TRITON_CACHE_DIR': 'triton',
+                        'TORCHINDUCTOR_CACHE_DIR': 'tmp/torch-inductor',
                         'DP_SUITE_KUBECTL_CACHE': 'kubectl'}.items():
         result['runtime_environment'][key] = str(root / suffix)
     if hold.get('read_only_backbone_cache') is not None:

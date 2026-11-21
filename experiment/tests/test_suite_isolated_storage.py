@@ -290,7 +290,7 @@ def test_contract_requires_complete_single_worker_private_profile(delegation, ch
 
 @pytest.mark.parametrize('key', ['HF_HOME', 'HF_HUB_CACHE', 'HF_MODULES_CACHE', 'TMPDIR',
                                 'TORCH_EXTENSIONS_DIR', 'TRITON_CACHE_DIR', 'TRANSFORMERS_CACHE',
-                                'DP_SUITE_KUBECTL_CACHE'])
+                                'DP_SUITE_KUBECTL_CACHE', 'TORCHINDUCTOR_CACHE_DIR'])
 def test_runtime_cache_cannot_escape_to_original_home(delegation, key):
     environment = deepcopy(delegation.env)
     environment['runtime_environment'][key] = str(delegation.home / 'legacy-runtime-cache')

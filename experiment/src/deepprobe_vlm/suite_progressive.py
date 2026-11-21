@@ -148,6 +148,24 @@ def _cache_runner_identity(path):
     token routing and scratch initialization statements below are normalized.
     """
     tree = ast.parse(Path(path).read_text(encoding='utf-8'))
+    # Only the explicit cache variable is added; frame/scoring code stays exact.
+    _normalize_exact(tree.body, '''
+ENVIRONMENT_KEYS = set(OFFLINE) | {
+    "PATH", "PYTHONPATH", "HF_HOME", "HF_HUB_CACHE", "HF_MODULES_CACHE", "TRANSFORMERS_CACHE",
+    "OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS",
+    "TORCH_EXTENSIONS_DIR", "TRITON_CACHE_DIR", "TORCHINDUCTOR_CACHE_DIR", "TMPDIR", "NCCL_DEBUG",
+    "NCCL_IB_TIMEOUT", "NCCL_NET_PLUGIN", "TORCH_NCCL_ASYNC_ERROR_HANDLING",
+    "NCCL_ASYNC_ERROR_HANDLING", "TOKENIZERS_PARALLELISM", "DP_SUITE_KUBECTL_CACHE",
+}
+''', '''
+ENVIRONMENT_KEYS = set(OFFLINE) | {
+    "PATH", "PYTHONPATH", "HF_HOME", "HF_HUB_CACHE", "HF_MODULES_CACHE", "TRANSFORMERS_CACHE",
+    "OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS",
+    "TORCH_EXTENSIONS_DIR", "TRITON_CACHE_DIR", "TMPDIR", "NCCL_DEBUG",
+    "NCCL_IB_TIMEOUT", "NCCL_NET_PLUGIN", "TORCH_NCCL_ASYNC_ERROR_HANDLING",
+    "NCCL_ASYNC_ERROR_HANDLING", "TOKENIZERS_PARALLELISM", "DP_SUITE_KUBECTL_CACHE",
+}
+''')
     _normalize_exact(tree.body, '''
 ENVIRONMENT_KEYS = set(OFFLINE) | {
     "PATH", "PYTHONPATH", "HF_HOME", "HF_HUB_CACHE", "HF_MODULES_CACHE", "TRANSFORMERS_CACHE",

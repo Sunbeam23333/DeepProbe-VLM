@@ -130,7 +130,9 @@ def test_kernel_mount_readback_rejects_manifest_only_isolation(prepared, damage)
 def test_renderer_and_final_job_validator_apply_isolation(prepared, tmp_path):
     env, _, before = prepared
     env.update(suite_id=env['execution_profile']['fleet_id'], machine_identity={'uid': 1000, 'gid': 1000},
-        experiment_root=str(tmp_path.resolve()), runtime_environment={}, allocation_identity={})
+        experiment_root=str(tmp_path.resolve()), runtime_environment={
+            'TORCHINDUCTOR_CACHE_DIR': env['isolated_storage']['namespace_root'] + '/runtime-cache/tmp/torch-inductor'},
+        allocation_identity={})
     template = {'apiVersion': 'kubeflow.org/v1', 'kind': 'PyTorchJob', 'spec': {
         'pytorchReplicaSpecs': {'Master': {'replicas': 1, 'restartPolicy': 'Never',
                                          'template': {'spec': before}}}}}
@@ -141,6 +143,7 @@ def test_renderer_and_final_job_validator_apply_isolation(prepared, tmp_path):
     spec = job['spec']['pytorchReplicaSpecs']['Master']['template']['spec']
     assert isolated.validate_isolated_pod(spec, env)['writable_home_mounts'] == [env['isolated_storage']['namespace_root']]
     argv = spec['containers'][0]['command']
+    assert {row['name']: row['value'] for row in spec['containers'][0]['env']}['TORCHINDUCTOR_CACHE_DIR'] == env['runtime_environment']['TORCHINDUCTOR_CACHE_DIR']
     assert suite_launch.validate_job(job, env, argv, worker_id='worker-01', binding_sha256='b' * 64) == job
     next(m for m in spec['containers'][0]['volumeMounts'] if m['mountPath'] == '/home/jinhaopeng')['readOnly'] = False
     with pytest.raises(ValueError, match='read-only'):
