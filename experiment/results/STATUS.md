@@ -1,5 +1,30 @@
 # Experiment status — 2026-11-21
 
+## R4 latency parity failure — November 21, 23:30 Beijing snapshot
+
+The original a12 Pod stopped at **23:25:02** after all five declared R4 latency
+measurement runs completed. The first comparison (`no_cache`) correctly stopped
+the suite on exact-token disagreement: **65/416 request pairs**, representing
+**5/32 samples**, with the same disagreement in every warmup and repeat.
+
+A CPU-only audit of the already saved artifacts reproduced the original failure
+exactly. Last-token projection alone passed all 416 pairs. Triton pooling and
+last-token projection plus Triton each failed 65 pairs. No model was rerun, no
+trial selected, and no parity gate or suite acceptance receipt changed. Timing
+ratios are withheld for all failing variants. Floating-point path differences
+are a hypothesis; logits/activation diagnostics are still needed to establish
+root cause. The other three comparison tasks were not run by the stopped suite;
+the offline audit is recorded separately.
+
+Accepted totals: **7/34 training stages, 3/18 complete models, 6/36 evaluations,
+5/15 full-model latency runs, 0/12 suite-accepted comparisons**. Completed R4
+training, model archives and evaluations remain accepted. Weights and terminal
+logs are retained for migration. The independent 226.68 GB transfer continues;
+no replacement GPU job was submitted during this migration-first diagnosis.
+
+See [parity report and evidence hashes](R4_LATENCY_PARITY_20261121.json).
+
+
 ## Migration preservation and R4 evaluations — November 21, 22:43 Beijing snapshot
 
 R4 seed17 completed both declared evaluations on the original a12 worker:

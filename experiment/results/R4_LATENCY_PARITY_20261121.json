@@ -1,0 +1,162 @@
+{
+  "schema_version": 1,
+  "observed_utc": "2026-11-21T15:30:19.108058+00:00",
+  "model": "ouro_r4_s17",
+  "worker_attempt": "a12",
+  "worker_stopped_utc": "2026-11-21T15:25:02.792281+00:00",
+  "status": "WORKER_STOPPED_ON_TOKEN_PARITY_FAILURE",
+  "scientific_totals": {
+    "training_stages": 7,
+    "complete_two_stage_models": 3,
+    "evaluations": 6,
+    "full_model_latency_runs": 5,
+    "suite_accepted_comparisons": 0
+  },
+  "measurement_protocol": {
+    "samples": 32,
+    "warmup_per_sample": 3,
+    "measured_repeats_per_sample": 10,
+    "batch_size": 1,
+    "max_new_tokens": 16,
+    "dtype": "bfloat16",
+    "decoding": "greedy_argmax",
+    "devices": 1,
+    "data_scope": "development_only"
+  },
+  "comparisons": {
+    "no_cache": {
+      "status": "TOKEN_PARITY_FAILED",
+      "comparison_identity": "cd8d5c7bdfc9ec03fcddded54174da83712ce5435cc2971c2ebcd0a30ef34e64",
+      "reference_plan_sha256": "5350f0f1a86a2db381453370e52bfe76c55e056d018b94a56b766ac8a1df97e2",
+      "candidate_plan_sha256": "da629f41747f16a934be0efaa40c863b8755a09cc6981e4b80d307466315b16f",
+      "reference_implementation": {
+        "last_token_logits": false,
+        "pool_backend": "reference"
+      },
+      "candidate_implementation": {
+        "last_token_logits": false,
+        "pool_backend": "reference"
+      },
+      "reference_cache": true,
+      "candidate_cache": false,
+      "requests_compared_including_warmups": 416,
+      "token_mismatch_count": 65,
+      "reference_over_candidate_timing_ratio": null,
+      "timing_ratio_interpretation": "greater than one means lower candidate latency; no significance or serving-throughput claim",
+      "heldout_quality_claimed": false,
+      "mismatching_samples": [
+        "llava:2ed4fff378ded486c623d51f",
+        "llava:5ab2d55a5e32a4c649713dcb",
+        "llava:9467dcd86baa16bffeab560e",
+        "llava:c08c3763665ef457dea2be9d",
+        "llava:f1e1c327bd6e38b4c4bd87ae"
+      ]
+    },
+    "last_token": {
+      "status": "TOKEN_PARITY_PASSED",
+      "comparison_identity": "cd8d5c7bdfc9ec03fcddded54174da83712ce5435cc2971c2ebcd0a30ef34e64",
+      "reference_plan_sha256": "5350f0f1a86a2db381453370e52bfe76c55e056d018b94a56b766ac8a1df97e2",
+      "candidate_plan_sha256": "a2621da90b91c8aab0675781d37174592529c8c25c4b792561337d9c9e71e8c5",
+      "reference_implementation": {
+        "last_token_logits": false,
+        "pool_backend": "reference"
+      },
+      "candidate_implementation": {
+        "last_token_logits": true,
+        "pool_backend": "reference"
+      },
+      "reference_cache": true,
+      "candidate_cache": true,
+      "requests_compared_including_warmups": 416,
+      "token_mismatch_count": 0,
+      "reference_over_candidate_timing_ratio": {
+        "model_seconds": {
+          "median": 1.0558686917711058,
+          "p95": 1.0553736051580598
+        },
+        "request_seconds": {
+          "median": 1.0298736507634951,
+          "p95": 1.0168892509421072
+        }
+      },
+      "timing_ratio_interpretation": "greater than one means lower candidate latency; no significance or serving-throughput claim",
+      "heldout_quality_claimed": false,
+      "mismatching_samples": []
+    },
+    "triton_pool": {
+      "status": "TOKEN_PARITY_FAILED",
+      "comparison_identity": "cd8d5c7bdfc9ec03fcddded54174da83712ce5435cc2971c2ebcd0a30ef34e64",
+      "reference_plan_sha256": "5350f0f1a86a2db381453370e52bfe76c55e056d018b94a56b766ac8a1df97e2",
+      "candidate_plan_sha256": "52dab08e4fd3c5cf52568ca77cfaf5f22d49a48168cdebce54fe856be6fb5ef6",
+      "reference_implementation": {
+        "last_token_logits": false,
+        "pool_backend": "reference"
+      },
+      "candidate_implementation": {
+        "last_token_logits": false,
+        "pool_backend": "triton"
+      },
+      "reference_cache": true,
+      "candidate_cache": true,
+      "requests_compared_including_warmups": 416,
+      "token_mismatch_count": 65,
+      "reference_over_candidate_timing_ratio": null,
+      "timing_ratio_interpretation": "greater than one means lower candidate latency; no significance or serving-throughput claim",
+      "heldout_quality_claimed": false,
+      "mismatching_samples": [
+        "llava:1ce15708d7785ecc20785c68",
+        "llava:2ed4fff378ded486c623d51f",
+        "llava:8aeccc0ddab5876fa1175ccb",
+        "llava:9467dcd86baa16bffeab560e",
+        "llava:f1e1c327bd6e38b4c4bd87ae"
+      ]
+    },
+    "both": {
+      "status": "TOKEN_PARITY_FAILED",
+      "comparison_identity": "cd8d5c7bdfc9ec03fcddded54174da83712ce5435cc2971c2ebcd0a30ef34e64",
+      "reference_plan_sha256": "5350f0f1a86a2db381453370e52bfe76c55e056d018b94a56b766ac8a1df97e2",
+      "candidate_plan_sha256": "2f6a0101538d4bccb4967d8a70ff15887fbc96fc61a01c5581903b3e0b6eb72f",
+      "reference_implementation": {
+        "last_token_logits": false,
+        "pool_backend": "reference"
+      },
+      "candidate_implementation": {
+        "last_token_logits": true,
+        "pool_backend": "triton"
+      },
+      "reference_cache": true,
+      "candidate_cache": true,
+      "requests_compared_including_warmups": 416,
+      "token_mismatch_count": 65,
+      "reference_over_candidate_timing_ratio": null,
+      "timing_ratio_interpretation": "greater than one means lower candidate latency; no significance or serving-throughput claim",
+      "heldout_quality_claimed": false,
+      "mismatching_samples": [
+        "llava:1ce15708d7785ecc20785c68",
+        "llava:2ed4fff378ded486c623d51f",
+        "llava:8aeccc0ddab5876fa1175ccb",
+        "llava:9467dcd86baa16bffeab560e",
+        "llava:f1e1c327bd6e38b4c4bd87ae"
+      ]
+    }
+  },
+  "original_failed_comparison_reproduced_exactly": true,
+  "all_five_modes_deterministic_on_all_32_samples": true,
+  "comparison_acceptance_scope": "CPU-only audit of original immutable measurements. The suite failed on no_cache; the remaining three suite comparison tasks were not executed. This audit does not modify suite receipts or relax the token-parity gate.",
+  "diagnosis": {
+    "confirmed": "No-cache differs from reference on 5 of32 samples across every warmup and measured repeat (65/416 request pairs). Triton pooling and last-token+Triton also each differ on5 samples. Last-token-only passes all416 pairs.",
+    "root_cause_proven": false,
+    "numerical_hypothesis": "Cache/full-prefix matmuls and separable-matmul/Triton-reduction pooling use different floating-point operation paths. The saved artifacts contain final tokens but not paired logits/intermediate activations, so they do not establish the causal source or logit margins.",
+    "next_diagnostic": "Preserve this failed result. A separately frozen diagnostic can compare paired logits/activations and high-precision controls on the same inputs; do not rerun or select trials to seek a pass."
+  },
+  "weights_deleted": false,
+  "new_gpu_job_submitted": false,
+  "speedup_claim_for_failed_variants": false,
+  "scientific_suite_complete": false,
+  "migration_complete": false,
+  "evidence": {
+    "terminal_snapshot": "migration/2026-11-21/a12-terminal-parity-2330.tar.gz",
+    "terminal_snapshot_sha256": "c3d5c62b0da8761fac276741f7b0c010fdc9f0aa4fb8fdf557a68c35ac8fdeff",
+    "analysis_sha256": "b2037f6d04be9d6b7e9b7edcd6d3b8fdad8c9bfc9310f9cd94a25d727a0d62c6"
+  }
+}
